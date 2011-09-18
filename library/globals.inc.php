@@ -1317,5 +1317,137 @@ $GLOBALS_METADATA = array(
       xl('Contact ZMG, LLC (zmghealth@gmail.com) for subscribing the eRx service')
     ),
   ),
+  
+  // Begin RX Options
+  // Portal Tab
+  //
+  'Rx Options' => array(
+//$GLOBALS['oer_config']['prescriptions']['show_DEA'] = true;
+    'show_DEA' => array(
+      xl('Enable DEA'),
+      'bool',                           // data type
+      '0',
+      xl('Enable DEA.')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['show_NPI'] = true;
+    'show_NPI' => array(
+      xl('Enable NPI'),
+      'bool',                           // data type
+      '0',
+      xl('Enable NPI.')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['show_SLN'] = true;
+    'show_SLN' => array(
+      xl('Enable State Lic. #'),
+      'bool',                           // data type
+      '0',
+      xl('Enable State Lic. #')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['display_NPI'] = true;
+    'display_NPI' => array(
+      xl('Print NPI'),
+      'bool',                           // data type
+      '0',
+      xl('Print NPI')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['display_SLN'] = true;
+    'display_SLN' => array(
+      xl('Print State Lic. #'),
+      'bool',                           // data type
+      '0',
+      xl('Print State Lic. #')
+    ),
+ //
+// select paper size for prescription printing
+// see library/classes/class.ezpdf.php for complete list of paper sizes
+// ex. "LETTER", "A4", "LEGAL" ...
+//$GLOBALS['oer_config']['prescriptions']['paper_size'] = "LETTER";
+    'paper_size' => array(
+      xl('Paper Size'),               // descriptive name
+      array(
+        '4A0' => xl('4A0'),
+        '2A0' => xl('2A0'),
+        'A0' => xl('A0'),
+        'A1' => xl('A1'),
+        'A2' => xl('A2'),
+        'A3' => xl('A3'),
+        'A4' => xl('A4'),
+        'A5' => xl('A5'),
+        'A6' => xl('A6'),
+        'A7' => xl('A7'),
+        'A8' => xl('A8'),
+        'A9' => xl('A9'),
+        'A10' => xl('A10'),
+        'B0' => xl('B0'),
+        'B1' => xl('B1'),
+        'B2' => xl('B2'),
+        'B3' => xl('B3'),
+        'B4' => xl('B4'),
+        'B5' => xl('B5'),
+        'B6' => xl('B6'),
+        'B7' => xl('B7'),
+        'B8' => xl('B8'),
+        'B9' => xl('B9'),
+        'B10' => xl('B10'),
+        'C0' => xl('C0'),
+        'C1' => xl('C1'),
+        'C2' => xl('C2'),
+        'C3' => xl('C3'),
+        'C4' => xl('C4'),
+        'C5' => xl('C5'),
+        'C6' => xl('C6'),
+        'C7' => xl('C7'),
+        'C8' => xl('C8'),
+        'C9' => xl('C9'),
+        'C10' => xl('C10'),
+        'RA0' => xl('RA0'),
+        'RA1' => xl('RA1'),
+        'RA2' => xl('RA2'),
+        'RA3' => xl('RA3'),
+        'RA4' => xl('RA4'),
+        'SRA0' => xl('SRA0'),
+        'SRA1' => xl('SRA1'),
+        'SRA2' => xl('SRA2'),
+        'SRA3' => xl('SRA3'),
+        'SRA4' => xl('SRA4'),
+        'LETTER' => xl('LETTER'),
+        'LEGAL' => xl('LEGAL'),
+        'FOLIO' => xl('FOLIO'),
+        'EXECUTIVE' => xl('EXECUTIVE'),
+      ),
+      'LETTER',                              // default = tree menu
+      xl('Paper Size')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['left']   = 30;
+    'left' => array(
+      xl('Left Margin'),
+      'num',
+      '30',
+      xl('Left Margin')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['right']  = 30;
+    'right' => array(
+      xl('Right Margin'),
+      'num',
+      '30',
+      xl('Right Margin')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['top']    = 72;
+    'top' => array(
+      xl('Top Margin'),
+      'num',
+      '72',
+      xl('Top Margin')
+    ),
+//$GLOBALS['oer_config']['prescriptions']['bottom'] = 30;   
+    'bottom' => array(
+      xl('Bottom Margin'),
+      'num',
+      '30',
+      xl('Bottom Margin')
+    ),
+ //   
+),
+  //End RX Options
 );
 ?>
