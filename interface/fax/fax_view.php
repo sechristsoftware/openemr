@@ -6,6 +6,11 @@
  // as published by the Free Software Foundation; either version 2
  // of the License, or (at your option) any later version.
 
+	// mdsupport : Invoke new Security model 
+	$fake_register_globals=false;
+	$sanitize_all_escapes=true;
+	// mdsupport : end change
+	
 	require_once("../globals.php");
 
 	$ffname = '';
@@ -34,6 +39,17 @@
 			die(xl("Cannot find postscript document reference in ") . $jfname);
 		}
 	}
+	// mdsupport : View a document
+	else if ($_GET['document']) {
+			$doc = sqlStatement("SELECT type, url FROM documents WHERE id =?"
+			    				, array($_GET['document']) 
+			);
+			while ($drow = sqlFetchArray($doc)) {
+				$ffname = $drow['url']; // rawurlencode($drow['url']);
+				continue;
+			}
+	}
+	// mdsupport : End change
 	else if ($_GET['scan']) {
 		$ffname = $GLOBALS['scanner_output_directory'] . '/' . $_GET['scan'];
 	}

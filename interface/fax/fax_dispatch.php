@@ -71,6 +71,20 @@ function mergeTiffs() {
 
 // If we are submitting...
 //
+// mdsupport : Handle files that require image rotation during the dispatch process
+if ($_POST['form_rotate']) {
+	// all files in the directory will be rotated by 180 degrees
+	if (is_dir($faxcache)) {
+		$tmp0 = exec("cd '$faxcache'; ".
+					 "mogrify -rotate 180 *.tif; ".
+					 "mogrify -rotate 180 *.jpg; "
+		, $tmp1, $tmp2);
+		if ($tmp2) die("mogrify returned $tmp2 : $tmp0;<BR>".
+						var_dump($tmp1)."<BR>".
+						"Directory is '$faxcache';<BR>file is '$filepath'");
+	}
+}
+else
 if ($_POST['form_save']) {
   $action_taken = false;
   $tmp1 = array();
@@ -133,6 +147,31 @@ if ($_POST['form_save']) {
         sqlStatement($query);
       } // end not error
 
+      //mdsupport : Always notify the Primary Physician about the chart activity
+      //TBD - Is simillar change needed for scanned encounters?
+      // Build note text in a way that identifies the new document for pnotes_full.php.
+      $ptdata = sqlQuery("SELECT u.username as prov_user FROM patient_data p INNER JOIN users u ON u.id=p.providerid WHERE pid = '".$_POST['form_pid']."'");
+      if ($ptdata['prov_user']) {
+      	echo '<BR>Automatic Notification : ON<BR>';
+      	$note = "$ffname$ffmod$ffsuff";
+		$msgType = "";
+      	for ($tmp = $catid; $tmp;) {
+      		$catrow = sqlQuery("SELECT name, parent FROM categories WHERE id = '$tmp'");
+      		$note = $catrow['name'] . "/$note";
+      		$tmp = $catrow['parent'];
+			if ($msgType == "") $msgType = $catrow['name'];
+      	}
+      	$note = "New scanned document $newid: $note";
+      	$form_note_message = trim($_POST['form_note_message']);
+      	if (get_magic_quotes_gpc()) $form_note_message = stripslashes($form_note_message);
+      	if ($form_note_message) $note .= "\n" . $form_note_message;
+      	// addPnote() will do its own addslashes().
+      	$noteid = addPnote($_POST['form_pid'], $note, $userauthorized, '1',
+          $msgType, $ptdata['prov_user']);
+      	// Link the new patient note to the document.
+      	setGpRelation(1, $newid, 6, $noteid);
+      }
+      
       // If we are posting a note...
       if ($_POST['form_cb_note'] && !$info_msg) {
         // Build note text in a way that identifies the new document.
@@ -351,7 +390,7 @@ if (! is_dir($faxcache)) {
     $tmp0 = exec("cd '$faxcache'; tiffsplit '$filepath'", $tmp1, $tmp2);
     if ($tmp2) die("tiffsplit returned $tmp2: $tmp0");
   }
-  $tmp0 = exec("cd '$faxcache'; mogrify -resize 750x970 -format jpg *.tif", $tmp1, $tmp2);
+  $tmp0 = exec("cd '$faxcache'; mogrify -resize 750x970 -frame 3x3+1+1 -format jpg *.tif", $tmp1, $tmp2);
   if ($tmp2) die("mogrify returned $tmp2: $tmp0; ext is '$ext'; filepath is '$filepath'");
 }
 
@@ -520,9 +559,9 @@ div.section {
 
 </head>
 
-<body class="body_top" onunload='imclosing()'>
+<body class="body_top report_results" onunload='imclosing()'>
 
-<center><h2><?php xl('Dispatch Received Document','e'); ?></h2></center>
+<center><h2><?php xl('Dispatch Received Document','e');echo ' - '.$filebase; ?></h2></center>
 
 <form method='post' name='theform'
  action='fax_dispatch.php?<?php echo ($mode == 'fax') ? 'file' : 'scan'; ?>=<?php echo $filename ?>' onsubmit='return validate()'>
@@ -656,6 +695,10 @@ while ($urow = sqlFetchArray($ures)) {
  </table>
 </div><!-- end div_copy -->
 
+<?php
+// mdsupport : if fax support is not enabled, do not show the fax option
+if ($GLOBALS['enable_hylafax']) { 
+?>
 <p><input type='checkbox' name='form_cb_forward' value='1'
  onclick='return divclick(this,"div_forward");' />
 <b><?php xl('Forward Pages via Fax','e'); ?></b></p>
@@ -699,7 +742,9 @@ while ($urow = sqlFetchArray($ures)) {
   </tr>
  </table>
 </div><!-- end div_forward -->
-
+<?php 
+}  // end of hylafax
+?>
 <p><b><?php xl('Delete Pages','e'); ?>:</b>&nbsp;
 <input type='radio' name='form_cb_delete' value='2' />All&nbsp;
 <input type='radio' name='form_cb_delete' value='1' checked />Selected&nbsp;
@@ -715,8 +760,10 @@ while ($urow = sqlFetchArray($ures)) {
 <input type='button' value='<?php xl('Select All','e'); ?>' onclick='allCheckboxes(true)' />
 &nbsp; &nbsp;
 <input type='button' value='<?php xl('Clear All','e'); ?>' onclick='allCheckboxes(false)' />
+<?php // mdsupport : Added the option on the following line to invert the pages ?>
+&nbsp; &nbsp;
+<input type='submit' name='form_rotate' value='<?php xl('Flip Images','e'); ?>' />
 </p>
-
 <p><br /><b><?php xl('Please select the desired pages to copy or forward:','e'); ?></b></p>
 <table>
 
