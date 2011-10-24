@@ -62,6 +62,7 @@
   //   coding_a    Coding - any encounters (write,wsome optional)
   //   notes       Notes - my encounters (write,addonly optional)
   //   notes_a     Notes - any encounters (write,addonly optional)
+  //   notes_a_v   Notes - any encounters (view)
   //   date_a      Fix encounter dates - any encounters
   //   relaxed     Less-private information (write,addonly optional)
   //               (e.g. the Sports Fitness encounter form)

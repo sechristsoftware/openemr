@@ -115,7 +115,9 @@
      // xl('Notes - my encounters (write,addonly optional)')
  $gacl->add_object('encounters', 'Notes - any encounters (write,addonly optional)'  , 'notes_a' , 10, 0, 'ACO');
      // xl('Notes - any encounters (write,addonly optional)')
- $gacl->add_object('encounters', 'Fix encounter dates - any encounters'             , 'date_a'  , 10, 0, 'ACO');
+ $gacl->add_object('encounters', 'Notes - any encounters (view any encounters)'  , 'notes_a_v' , 10, 0, 'ACO');
+     // xl('Notes - any encounters (view any encounters)')
+$gacl->add_object('encounters', 'Fix encounter dates - any encounters'             , 'date_a'  , 10, 0, 'ACO');
      // xl('Fix encounter dates - any encounters')
  $gacl->add_object('encounters', 'Less-private information (write,addonly optional)', 'relaxed' , 10, 0, 'ACO');
      // xl('Less-private information (write,addonly optional)')

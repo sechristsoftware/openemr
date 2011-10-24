@@ -90,6 +90,7 @@ function divtoggle(spanid, divid) {
 		text.innerHTML = "<?php xl('Collapse','e'); ?>";
 	}
 }
+
 </script>
 
 <style type="text/css">
@@ -109,10 +110,12 @@ function divtoggle(spanid, divid) {
 </style>
 
 </head>
-<?php
+<?php if (!acl_check('encounters', 'notes_a_v')){?>
+<?php 
 $hide=1;
 require_once("$incdir/patient_file/encounter/new_form.php");
 ?>
+<?php;}?>
 <body class="body_top">
 
 <div id="encounter_forms">
@@ -129,6 +132,10 @@ $encounter_date = date("Y-m-d",strtotime($dateres["date"]));
 $auth_notes_a  = acl_check('encounters', 'notes_a');
 $auth_notes    = acl_check('encounters', 'notes');
 $auth_relaxed  = acl_check('encounters', 'relaxed');
+$now=date("Y-m-d",time());
+$datediff = abs(strtotime($now) - strtotime($encounter_date));
+$interval = floor($datediff/(60*60*24));
+
 
 if (is_numeric($pid)) {
     // Check for no access to the patient's squad.
@@ -144,6 +151,7 @@ if (is_numeric($pid)) {
         $auth_notes_a = $auth_notes = $auth_relaxed = 0;
     }
 }
+
 ?>
 </div>
 
@@ -156,7 +164,7 @@ if (is_numeric($pid)) {
         &nbsp;&nbsp;&nbsp;<a  style="font-size:80%;" href="#" onClick='expandcollapse("collapse");'><?php xl('Collapse All','e'); ?></a>
     </div>
 
-    <?php if ($GLOBALS['enable_amc_prompting']) { ?>
+    <?php if ($GLOBALS['enable_amc_prompting'] && !acl_check('encounters', 'notes_a_v')) { ?>
         <div style='float:right;margin-right:25px;border-style:solid;border-width:1px;'>
             <div style='float:left;margin:5px 5px 5px 5px;'>
                 <table>
@@ -200,7 +208,7 @@ if (is_numeric($pid)) {
                     </td>
                     <td>
                     <span class="text"><?php echo xl('Transition/Transfer of Care?') ?></span>
-                    </td>
+                     </td>
                     </tr>
                     </table>
                     <table style="margin-left:2em;">
@@ -258,7 +266,8 @@ if (is_numeric($pid)) {
         // Skip forms that we are not authorized to see.
         if (($auth_notes_a) ||
             ($auth_notes && $iter['user'] == $_SESSION['authUser']) ||
-            ($auth_relaxed && ($formdir == 'sports_fitness' || $formdir == 'podiatry'))) ;
+            ($auth_relaxed && ($formdir == 'sports_fitness' || $formdir == 'podiatry')) ||
+            acl_check('encounters', 'notes_a_v'));
         else continue;
 
         // $form_info = getFormInfoById($iter['id']);
@@ -285,11 +294,12 @@ if (is_numeric($pid)) {
         echo "<td style='border-bottom:1px solid'>";
         // a link to edit the form
         echo "<div class='form_header_controls'>";
+        if (($auth_notes_a  && ($interval <$enc_lock || $enc_lock ==0))  || (acl_check('admin', 'super'))) {
         echo "<a target='".
                 ($GLOBALS['concurrent_layout'] ? "_parent" : "Main") .
                 "' href='$rootdir/patient_file/encounter/view_form.php?" .
                 "formname=" . $formdir . "&id=" . $iter['form_id'] .
-                "' onclick='top.restoreSession()' class='css_button_small'><span>" . xl('Edit') . "</span></a>";
+                "' onclick='top.restoreSession()' class='css_button_small'><span>" . xl('Edit') . "</span></a>";}
 
         if (acl_check('admin', 'super') ) {
             if ( $formdir != 'newpatient') {
@@ -346,7 +356,6 @@ if (is_numeric($pid)) {
  }
 </script>
 <?php } ?>
-
 </div> <!-- end large encounter_forms DIV -->
 </body>
 

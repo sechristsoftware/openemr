@@ -111,6 +111,8 @@ addObjectAcl('patients', 'Patients', 'sign', 'Sign Lab Results (write,addonly op
 addObjectAcl('nationnotes', 'Nation Notes', 'nn_configure', 'Nation Notes Configure');
 //Add 'patientportal' object (added in 4.1.0)
 addObjectAcl('patientportal', 'Patient Portal', 'portal', 'Patient Portal');
+//Add 'Notes Viewonly' object (added in 4.1.1)
+addObjectAcl('encounters', 'Encounters', 'notes_a_v', 'Notes - any encounters (view any encounters)');
 
 //Update already existing Objects
 echo "<BR/><B>Upgrading objects</B><BR/>";

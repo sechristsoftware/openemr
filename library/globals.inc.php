@@ -571,7 +571,14 @@ $GLOBALS_METADATA = array(
       '0',                              // default = true
       xl('This will use the custom immunizations list rather than the standard CVX immunization list.')
     ),
-
+    
+    'enc_lock' => array(
+      xl('Days to Lock Encounter'),
+      'num',                           // data type
+      '0',                               // default = 0
+      xl('# of Days or 0 to disable')
+    ),
+     // 
   ),
 
   // Calendar Tab
@@ -1471,6 +1478,8 @@ $GLOBALS_METADATA = array(
       '30',
       xl('Rx Bottom Margin (px)')
     ),
-  ),
+ //   
+),
+  //End RX Options
 );
 ?>
