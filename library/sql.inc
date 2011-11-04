@@ -6,6 +6,9 @@ include_once(dirname(__FILE__) . "/log.inc");
 
 if (!defined('ADODB_FETCH_ASSOC')) define('ADODB_FETCH_ASSOC', 2);
 $database = NewADOConnection("mysql");
+// Ramesh Nagul fix for issue with using default MySQL port on 3306. 
+$host = $host.":".$port;
+//error_log("Connecting to server ".$host, 0);
 $database->PConnect($host, $login, $pass, $dbase);
 $GLOBALS['adodb']['db'] = $database;
 $GLOBALS['dbh'] = $database->_connectionID;
@@ -104,13 +107,14 @@ function sqlInsert($statement, $binds=array())
   //Run a adodb execute
   // Note the auditSQLEvent function is embedded in the
   //   adodb Execute function.
-  $recordset = $GLOBALS['adodb']['db']->Execute($statement, $binds);
+  $last_insert_id=0;
+  $recordset = $GLOBALS['adodb']['db']->Execute($statement, $binds, &$last_insert_id);
   if ($recordset === FALSE) {
     HelpfulDie("insert failed: $statement", $GLOBALS['adodb']['db']->ErrorMsg());
   }
   // Return the correct last id generated using function
   //   that is safe with the audit engine.
-  return getSqlLastID();
+  return ($last_insert_id) ? ($last_insert_id) : getSqlLastID();
 }
 
 // Function that will allow use of the adodb binding

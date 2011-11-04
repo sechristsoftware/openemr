@@ -729,7 +729,7 @@
 	 * @param [inputarr]	holds the input data to bind to. Null elements will be set to null.
 	 * @return 		RecordSet or false
 	 */
-	function &Execute($sql,$inputarr=false) 
+	function &Execute($sql,$inputarr=false, $last_insert_id=0) 
 	{
 		include_once(dirname(__FILE__) . "/../log.inc");
 		if ($this->fnExecute) {
@@ -782,7 +782,9 @@
 			$ret =& $this->_Execute($sql,false);
 		}
 	
-	        // Added for the OpenEMR audit engine
+		// Save the ID from the last insert.
+		$last_insert_id=mysql_insert_id($GLOBALS['dbh']);
+		// Added for the OpenEMR audit engine
                 if ($ret === false) {
 		        auditSQLEvent($sql,false);
 		}
@@ -795,6 +797,7 @@
 	
 	function& _Execute($sql,$inputarr=false)
 	{
+		//echo $sql;
 		// debug version of query
 		if ($this->debug) {
 		global $HTTP_SERVER_VARS;
