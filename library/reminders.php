@@ -91,9 +91,11 @@ function patient_reminder_widget($patient_id,$dateTarget='') {
  *
  * @param  string   $dateTarget  target date (format Y-m-d H:i:s). If blank then will test with current date as target.
  * @param  integer  $patient_id  pid of patient. If blank then will check all patients.
+ * @param  integer  $start       patient id to start at (when batching process)
+ @ @param  integer  $batchSize   number of patients to batch (when batching process)
  * @return array                 see above for data structure of returned array
  */
-function update_reminders($dateTarget='', $patient_id='') {
+function update_reminders($dateTarget='', $patient_id='', $start=null, $batchSize=null) {
 
   $logging = array();
 
@@ -114,7 +116,17 @@ function update_reminders($dateTarget='', $patient_id='') {
     // as described above, need to pass in each patient_id
     // Collect all patient ids
     $patientData = array();
-    $rez = sqlStatement("SELECT `pid` FROM `patient_data`");
+    $patientQueryString="SELECT `pid` FROM `patient_data`";
+    if(($start!==null) && ($batchSize!==null))
+    {
+        $patientQueryString = $patientQueryString . " LIMIT ?,?";
+        $rez=sqlStatement($patientQueryString,array($start,$batchSize));
+    }
+    else
+    {
+        $rez = sqlStatement($patientQueryString);
+
+    }
     for($iter=0; $row=sqlFetchArray($rez); $iter++) {
       $patientData[$iter]=$row;
     }
