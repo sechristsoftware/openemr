@@ -1,0 +1,367 @@
+  <?php          
+//  ------------------------------------------------------------------------ //
+//                OpenEMR Electronic Medical Records System                  //
+//                   Copyright (c) 2005-2010 oemr.org                        //
+//                       <http://www.oemr.org/>                              //
+//  ------------------------------------------------------------------------ //
+//  This program is free software; you can redistribute it and/or modify     //
+//  it under the terms of the GNU General Public License as published by     //
+//  the Free Software Foundation; either version 2 of the License, or        //
+//  (at your option) any later version.                                      //
+//                                                                           //
+//  You may not change or alter any portion of this comment or credits       //
+//  of supporting developers from this source code or any supporting         //
+//  source code which is considered copyrighted (c) material of the          //
+//  original comment or credit authors.                                      //
+//                                                                           //
+//  This program is distributed in the hope that it will be useful,          //
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of           //
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            //
+//  GNU General Public License for more details.                             //
+//                                                                           //
+//  You should have received a copy of the GNU General Public License        //
+//  along with this program; if not, write to the Free Software              //
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA // 
+// --------------------------------------------------------------------------//
+// Original Author of this file: Craig Bezuidenhout (Tajemo Enterprises)     //
+// Purpose of this file: Used for adding dated reminders                     //
+// --------------------------------------------------------------------------// 
+                                  
+  $fake_register_globals=false;
+  $sanitize_all_escapes=true;     
+    
+    require_once("../../globals.php"); 
+    require_once("$srcdir/htmlspecialchars.inc.php");
+  
+  $dateRanges = array();
+// $dateranges = array ( number_period => text to display ) == period is always in the singular 
+// eg. $dateRanges['4_week'] = '4 Weeks From Now';  
+  $dateRanges['1_day'] =  xl('1 Day From Now'); 
+  $dateRanges['2_day'] = xl('2 Days From Now');   
+  $dateRanges['3_day'] = xl('3 Days From Now');   
+  $dateRanges['4_day'] = xl('4 Days From Now');   
+  $dateRanges['5_day'] = xl('5 Days From Now');  
+  $dateRanges['6_day'] = xl('6 Days From Now'); 
+  $dateRanges['1_week'] = xl('1 Week From Now'); 
+  $dateRanges['2_week'] = xl('2 Weeks From Now');
+  $dateRanges['3_week'] = xl('3 Weeks From Now');
+  $dateRanges['4_week'] = xl('4 Weeks From Now');
+  $dateRanges['5_week'] = xl('5 Weeks From Now');
+  $dateRanges['6_week'] = xl('6 Weeks From Now');
+  $dateRanges['1_month'] = xl('1 Month From Now');   
+  $dateRanges['2_month'] = xl('2 Months From Now');  
+  $dateRanges['3_month'] = xl('3 Months From Now'); 
+  $dateRanges['4_month'] = xl('4 Months From Now'); 
+  $dateRanges['5_month'] = xl('5 Months From Now'); 
+  $dateRanges['6_month'] = xl('6 Months From Now');  
+  $dateRanges['7_month'] = xl('7 Months From Now'); 
+  $dateRanges['8_month'] = xl('8 Months From Now'); 
+  $dateRanges['9_month'] = xl('9 Months From Now');  
+  $dateRanges['1_year'] = xl('1 Year From Now');   
+  $dateRanges['2_year'] = xl('2 Years From Now');
+  
+// --- need to add a check to ensure the post is being sent from the correct location ??? 
+    
+    $this_message = array('message'=>'','priority'=>1,'dueDate'=>'');
+    $forwarding = false;
+    
+// ---------------- FOR FORWARDING MESSAGES ------------->
+if(isset($_GET['mID']) and is_numeric($_GET['mID'])){
+  $forwarding = true;     
+  $rdrSQL = sqlStatement("SELECT * FROM `dated_reminders` dr 
+                            JOIN `dated_reminders_link` drl ON dr.dr_id = drl.dr_id  
+                            WHERE drl.to_id = ? AND dr.`dr_id` = ? LIMIT 0,1", array($_SESSION['authId'],$_GET['mID']));  
+  $rdrRow=sqlFetchArray($rdrSQL);
+  if(!empty($rdrRow)){ 
+    $this_message['message'] = $rdrRow['dr_message_text'];  
+    $this_message['priority'] = $rdrRow['message_priority'];
+    $this_message['dueDate'] = $rdrRow['dr_message_due_date'];
+  } 
+}
+
+// ---------------END FORWARDING MESSAGES ----------------   
+
+ 
+// --- add reminders 
+      if($_POST){ 
+// --- initialize $output as blank      
+        $output = '';  
+        
+          $sendTo = array();
+          foreach($_POST as $key=>$val){
+          // check for recipients, make sure they are integers
+            if(preg_match('/^sendTo_/',$key) and is_numeric($val)){
+              $sendTo[] = intval($val);
+              unset($_POST[$key]);
+            }  
+          }
+         
+// --------------------------------------------------------------------------------------------------------------------------
+// --- check for the post, if it is valid, commit to the database, close this window and run opener.Handeler 
+         if(          
+// ------- check sendTo is not empty 
+           !empty($sendTo) and    
+// ------- check dueDate, only allow valid dates, todo -> enhance date checker 
+           isset($_POST['dueDate']) and preg_match('/\d{4}[-]\d{2}[-]\d{2}/',$_POST['dueDate']) and     
+// ------- check priority, only allow 1-3 
+           isset($_POST['priority']) and intval($_POST['priority']) <= 3 and       
+// ------- check message, only up to 144 characters
+           isset($_POST['message']) and strlen($_POST['message']) <= 144 and strlen($_POST['message']) > 0 and 
+// ------- check if PatientID is set and in numeric
+           isset($_POST['PatientID']) and is_numeric($_POST['PatientID'])                 
+         ){  
+           $sendDMTo = $_POST['sendTo'];
+           $dueDate = $_POST['dueDate'];
+           $priority = intval($_POST['priority']);
+           $message = $_POST['message'];
+           $fromID = $_SESSION['authId'];
+// ------- still to add this           
+           $patID = $_POST['PatientID'];       
+// ------- check for valid recipient           
+           $cRow=sqlFetchArray(sqlStatement('SELECT count(id) FROM  `users` WHERE  `id` = ?',array($sendDMTo)));    
+           
+// --------------------------------------------------------------------------------------------------------------------------
+           if($cRow == 0){ 
+             $output .= '<div style="text-size:2em; text-align:center; color:red">* '.xl('Please select a valid recipient').'</div> ';
+           }                                              
+// --------------------------------------------------------------------------------------------------------------------------
+                    
+// --------------------------------------------------------------------------------------------------------------------------
+// ------- if no errors           
+           if($output == ''){   
+// --------- insert the new message
+            $mID = sqlInsert("INSERT INTO `dated_reminders` 
+                           (`dr_from_ID` ,`dr_message_text` ,`dr_message_sent_date` ,`dr_message_due_date` ,`pid` ,`message_priority` ,`message_processed` ,`processed_date`)
+                            VALUES (?, ?, NOW( ), ?, ?, ?, '0', '');",
+                            array($fromID,$message,$dueDate,$patID,$priority));
+             
+             foreach($sendTo as $st){
+               sqlInsert("INSERT INTO `openemr`.`dated_reminders_link` 
+                          (`dr_id` ,`to_id`)
+                          VALUES (?, ?);",
+                              array($mID,$st));               
+             };
+                            
+// --------- echo javascript            
+             echo '<html><body><script language="JavaScript">'; 
+// ------------ 1) refresh parent window this updates if sent to self 
+             echo '  if (opener && !opener.closed && opener.refreshme) opener.refreshme();';     
+// ------------ 2) communicate with user      
+             echo '   alert("'.xl('Message Sent').'");';                 
+// ------------ 3) close this window 
+             echo '  window.close();';
+             echo '</script></body></html>';                 
+// --------- stop script from executing further
+             exit; 
+           }  
+// --------------------------------------------------------------------------------------------------------------------------
+         }  
+// -------------------------------------------------------------------------------------------------------------------------- 
+         
+         else{                
+// ------- if POST error
+           $output .= '<div style="text-size:2em; text-align:center; color:red">* '.xl('Data Error').'</div> ';
+         }           
+// ------- if any errors, communicate with the user
+         echo $output; 
+      } 
+    // end add reminders 
+    
+// ------- get current patient name
+// ---- returns string, blank if no current patient
+function getPatName(){  
+  global $pid;
+  $pid = intval($pid);
+  $pSQL = sqlStatement("SELECT pd.title ptitle, pd.fname pfname, pd.mname pmname, pd.lname plname FROM `patient_data` pd WHERE pd.id = ?",array($pid));  
+  $pRow = sqlFetchArray($pSQL); 
+  return (empty($pRow) ? '' : $pRow['ptitle'].' '.$pRow['pfname'].' '.$pRow['pmname'].' '.$pRow['plname']);
+}     
+  ?>    
+<html>
+  <head>
+    <title><?php echo xl('Send a Reminder') ?></title>                                                              
+    <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery.js"></script>  
+    <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery-calendar.js"></script>   
+    <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/dialog.js"></script>            
+    <script language="JavaScript">   
+      $(document).ready(function (){  
+        $('#selectPatient').click(function(){ 
+          //dlgopen('find_patient_popup.php', '_drPatSel', 600, 400);
+          alert('This should invoke find_patient_popup.php, but it is not working yet (currently linking to current patient only)');   
+          //$("#PatientID").val(result);  
+          //$("patientName").val(result);  
+          $("#patientName").show();  
+          $("#selectPatient").hide();  
+          $("#removePatient").show();
+          return false;
+        })                                                   
+        $('#sendTo').change(function(){ 
+          var SendTo = $(this).find("option:selected").text();
+          if(SendTo == ' -- Send to Self -- '){
+             SendTo = 'Myself';
+          }
+          $("#sendButton").val("Send This Message To "+SendTo);
+        })
+        $('#timeSpan').change(function(){ 
+          var value = $(this).val();
+          var arr = value.split('_');
+          var span = arr[1];
+          var period = parseInt(arr[0]);   
+          var d=new Date();       
+          // todo work here ASAP 
+          if(span == 'day'){ 
+            d.setDate(d.getDate()+period);
+          }
+          else if(span == 'week'){
+            var weekInDays = period * 7;
+            d.setDate(d.getDate()+weekInDays);  
+          }
+          else if(span == 'month'){
+            d.setMonth(d.getMonth()+period);
+          }   
+          else if(span == 'year'){
+            var yearsInMonths = period * 12;
+            d.setMonth(d.getMonth()+yearsInMonths); 
+          } 
+          var curr_date = d.getDate().toString();
+          if(curr_date.length == 1){
+            curr_date = '0'+curr_date;
+          } 
+          var curr_month = d.getMonth() + 1; //months are zero based 
+          curr_month = curr_month.toString();    
+          if(curr_month.length == 1){
+            curr_month = '0'+curr_month;
+          } 
+          var curr_year = d.getFullYear(); 
+          $('#dueDate').val(curr_year + "-" + curr_month + "-" + curr_date); 
+        })
+        $("#sendButton").click(function(){
+          $('#errorMessage').html('');
+          errorMessage = '';
+          var sendTo = $('#sendTo').val();  
+          var PatientID = $('#PatientID').val();
+          var dueDate = $('#dueDate').val();
+          var priority = $('#priority:checked').val();
+          var message = $("#message").val(); 
+          // todo : check if message is no more than 144 characters long
+          // todo : check if PatientID is numeric
+          // todo : add check to see if sendTo is numeric 
+          // todo : add check to see if dueDate is a valid date   
+          // todo : add check to see if message is longer than n (decide on a minimum length) characters 
+          if(sendTo == '__BLANK__'){
+             errorMessage = errorMessage + '* Please select a recipient<br />';
+          }        
+          if(dueDate == ''){
+             errorMessage = errorMessage + '* Please enter a due date<br />';
+          }                                           
+          if(message == ''){
+             errorMessage = errorMessage + '* Please enter a message<br />';
+          }      
+          if(errorMessage != ''){
+            // handle invalid queries
+            $('#errorMessage').html(errorMessage);
+          }
+          else{
+            // handle valid queries
+            // post the form to self
+            $("#addDR").submit();
+          }
+          return false;
+        }) 
+        if($("#PatientID").val() == 0){
+          $("#PatientID").val("0");  
+          $("#patientName").val("");  
+          $("#patientName").hide();  
+          $("#selectPatient").show();
+          $("#removePatient").hide();
+        }else{ 
+          $("#selectPatient").hide();
+        }
+        $("#removePatient").click(function(){
+          $("#PatientID").val("0");  
+          $("#patientName").val("");  
+          $("#patientName").hide();  
+          $("#selectPatient").show();
+          $(this).hide();
+          return false;
+        })
+      })
+      function limitText(limitField, limitCount, limitNum) {
+      	if (limitField.value.length > limitNum) {
+      		limitField.value = limitField.value.substring(0, limitNum);
+      	} else {
+      		limitCount.value = limitNum - limitField.value.length;
+      	}
+      }
+    </script> 
+<link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
+  </head>
+  <body>   
+<!-- Required for the popup date selectors -->
+<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
+
+
+    <h1>Send a Reminder</h1>
+    <form id="addDR" style="margin-left:40px;" id="newMessage" method="post">
+     <div style="text-size:2em; text-align:center; color:red" id="errorMessage"></div>                                                
+       Link to Patient (optional) <a href="#" id="selectPatient">click to select</a>
+       <span id="patientIDSpan">
+        <input name="PatientID" id="PatientID" type="hidden" value="<?php echo (isset($pid) ? $pid : 0) ?>" />
+        <input style="width:200px;" disabled="disabled" id="patientName" value="<?php echo getPatName() ?>" />
+        <a href="#" id="removePatient">[unlink patient]</a>
+       </span>
+     <br /><br />     
+     Send to :  <p style="line-height:1.8em;">
+               <input type="checkbox" name="sendTo_me" value="<?php echo intval($_SESSION['authId']) ?>" id="me"><label for="me">Myself</label>&nbsp;&nbsp;&nbsp;&nbsp; 
+                <?php //     
+                    $uSQL = sqlStatement('SELECT id, fname,	mname, lname  FROM  `users` WHERE  `active` = 1 AND id != ?',array(intval($_SESSION['authId'])));
+                    for($i=2; $uRow=sqlFetchArray($uSQL); $i++){  
+                      echo '<input type="checkbox" name="sendTo_',$i,'" id="sendTo_',$i,'" value="',$uRow['id'],'"><label for="sendTo_',$i,'">',$uRow['fname'],' ',$uRow['mname'],' ',$uRow['lname'],'</label>&nbsp;&nbsp;&nbsp;&nbsp; ';
+                      // line break for every 4 users
+                      if($i % 4 == 0) echo "<br />";  
+                    }
+                ?>      
+               </p> 
+               
+               
+               
+                   
+      Due Date : <input type='text' name='dueDate' id="dueDate" size='20' value="<?php echo ($this_message['dueDate'] == '' ? date('Y-m-d') : htmlspecialchars($this_message['dueDate'], ENT_QUOTES)); ?>" onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='<?php echo htmlspecialchars( xl('yyyy-mm-dd'), ENT_QUOTES); ?>' />      
+      OR Select a time span : <select id="timeSpan">
+                                <option value="__BLANK__"> -- Select a Time Span -- </option>
+                                <?php 
+                                  $optionTxt = '';
+                                  foreach($dateRanges as $val=>$txt){   
+                                    $optionTxt .= '<option value="'.htmlspecialchars($val).'">'.htmlspecialchars($txt).'</option>';  
+                                 } 
+                                 echo $optionTxt;
+                                ?>     
+                             </select>    
+      <br />         
+      <br />
+      Priority : <input <?php echo ($this_message['priority'] == 1 ? 'checked="checked"' : '') ?> type="radio" id="priority" name="priority" value='3'> Low 
+                 <input <?php echo ($this_message['priority'] == 2 ? 'checked="checked"' : '') ?>type="radio" name="priority" id="priority"  value='2'> Medium  
+                 <input <?php echo ($this_message['priority'] == 3 ? 'checked="checked"' : '') ?>type="radio" name="priority" id="priority"  value='1'> High 
+      <br />         
+      <br />
+      Type Your message here : <br /><br />
+      <textarea onKeyDown="limitText(this.form.message,this.form.countdown,144);" 
+                onKeyUp="limitText(this.form.message,this.form.countdown,144);" 
+                style="width:100%; height:50px" name="message" id="message"><?php echo $this_message['message']; ?></textarea>
+      <br>
+      <font size="1">(Maximum characters: 144)<br>
+      You have <input readonly type="text" name="countdown" size="3" value="144"> characters left.</font>                
+      <br />
+      <br />
+      <input type="submit" id="sendButton" value="Send This Message" />
+    </form>
+  </body>  
+<!-- stuff for the popup calendar -->
+<style type="text/css">@import url(<?php echo $GLOBALS['webroot'] ?>/library/dynarch_calendar.css);</style>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/dynarch_calendar.js"></script>
+<?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/dynarch_calendar_setup.js"></script>
+<script language="Javascript"> 
+  Calendar.setup({inputField:"dueDate", ifFormat:"%Y-%m-%d", button:"img_begin_date", showsTime:'false'}); 
+</script>
+</html>

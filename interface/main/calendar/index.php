@@ -153,7 +153,12 @@ if ($modinfo['type'] == 2)
         $output = new pnHTML();
         //$output->StartPage();
         $output->SetInputMode(_PNH_VERBATIMINPUT);
-        $output->Text($return);
+        $output->Text($return); 
+        
+        // TajEmo Work by CB 2012/01/11 02:51:25 PM adding dated reminders
+        // I am asuming that at this point security checks have been performed
+        require_once 'dated_reminders.php';
+        
         $output->SetInputMode(_PNH_PARSEINPUT);
         //$output->EndPage();
         $output->PrintPage();
