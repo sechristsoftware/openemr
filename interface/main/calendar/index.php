@@ -153,7 +153,7 @@ if ($modinfo['type'] == 2)
         $output = new pnHTML();
         //$output->StartPage();
         $output->SetInputMode(_PNH_VERBATIMINPUT);
-        $output->Text($return);
+        $output->Text($return);  
         $output->SetInputMode(_PNH_PARSEINPUT);
         //$output->EndPage();
         $output->PrintPage();
