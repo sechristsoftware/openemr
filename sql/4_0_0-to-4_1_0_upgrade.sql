@@ -165,7 +165,7 @@ INSERT INTO `clinical_rules` ( `id`, `pid`, `active_alert_flag`, `passive_alert_
 INSERT INTO `clinical_rules` ( `id`, `pid`, `active_alert_flag`, `passive_alert_flag`, `cqm_flag`, `cqm_nqf_code`, `cqm_pqri_code`, `amc_flag`, `amc_code`, `patient_reminder_flag` ) VALUES ('rule_cs_prostate', 0, 0, 1, 0, '', '', 0, '', 0);
 INSERT INTO `clinical_rules` ( `id`, `pid`, `active_alert_flag`, `passive_alert_flag`, `cqm_flag`, `cqm_nqf_code`, `cqm_pqri_code`, `amc_flag`, `amc_code`, `patient_reminder_flag` ) VALUES ('rule_inr_monitor', 0, 0, 1, 0, '', '', 0, '', 0);
 #EndIf
-
+          
 #IfNotTable enc_category_map
 CREATE TABLE `enc_category_map` (
   `rule_enc_id` varchar(31) NOT NULL DEFAULT '' COMMENT 'encounter id from rule_enc_types list in list_options',
@@ -1869,3 +1869,30 @@ INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`) VALUES ('msp_remit_codes', 'W2', 'W2', 217, 0, 0, '', 'Payment reduced or denied based on workers'' compensation jurisdictional regulations or payment policies, use only if no other code is applicable. Note: If adjustment is at the Claim Level, the payer must send and the provider should refer to the 835 Insur');
 #EndIf
 
+#IfNotTable dated_reminders
+CREATE TABLE `dated_reminders` (
+            `dr_id` int(11) NOT NULL AUTO_INCREMENT,
+            `dr_from_ID` int(11) NOT NULL,
+            `dr_message_text` varchar(160) NOT NULL,
+            `dr_message_sent_date` datetime NOT NULL,
+            `dr_message_due_date` date NOT NULL,
+            `pid` int(11) NOT NULL,
+            `message_priority` tinyint(1) NOT NULL,
+            `message_processed` tinyint(1) NOT NULL DEFAULT '0',
+            `processed_date` timestamp NULL DEFAULT NULL,
+            `dr_processed_by` int(11) NOT NULL,
+            PRIMARY KEY (`dr_id`),
+            KEY `dr_from_ID` (`dr_from_ID`,`dr_message_due_date`)
+          ) ENGINE=MyISAM ;
+#EndIf
+
+#IfNotTable dated_reminders_link
+CREATE TABLE `dated_reminders_link` (
+            `dr_link_id` int(11) NOT NULL AUTO_INCREMENT,
+            `dr_id` int(11) NOT NULL,
+            `to_id` int(11) NOT NULL,
+            PRIMARY KEY (`dr_link_id`),
+            KEY `to_id` (`to_id`),
+            KEY `dr_id` (`dr_id`)
+          ) ENGINE=MyISAM ;
+#EndIf
