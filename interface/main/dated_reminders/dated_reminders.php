@@ -130,12 +130,8 @@
              }
              if(id == 'new'){
               $(".drTD").html('<p style="text-size:3em; margin-left:200px; color:black; font-weight:bold;"><?php echo xla("Processing") ?>...</p>');
-             }
-             top.restoreSession();
-             // Send the skip_timeout_reset parameter to not count this as a manual entry in the
-             //  timing out mechanism in OpenEMR.
-             $.post("<?php echo $GLOBALS['webroot']; ?>/interface/main/dated_reminders/dated_reminders.php",
-               { drR: id, skip_timeout_reset: "1" }, 
+             }    
+             $.post("<?php echo $GLOBALS['webroot']; ?>/interface/main/dated_reminders/dated_reminders.php", { drR: id }, 
                function(data) {
                 if(data == 'error'){     
                   alert("<?php echo addslashes(xl('Error Removing Message')) ?>");  
@@ -170,19 +166,12 @@
 }
       </script>
       
-        <?php 
-          $isAdmin =acl_check('admin', 'users');  
-          
-            
-          // Temporary for allowing all users to see this
-          $isAdmin = true;             
-          
-           
+        <?php  
           // initialize html string        
           $pdHTML = '<div class="dr_container"><table><tr><td valign="top">                         
                         <p><a class="hideDR css_button_small" href="#"><span>'.xlt('Hide Reminders').'</span></a><br /></p>
                         <div class="drHide">'.
-                        ($isAdmin ? '<p><a onclick="openLogScreen()" class="css_button_small" href="#"><span>'.xlt('View Log').'</span></a><br /></p>' : '')
+                        '<p><a title="'.xla('View Past and Future Reminders').'" onclick="openLogScreen()" class="css_button_small" href="#"><span>'.xlt('View Log').'</span></a><br /></p>'
                         .'<p><a onclick="openAddScreen(0)" class="css_button_small" href="#"><span>'.xlt('Send A Dated Reminder').'</span></a></p></div> 
                         </td><td class="drHide drTD">'; 
                         
