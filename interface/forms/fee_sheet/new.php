@@ -454,8 +454,46 @@ if ($_POST['bn_save'] || $_POST['bn_save_close']) {
     // Otherwise it's a new item...
     else if (! $del) {
       $code_text = addslashes($codesrow['code_text']);
-      addBilling($encounter, $code_type, $code, $code_text, $pid, $auth,
+    $cur_issue=  addBilling($encounter, $code_type, $code, $code_text, $pid, $auth,
         $provid, $modifier, $units, $fee, $ndc_info, $justify, 0, $notecodes);
+		
+				//$cur_issue = sqlInsert($sql);
+    $list_id = $cur_issue.id;
+	//	ini_set("display_errors",1);
+		
+    if( $GLOBALS['rh_patient'] ) {
+			if( file_exists( "$srcdir/outbox.inc" ) ) {  
+				require_once("$srcdir/outbox.inc");
+                                if($code_type=='CPT4')
+                                {
+                                  queueMessage($list_id,'billing_encounter','CCD', $pid); 
+                                }
+                                else if($code_type=='ICD9'){
+								$en_date = sqlQuery("SELECT date FROM form_encounter WHERE encounter='$encounter' ");
+								
+								$date_encounter=$en_date['date'];
+							
+                                  $insert = "INSERT INTO lists ( " .
+                                  "date, pid, type, title, activity, " .
+                                  "diagnosis, user, groupname" .
+                                  ") VALUES ( " .
+                                  "'$date_encounter', " .
+                                  "'$pid', " .
+                                  "'encounter_feesheet', " .
+                                  "'" . $code_text       . "', " .
+                                  "1, "                            .
+                                  "'ICD9:" . $code . "', " .
+                                  
+                                  "'" . $_SESSION['authUser']     . "', " .
+                                  "'" . $_SESSION['authProvider'] . "' )";
+                                  
+                                  $cur_issue = sqlInsert($insert);
+                                  queueMessage($cur_issue.id,'encounter_feesheet','CCD', $pid); 
+                                  
+                                }
+                                
+			} 
+		} 
     }
   } // end for
 

@@ -464,7 +464,7 @@ foreach($result as $iter2) {
 <td><span class="text"><?php xl('Job Description','e'); ?>: </span></td><td><input type="text" name="job" style="width:150px;"  value="<?php echo $iter["specialty"]?>"></td>
 </tr>
 
-<?php if (!empty($GLOBALS['ssi']['rh'])) { ?>
+<?php if (!empty($GLOBALS['rh_patient'])) { ?>
 <tr>
 <td><span class="text"><?php xl('Relay Health ID', 'e'); ?>: </span></td>
 <td><input type="password" name="ssi_relayhealth" style="width:150px;"  value="<?php echo $iter["ssi_relayhealth"]; ?>"></td>

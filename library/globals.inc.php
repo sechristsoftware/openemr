@@ -1486,6 +1486,178 @@ $GLOBALS_METADATA = array(
       '30',
       xl('Rx Bottom Margin (px)')
     ),
+    'activate_relay_link' => array(
+      xl('Activate Link to Relay health'),
+      'bool',                           // data type
+      '0',                              // default = false
+      xl('This will activate the Interoperability with Relay health.')
+    ),
+    'default_primary_provider' => array(
+      xl('Default Primary Provider'),
+      'Primary_provider',                           // data type
+      $default_primary_provider,                   // default
+      xl('Default Primary Provider')
+    ),
+    
+    'rh_partner_name_ssi' => array(
+      xl('Partner Name (SSI)'),
+      'text',                           // data type
+      $rh_partner_name_ssi,                   // default
+      xl('Partner Name.')
+    ),
+    'rh_practice_id_global' => array(
+      xl('Practice ID'),
+      'text',                           // data type
+      $rh_practice_id_global,                    // default
+      xl('Practice ID.')
+    ),
+    'rh_relay_guid' => array(
+      xl('GUID'),
+      'text',                           // data type
+      $rh_relay_guid,             // default
+      xl('GUID.')
+    ),
+    'rh_app_name_ssi' => array(
+      xl('App. Name (SSI)'),
+      'text',                           // data type
+      $rh_app_name_ssi,                  // default
+      xl('Application Name (SSI).')
+    ),
+    'rh_app_password_ssi' => array(
+      xl('App. Password (SSI)'),
+      'text',                           // data type
+      $rh_app_password_ssi,                  // default
+      xl('Application Name (SSI).')
+    ),
+        //// pipe id segment 
+     'rh_pipeid_inbound_ccd' => array(
+     xl('Inbound CCD into RelayHealth'),
+      'text',                           // data type
+      $rh_pipeid_inbound_ccd,                  // default
+      xl('Pipe ID for Inbound CCD into RelayHealth')
+    ),
+    'rh_pipeid_inbound_adt' => array(
+      xl('Inbound ADT into RelayHealth'),
+      'text',                           // data type
+      $rh_pipeid_inbound_adt,                  // default
+      xl('Pipe ID for Inbound ADT into RelayHealth')
+    ),
+      'rh_pipeid_outbound_rde' => array(
+      xl('Outbound RDE'),
+      'text',                           // data type
+      $rh_pipeid_outbound_rde,                  // default
+      xl('Pipe ID for Outbound RDE')
+    ),
+      'rh_pipeid_outbound_mdm_denial' => array(
+      xl('Outbound MDM denial'),
+      'text',                           // data type
+      $rh_pipeid_outbound_mdm_denial,                  // default
+      xl('Pipe Id for Outbound MDM denial')
+    ),
+     'rh_pipeid_outbound_mdm_renewal' => array(
+      xl('Outbound MDM renewal'),
+      'text',                           // data type
+      $rh_pipeid_outbound_mdm_renewal,                  // default
+      xl('Pipe ID for Outbound MDM renewal')
+    ),
+     'rh_pipeid_outbound_mdm_message' => array(
+      xl('Outbound MDM message'),
+      'text',                           // data type
+      $rh_pipeid_outbound_mdm_message,                  // default
+      xl('Pipe ID for Outbound MDM message')
+    ),
+      'rh_pipeid_outbound_ccd' => array(
+      xl('Outbound CCD'),
+      'text',                           // data type
+      $rh_pipeid_outbound_ccd,                  // default
+      xl('Pipe ID for Outbound CCD')
+    ),
+     'rh_api' => array(
+      xl('Relayhealth SOAP API'),
+      'bool',                           // data type
+      '1',                              // default = TRUE
+      xl('set TRUE if using soap calls on Left Nav menu with RelayHealth.')
+    )
+     ,
+     'rh_escripts' => array(
+      xl('Relayhealth E-script'),
+      'bool',                           // data type
+      '1',                              // default = TRUE
+      xl('eScripts - set TRUE if using e-prescribing with RelayHealth.')
+    ),
+     'rh_patient' => array(
+      xl('Outbound Patient ADT'),
+      'bool',                           // data type
+      '1',                              // default = TRUE
+      xl('Outbound Patient ADT (New and Update) - set TRUE if sending')
+    ),
+     'rh_summary' => array(
+      xl('Outbound Patient/medication CCD'),
+      'bool',                           // data type
+      '1',                              // default = TRUE
+      xl('Outbound Patient/medication CCD (New and Update) - set TRUE if sending')
+    ),
+     'rh_enotes' => array(
+      xl('Inbound E-notes'),
+      'bool',                           // data type
+      '1',                              // default = TRUE
+      xl('eNotes - set TRUE if receiving e-notes (HL7/MDM) from RelayHealth')
+    ),
+     'rh_api_env' => array(
+      xl('Environment code'),
+      'text',                           // data type
+      'T',                              // default = T
+      xl('env codes T->Test P->Prod')
+    ),
+     'RHssilocation' => array(
+      xl('Relayhealth SSI location(integration)'),
+      'text',                           // data type
+      'https://api.integration.relayhealth.com/SSI/SingleSignIn.svc',                              // default = T
+      xl('Relayhealth SSI location(integration)')
+    ),
+     'RHssiwsdl' => array(
+      xl('Relayhealth SSI WSDL location(Integration)'),
+      'text',                           // data type
+      'https://api.integration.relayhealth.com/SSI/SingleSignIn.svc?wsdl',                              // default = T
+      xl('Relayhealth SSI WSDL location(Integration)')
+    ),
+     'RHmsglocation' => array(
+      xl('Relayhealth message API location(Integration)'),
+      'text',                           // data type
+      'https://api.integration.relayhealth.com/Message/RelayHealthMessageService.svc',                              // default = T
+      xl('Relayhealth message API location(Integration)')
+    ),
+     'RHmsgwsdl' => array(
+      xl('Relayhealth message API WSDL location(Integration)'),
+      'text',                           // data type
+      'https://api.integration.relayhealth.com/Message/RelayHealthMessageService.svc?wsdl',                              // default = T
+      xl('Relayhealth message API WSDL location(Integration)')
+    ),
+    
+     'RHssilocation_prod' => array(
+      xl('Relayhealth SSI location(Production)'),
+      'text',                           // data type
+      'https://api.relayhealth.com/SSI/SingleSignIn.svc',                              // default = T
+      xl('Relayhealth SSI location(Production)')
+    ),
+     'RHssiwsdl_prod' => array(
+      xl('Relayhealth SSI WSDL location(Production)'),
+      'text',                           // data type
+      'https://api.relayhealth.com/SSI/SingleSignIn.svc?wsdl',                              // default = T
+      xl('Relayhealth SSI WSDL location(Production)')
+    ),
+     'RHmsglocation_prod' => array(
+      xl('Relayhealth message API location(Production)'),
+      'text',                           // data type
+      'https://api.relayhealth.com/Message/RelayHealthMessageService.svc',                              // default = T
+      xl('Relayhealth message API location(Production)')
+    ),
+     'RHmsgwsdl_prod' => array(
+      xl('Relayhealth message API WSDL location(Production)'),
+      'text',                           // data type
+      'https://api.relayhealth.com/Message/RelayHealthMessageService.svc?wsdl',                              // default = T
+      xl('Relayhealth message API WSDL location(Production)')
+     )
   ),
 );
 ?>
