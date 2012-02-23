@@ -1,5 +1,6 @@
 <?php
-// Copyright (C) 2008 Phyaura, LLC <info@phyaura.com>
+	/*******************************************************************/
+	// Copyright (C) 2008-2011 Phyaura, LLC <www.phyaura.com> <info at phyaura.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -39,6 +40,19 @@ class StartC2CResponse {
   // string
   public $Url;
 }
+class StartPrescription {
+  // string
+  public $partnerUserId;
+  public $identifierType;   // mrn
+  public $patientId; // pubpid
+  public $assigningAuthority;  // guid set by vei for the provider (ssi_relayhelath or provider id) 
+}
+
+class StartPrescriptionResponse {
+  // string
+  public $Url;
+}
+
 
 class CodedInteropServiceFault {
   // string
@@ -77,6 +91,18 @@ class ViewMessage {
 }
 
 class ViewMessageResponse {
+  // string
+  public $Url;
+}
+class ViewRenewals {
+  // string
+  public $partnerUserId;
+}
+class CountMessages {
+  // string
+  public $UserIds;
+}
+class ViewRenewalsResponse {
   // string
   public $Url;
 }
@@ -139,13 +165,18 @@ $classmap = array(
   "InteropServiceFault" => "InteropServiceFault",
   "StartC2C" => "StartC2C",
   "StartC2CResponse" => "StartC2CResponse",
+  "StartPrescription" => "StartPrescription",
+  "StartPrescriptionResponse" => "StartPrescriptionResponse",
   "CodedInteropServiceFault" => "CodedInteropServiceFault",
   "ViewInbox" => "ViewInbox",
+  "CountMessages"=>"CountMessages",
   "ViewInboxResponse" => "ViewInboxResponse",
   "ViewWelcome" => "ViewWelcome",
   "ViewWelcomeResponse" => "ViewWelcomeResponse",
   "ViewMessage" => "ViewMessage",
   "ViewMessageResponse" => "ViewMessageResponse",
+  "ViewRenewals" => "ViewRenewals",
+  "ViewRenewalsResponse" => "ViewRenewalsResponse",
   "MessageNotFoundFault" => "MessageNotFoundFault",
   "ComposePatientMessage" => "ComposePatientMessage",
   "ComposePatientMessageResponse" => "ComposePatientMessageResponse",
@@ -160,4 +191,14 @@ $classmap = array(
   "NoRelationshipBetweenProviderAndPracticeFault" => "NoRelationshipBetweenProviderAndPracticeFault",
   "PracticeNotFoundFault" => "PracticeNotFoundFault"
 );
+
+
+class patientSummary {
+  // string
+  public $partnerUserId;
+  public $identifierType;   // mrn
+  public $patientId; // pubpid
+  public $assigningAuthority;  // guid set by vei for the provider (ssi_relayhelath or provider id) 
+}
+
 ?>

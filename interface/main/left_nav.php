@@ -88,6 +88,7 @@
  require_once($GLOBALS['fileroot']."/custom/code_types.inc.php");
  require_once($GLOBALS['fileroot']."/library/patient.inc");
  require_once($GLOBALS['fileroot']."/library/lists.inc");
+  include_once("../../library/ssi.inc");
 
  // This array defines the list of primary documents that may be
  // chosen.  Each element value is an array of 3 values:
@@ -1357,6 +1358,28 @@ if (!empty($reg)) {
       <?php genMiscLink('RTop','prf','0',xl('Preferences'),'super/edit_globals.php?mode=user'); ?>
     </ul>
   </li>
+   <?php
+    // To use RelayHealth, see comments and parameters in global
+    if($GLOBALS['activate_relay_link'])
+    {
+	if( $GLOBALS['rh_api'] ) { ?>
+           	<li><a class="collapsed" id="misimg" ><span><?php xl('E-suites','e') ?></span></a>
+   		<?php if( $_SESSION['rh_api_id'] != "" ) {?>
+   	<ul>
+     		<?php genMiscLink('RTop','esc','0',xl('e-Scripts'),'jump_to_RelayHealth.php?dest=escripts');?>
+		<?php genMiscLink('RTop','inb','0',xl('e-Messages'),'jump_to_RelayHealth.php?dest=inbox');?>
+     		<?php genMiscLink('RTop','ren','0',xl('e-Renewals'),'jump_to_RelayHealth.php?dest=renewals');?>
+     		<?php genMiscLink('RTop','sum','0',xl('Summary'),'jump_to_RelayHealth.php?dest=summary');?>
+   	</ul>
+  		<?php } 
+			else {?>
+    	<ul>
+    		<?php genMiscLink('RTop','hom','0',xl('E-suites'),'jump_to_RelayHealth.php?dest=home');?>
+    	</ul>
+  </li>
+   <?php 		} 
+		} 
+   }	?>
 
 <?php } // end not athletic team ?>
 
@@ -1407,15 +1430,6 @@ if (!empty($reg)) {
 <?php } ?>
 
 <br /><hr />
-
-<?php
- // To use RelayHealth, see comments and parameters in includes/config.php.
- if (!empty($GLOBALS['ssi']['rh'])) {
-  include_once("../../library/ssi.inc");
-  echo getRelayHealthLink() ."<br /><hr />\n";
- }
-?>
-
 <div id='current_patient' style = 'display:none'>
 <b><?php xl('None','e'); ?></b>
 </div>

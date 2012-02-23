@@ -40,7 +40,14 @@ while ($frow = sqlFetchArray($fres)) {
   $field_id  = $frow['field_id'];
   $newdata[$field_id] = get_layout_form_value($frow);
 }
-updateHistoryData($pid, $newdata);
+$cur_issue=updateHistoryData($pid, $newdata);
+ $list_id = $cur_issue.id;
+	if( $GLOBALS['rh_patient'] ) {
+	     if( file_exists( "$srcdir/outbox.inc" ) ) { 
+		require_once("$srcdir/outbox.inc");
+		queueMessage($list_id,'history_data','CCD', $pid);
+             }
+        }	
 
 if ($GLOBALS['concurrent_layout']) {
  include_once("history.php");

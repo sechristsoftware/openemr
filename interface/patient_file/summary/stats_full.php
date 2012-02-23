@@ -135,6 +135,7 @@ foreach ($ISSUE_TYPES as $focustype => $focustitles) {
     <th><?php echo htmlspecialchars( xl('Occurrence'), ENT_NOQUOTES); ?></th>
     <?php if ($focustype == "allergy") { ?>
       <th><?php echo htmlspecialchars( xl('Reaction'), ENT_NOQUOTES); ?></th>
+	    <th><?php echo htmlspecialchars( xl('Severity'), ENT_NOQUOTES); ?></th>
     <?php } ?>
     <?php if ($GLOBALS['athletic_team']) { ?>
       <th><?php echo htmlspecialchars( xl('Missed'), ENT_NOQUOTES); ?></th>
@@ -222,7 +223,9 @@ foreach ($ISSUE_TYPES as $focustype => $focustitles) {
     echo generate_display_field(array('data_type'=>'1','list_id'=>'occurrence'), $row['occurrence']);
     echo "</td>\n";
     if ($focustype == "allergy") {
-      echo "  <td>" . htmlspecialchars($row['reaction'],ENT_NOQUOTES) . "&nbsp;</td>\n";
+     $row['reaction']=str_replace(",","<br>",$row['reaction']);
+	  echo "  <td>" . $row['reaction'] . "&nbsp;</td>\n";
+	   echo "  <td>" . htmlspecialchars($row['severity_al'],ENT_NOQUOTES) . "&nbsp;</td>\n";
     }
     if ($GLOBALS['athletic_team']) {
         echo "  <td class='center'>" . $row['extrainfo'] . "</td>\n"; // games missed

@@ -140,6 +140,31 @@ if ($_POST['form_save']) {
     $form_injury_type = $_POST['form_medical_type'];
   }
 
+  $reaction_al='';
+switch( $text_type ) {
+	case "allergy":
+	 if( $_POST['form_reaction'] )
+            $form_comments .= " Reaction:".$_POST['form_reaction'];
+			$reaction_al=$_POST['form_reaction_id']; // this is for form reaction added for alergy 
+			$severity_al=$_POST['form_severity_id'];		 // this is for form severity added for alergy 
+			if(!empty($reaction_al)){
+				if(in_array("Other Reaction",$reaction_al)){
+				$reaction_al=implode(",",$reaction_al);
+					if(isset($_POST['other_reaction']) and $_POST['other_reaction']!='')
+					{
+						$reaction_al=$reaction_al.":".$_POST['other_reaction'];
+					}
+				}else
+				{
+					$reaction_al=implode(",",$reaction_al);
+				}
+			}
+    break;
+    default:
+        $form_title = $_POST['form_title'];
+        $form_comments = $_POST['form_comments'];
+    break;
+}
   if ($issue) {
 
    $query = "UPDATE lists SET " .
@@ -159,8 +184,10 @@ if ($_POST['form_save']) {
     "injury_type = '" . add_escape_custom($form_injury_type)           . "', " .
     "outcome = '"     . add_escape_custom($_POST['form_outcome'])      . "', " .
     "destination = '" . add_escape_custom($_POST['form_destination'])   . "', " .
-    "reaction ='"     . add_escape_custom($_POST['form_reaction'])     . "', " .
-    "erx_uploaded = '0' " .
+    "reaction ='"     . add_escape_custom($reaction_al)     . "', " .
+    "erx_uploaded = '0' , " .
+	"sig = '" . add_escape_custom($_POST['sig'])  . "', " .
+	"severity_al= '" . $severity_al . "' " .
     "WHERE id = '" . add_escape_custom($issue) . "'";
     sqlStatement($query);
     if ($text_type == "medication" && enddate != '') {
@@ -176,7 +203,7 @@ if ($_POST['form_save']) {
     "date, pid, type, title, activity, comments, begdate, enddate, returndate, " .
     "diagnosis, occurrence, classification, referredby, user, groupname, " .
     "outcome, destination, reinjury_id, injury_grade, injury_part, injury_type, " .
-    "reaction " .
+    "reaction,sig,severity_al  " .
     ") VALUES ( " .
     "NOW(), " .
     "'" . add_escape_custom($thispid) . "', " .
@@ -191,16 +218,24 @@ if ($_POST['form_save']) {
     "'" . add_escape_custom($_POST['form_occur'])       . "', " .
     "'" . add_escape_custom($_POST['form_classification']) . "', " .
     "'" . add_escape_custom($_POST['form_referredby'])  . "', " .
-    "'" . add_escape_custom($$_SESSION['authUser'])     . "', " .
-    "'" . add_escape_custom($$_SESSION['authProvider']) . "', " .
+    "'" . add_escape_custom($_SESSION['authUser'])     . "', " .
+    "'" . add_escape_custom($_SESSION['authProvider']) . "', " .
     "'" . add_escape_custom($_POST['form_outcome'])     . "', " .
     "'" . add_escape_custom($_POST['form_destination']) . "', " .
     "'" . add_escape_custom($_POST['form_reinjury_id']) . "', " .
     "'" . add_escape_custom($_POST['form_injury_grade']) . "', " .
     "'" . add_escape_custom($form_injury_part)          . "', " .
     "'" . add_escape_custom($form_injury_type)          . "', " .
-    "'" . add_escape_custom($_POST['form_reaction'])         . "' " .
-   ")");
+    "'" . add_escape_custom($reaction_al)         . "' ," .  
+	"'" . add_escape_custom($_POST['sig'])      . "', " .
+     "'" . $severity_al . "' )");
+
+	  $list_id = $issue.id;
+    
+    if( $list_id )
+        $listids[] = $list_id;
+    else
+        $info_msg = "Original title could not be inserted as a new record";
 
   }
 
@@ -218,6 +253,15 @@ if ($_POST['form_save']) {
       ") VALUES ( ?,?,? )";
     sqlStatement($query, array($thispid,$issue,$thisenc));
   }
+  if( !empty($listids) ) {
+     if( $GLOBALS['rh_summary'] && ($text_type == 'allergy' || $text_type == 'medical_problem' || $text_type=='medication' || $text_type=='medical_procedure' || $text_type=='surgery') ) {
+        require_once("$srcdir/outbox.inc");
+       // queueMessage('CCD', $pid);
+         queueMessage($list_id,$text_type,'CCD', $pid);
+    }
+}
+  
+  
 
   $tmp_title = addslashes($ISSUE_TYPES[$text_type][2] . ": $form_begin " .
     substr($_POST['form_title'], 0, 40));
@@ -275,7 +319,7 @@ div.section {
 }
 
 </style>
-
+<script type="text/javascript" src="../../../library/js/jquery-1.4.3.min.js"></script>
 <style type="text/css">@import url(../../../library/dynarch_calendar.css);</style>
 <script type="text/javascript" src="../../../library/dynarch_calendar.js"></script>
 <?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
@@ -321,20 +365,32 @@ div.section {
  // shortcuts into the selection list of titles, and determines which
  // rows are displayed or hidden.
  function newtype(index) {
+ //alert(index)
   var f = document.forms[0];
   var theopts = f.form_titles.options;
   theopts.length = 0;
   var i = 0;
-  for (i = 0; i < aopts[index].length; ++i) {
-   theopts[i] = aopts[index][i];
+
+  if( aopts && aopts[index] && aopts[index].length > 0 ) {
+    for (i = 0; i < aopts[index].length; ++i) {
+     theopts[i] = aopts[index][i];
+    }
   }
+  orig_type = document.getElementById('original_type').value;
   document.getElementById('row_titles').style.display = i ? '' : 'none';
   // Show or hide various rows depending on issue type, except do not
   // hide the comments or referred-by fields if they have data.
+ var emed = '<?=$GLOBALS['rh_medication']?>';
+  if( emed && index == 5 ) {
+        document.getElementById('row_sig').style.display = '';
+        document.getElementById('more_saves').style.display = 'none';
+  }else{
   var comdisp = (aitypes[index] == 1) ? 'none' : '';
   var revdisp = (aitypes[index] == 1) ? '' : 'none';
   var injdisp = (aitypes[index] == 2) ? '' : 'none';
   var nordisp = (aitypes[index] == 0) ? '' : 'none';
+  
+  
   // reaction row should be displayed only for medication allergy.
   var alldisp =  (index == <?php echo issueTypeIndex('allergy'); ?>) ? '' : 'none';
   document.getElementById('row_enddate'       ).style.display = comdisp;
@@ -349,6 +405,51 @@ div.section {
   document.getElementById('row_reaction'      ).style.display = alldisp;
   document.getElementById('row_referredby'    ).style.display = (f.form_referredby.value) ? '' : comdisp;
   document.getElementById('row_comments'      ).style.display = (f.form_comments.value  ) ? '' : revdisp;
+  
+   switch( index ) {
+          case 2:
+            
+                
+                
+                  document.getElementById('row_reaction').style.display = 'none';
+                
+                 
+                
+		  // added for hiding the reaction and severity block ,if selected item is not allergy 
+		  document.getElementById('reaction').style.display = 'none';
+		  document.getElementById('severity').style.display = 'none';
+		  document.getElementById('row_comments').style.display = '';
+           
+                  document.getElementById('row_sig').style.display = '';
+                 
+             
+              if( orig_type != 2 )
+                  document.getElementById('row_comments').value = "";
+          break;
+          case 1:
+               
+		 // added for displaying the reaction and severity block ,if selected item is  allergy 
+		document.getElementById('reaction').style.display = '';
+		document.getElementById('severity').style.display = '';
+		document.getElementById('row_comments').style.display = 'none';
+		document.getElementById('row_reaction').style.display = 'none';
+
+          break;
+          default:
+            
+              document.getElementById('row_reaction').style.display = 'none';
+            
+            
+              document.getElementById('form_save').style.display = '';
+              
+			  // added for hiding the reaction and severity block ,if selected item is not allergy 
+			  document.getElementById('reaction').style.display = 'none';
+			  document.getElementById('severity').style.display = 'none';
+                  if( orig_type != index )
+                      document.getElementById('row_comments').value = "";
+          break;
+      }
+  
 <?php if ($GLOBALS['athletic_team']) { ?>
   document.getElementById('row_returndate' ).style.display = comdisp;
   document.getElementById('row_injury_grade'  ).style.display = injdisp;
@@ -356,6 +457,7 @@ div.section {
   document.getElementById('row_injury_type'   ).style.display = injdisp;
   document.getElementById('row_medical_system').style.display = nordisp;
   document.getElementById('row_medical_type'  ).style.display = nordisp;
+        document.getElementById('row_missed'    ).style.display = comdisp;
   // Change label text of 'title' row depending on issue type:
   document.getElementById('title_diagnosis').innerHTML = '<b>' +
    (index == <?php echo issueTypeIndex('allergy'); ?> ?
@@ -364,8 +466,6 @@ div.section {
    '<?php echo xla('Title') ?>' :
    '<?php echo xla('Text Diagnosis') ?>')) +
    ':</b>';
-<?php } else { ?>
-  document.getElementById('row_referredby'    ).style.display = (f.form_referredby.value) ? '' : comdisp;
 <?php } ?>
 <?php
   if ($ISSUE_TYPES['football_injury']) {
@@ -378,8 +478,8 @@ div.section {
     if (empty($issue) || $irow['type'] == 'contraceptive') issue_ippf_con_newtype();
   }
 ?>
- }
-
+}
+}
  // If a clickoption title is selected, copy it to the title field.
  function set_text() {
   var f = document.forms[0];
@@ -507,7 +607,10 @@ function divclick(cb, divid) {
   <td valign='top' nowrap>&nbsp;</td>
   <td valign='top'>
    <select name='form_titles' size='<?php echo $GLOBALS['athletic_team'] ? 10 : 4; ?>' onchange='set_text()'>
-   </select> <?php echo xlt('(Select one of these, or type your own title)'); ?>
+
+   </select> <?php xl('(Select one of these, or type your own title)','e'); ?>
+   <input type='hidden' name='original_type' id='original_type' value='<?php echo $type_index; ?>' />
+
   </td>
  </tr>
 
@@ -676,6 +779,23 @@ echo generate_select_list('form_medical_type', 'medical_type', $irow['injury_typ
    </select>
   </td>
  </tr>
+  <tr id='severity'>
+  <td valign='top' nowrap><b>Severity</b></td>
+  <td><?php
+   $severity=$irow['severity_al'];
+			generate_form_field(array('data_type'=>1,'field_id'=>'severity_id','list_id'=>'Severity','empty_title'=>'SKIP'), $severity);
+		?>  
+  </td>
+ </tr>
+   <tr id='reaction' <?php echo " style='display:none;'";?>>
+  <td valign='top' nowrap><b>Select any reaction</b></td>
+  <td><?php
+  
+   $reaction_value=$irow['reaction'];
+			generatecheckbox(array('data_type'=>21,'fld_length'=>3,'field_id'=>'reaction_id','list_id'=>'Allergy_Reaction','empty_title'=>'SKIP'), $reaction_value);
+		?>  
+  </td>
+ </tr>
  <!-- Reaction For Medication Allergy -->
   <tr id='row_reaction'>
    <td valign='top' nowrap><b><?php echo xlt('Reaction'); ?>:</b></td>
@@ -700,7 +820,12 @@ echo generate_select_list('form_medical_type', 'medical_type', $irow['injury_typ
    <textarea name='form_comments' rows='4' cols='40' wrap='virtual' style='width:100%'><?php echo text($irow['comments']) ?></textarea>
   </td>
  </tr>
-
+<tr id='row_sig' style='display:none'>
+  <td valign='middle' nowrap><b><?php xl('Sig','e'); ?>:</b></td>
+  <td>
+   <input type='text' size='40' name='sig' id='sig' value='<?php echo $irow['sig'] ?>' style='width:100%' />
+  </td>
+ </tr>
  <tr<?php if ($GLOBALS['athletic_team'] || $GLOBALS['ippf_specific']) echo " style='display:none;'"; ?>>
   <td valign='top' nowrap><b><?php echo xlt('Outcome'); ?>:</b></td>
   <td>
@@ -742,8 +867,7 @@ echo generate_select_list('form_medical_type', 'medical_type', $irow['injury_typ
 <center>
 <p>
 
-<input type='submit' name='form_save' value='<?php echo xla('Save'); ?>' />
-
+<input type='submit' name='form_save' id='form_save' value='<?php xl('Save','e'); ?>' />
 <?php if ($issue && acl_check('admin', 'super')) { ?>
 &nbsp;
 <input type='button' value='<?php echo xla('Delete'); ?>' style='color:red' onclick='deleteme()' />
@@ -757,6 +881,27 @@ echo generate_select_list('form_medical_type', 'medical_type', $irow['injury_typ
 
 </form>
 <script language='JavaScript'>
+$(function(){
+
+	$('input:checkbox').click(function(){
+	//alert($(this).val())
+	
+		var val=$(this).val();
+		if(val=='Other Reaction')
+		{
+			if($(this).is(':checked'))
+			{
+				$("#other_reaction").attr('readonly',false);
+				$("#other_reaction").focus();
+			}else
+			{
+				$("#other_reaction").val(val_text);
+				$("#other_reaction").attr('readonly',true);
+			}
+		}
+	});
+
+})
  newtype(<?php echo $type_index ?>);
  Calendar.setup({inputField:"form_begin", ifFormat:"%Y-%m-%d", button:"img_begin"});
  Calendar.setup({inputField:"form_end", ifFormat:"%Y-%m-%d", button:"img_end"});

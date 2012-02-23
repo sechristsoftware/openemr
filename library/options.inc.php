@@ -599,7 +599,16 @@ function generate_form_field($frow, $currvalue) {
   else if ($data_type == 28 || $data_type == 32) {
     $tmp = explode('|', $currvalue);
     switch(count($tmp)) {
-      case "4": {
+     case "7": {
+        $resnote = $tmp[0];
+        $restype = $tmp[1];
+        $resdate = $tmp[2];
+        $reslist = $tmp[3];
+        $resSdate = $tmp[4];
+        $respacks = $tmp[5];
+        $resamount = $tmp[6];
+      } break;
+        case "4": {
         $resnote = $tmp[0]; 
         $restype = $tmp[1];
         $resdate = $tmp[2];
@@ -630,76 +639,124 @@ function generate_form_field($frow, $currvalue) {
     $maxlength = htmlspecialchars( $maxlength, ENT_QUOTES);
     $resnote = htmlspecialchars( $resnote, ENT_QUOTES);
     $resdate = htmlspecialchars( $resdate, ENT_QUOTES);
-    echo "<table cellpadding='0' cellspacing='0'>";
+    echo "<table cellpadding='0' cellspacing='0'  style='width:100%' border='0'>";
     echo "<tr>";
     if ($data_type == 28)
     {
 	// input text 
-    echo "<td><input type='text'" .
+
+    echo "<td td style='width:250px;'><input type='text' " .
       " name='form_$field_id_esc'" .
       " id='form_$field_id_esc'" .
       " size='$fldlength'" .
       " maxlength='$maxlength'" .
-      " value='$resnote' />&nbsp;</td>";
-   echo "<td class='bold'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".
-      "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".
-      htmlspecialchars( xl('Status'), ENT_NOQUOTES).":&nbsp;&nbsp;</td>";
+      " value='$resnote' /></td>";
+   echo "<td class='bold'>".
+
+      "".
+      htmlspecialchars( xl('Status'), ENT_NOQUOTES).":</td>";
     }
     else if($data_type == 32)
     {
     // input text
-    echo "<tr><td><input type='text'" .
-      " name='form_text_$field_id_esc'" .
+
+    echo "<td style='width:250px;' >";
+   
+    
+    //Selection list for smoking status
+     $onchange = 'radioChange(this.options[this.selectedIndex].value,"none")';//Netsity :: The javascript function for selection list.
+     
+     echo generate_select_list("form_$field_id", $list_id, $reslist,
+      $description, $showEmpty ? $empty_title : '', 'smokingstatus', $onchange)."</td>";
+     
+
+     echo "<td ><div id='divTobaco'><table cellpadding='0' cellspacing='0' style='width:100%;' border='0'><tr><td class='bold' id='dvPacks'>".htmlspecialchars( xl('Pack(s)'), ENT_NOQUOTES). ": ";
+    
+     echo generate_select_list("form_Packs", "Smoking_status_packs", $resamount,
+      '', '', '')."</td>";
+     echo "<td class='bold' id='per_day'><input type='radio'" .
+      " name='radio_per'" .
+      " id='radio_{$field_id_esc}[per_day]'" .
+      " value='d'";
+    if ($respacks == "d") echo " checked";
+    echo "/>".htmlspecialchars( xl('Per Day'), ENT_NOQUOTES)."</td>";
+     echo "<td class='bold' id='per_week'><input type='radio'" .
+      " name='radio_per'" .
+      " id='radio_{$field_id_esc}[per_week]'" .
+      " value='w'";
+    if ($respacks == "w") echo " checked";
+    echo "  />".htmlspecialchars( xl('Per Week'), ENT_NOQUOTES)."</td>";
+     echo "<td class='bold' id='per_year'><input type='radio'" .
+      " name='radio_per'" .
+      " id='radio_{$field_id_esc}[per_year]'" .
+      " value='y'";
+    if ($respacks == "y") echo " checked";
+     echo " />".htmlspecialchars( xl('Per Year'), ENT_NOQUOTES)."</td>";
+
+     echo "<td class='bold' id='startedOn'>Started in (Yr): <input type='text'" .
+      " name='form_text_{$field_id_esc}_startedOn'" .
+      " id='form_text_{$field_id_esc}_startedOn'" .
+      " size='6'" .
+      " maxlength='4'" .
+      " value='$resSdate' onkeypress='return isNumberKey(event)' /></td>";
+    echo "</tr></table></div></td></tr></table>";
+   
+    
+     echo "<table cellpadding='0' cellspacing='0' style='width:100%' border='0'><tr><td style='width:250px;'><input type='text'" .
+      " name='form_text_$field_id_esc' " .
       " id='form_text_$field_id_esc'" .
       " size='$fldlength'" .
       " maxlength='$maxlength'" .
-      " value='$resnote' />&nbsp;</td></tr>";
-    echo "<td>";
-    //Selection list for smoking status
-    $onchange = 'radioChange(this.options[this.selectedIndex].value)';//VicarePlus :: The javascript function for selection list.
-    echo generate_select_list("form_$field_id", $list_id, $reslist,
-      $description, $showEmpty ? $empty_title : '', '', $onchange)."</td>";
-    echo "<td class='bold'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".htmlspecialchars( xl('Status'), ENT_NOQUOTES).":&nbsp;&nbsp;</td>";
+
+      " value='$resnote' /></td>";
+    echo "<td class='bold'>".htmlspecialchars( xl('Status'), ENT_NOQUOTES).":</td>";
     }
     // current
     echo "<td><input type='radio'" .
       " name='radio_{$field_id_esc}'" .
       " id='radio_{$field_id_esc}[current]'" .
       " value='current".$field_id_esc."'";
-    if ($restype == "current".$field_id) echo " checked";
-      echo " if($data_type == 32) { onClick='smoking_statusClicked(this)' } />".htmlspecialchars( xl('Current'), ENT_NOQUOTES)."&nbsp;</td>";
+    if ($restype == "current".$field_id) echo " checked ";
+     if($data_type == 32) {   echo "onClick='smoking_statusClicked(this)'"; } echo "/>".htmlspecialchars( xl('Current'), ENT_NOQUOTES)."&nbsp;</td>";
     // quit
     echo "<td><input type='radio'" .
       " name='radio_{$field_id_esc}'" .
       " id='radio_{$field_id_esc}[quit]'" .
       " value='quit".$field_id_esc."'";
-    if ($restype == "quit".$field_id) echo " checked";
-    echo " if($data_type == 32) { onClick='smoking_statusClicked(this)' } />".htmlspecialchars( xl('Quit'), ENT_NOQUOTES)."&nbsp;</td>";
+    if ($restype == "quit".$field_id) echo " checked ";
+    if($data_type == 32) {   echo " onClick='smoking_statusClicked(this)'"; } echo "/>".htmlspecialchars( xl('Quit'), ENT_NOQUOTES)."&nbsp;</td>";
     // quit date
     echo "<td><input type='text' size='6' name='date_$field_id_esc' id='date_$field_id_esc'" .
       " value='$resdate'" .
-      " title='$description'" .
-      " onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' />" .
-      "<img src='$rootdir/pic/show_calendar.gif' align='absbottom' width='24' height='22'" .
+      " title='$description'" ;
+      
+    if($data_type == 32){
+
+        echo " maxlength='4' onkeypress='return isNumberKey(event)'/>" ;
+        echo  "<img src='$rootdir/pic/pix.gif' align='absbottom' width='24' height='22'>&nbsp;</td>";
+    }else{
+     echo " onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' />" ;
+     echo  "<img src='$rootdir/pic/show_calendar.gif' align='absbottom' width='24' height='22'" .
       " id='img_$field_id_esc' border='0' alt='[?]' style='cursor:pointer'" .
       " title='" . htmlspecialchars( xl('Click here to choose a date'), ENT_QUOTES) . "' />&nbsp;</td>";
     $date_init .= " Calendar.setup({inputField:'date_$field_id', ifFormat:'%Y-%m-%d', button:'img_$field_id'});\n";
-    // never
+    }// never
     echo "<td><input type='radio'" .
       " name='radio_{$field_id_esc}'" .
       " id='radio_{$field_id_esc}[never]'" .
       " value='never".$field_id_esc."'";
     if ($restype == "never".$field_id) echo " checked";
-    echo " if($data_type == 32) { onClick='smoking_statusClicked(this)' } />".htmlspecialchars( xl('Never'), ENT_NOQUOTES)."&nbsp;</td>";
+    if($data_type == 32) {   echo " onClick='smoking_statusClicked(this)'"; } echo "/>".htmlspecialchars( xl('Never'), ENT_NOQUOTES)."&nbsp;</td>";
 	// Not Applicable
     echo "<td><input type='radio'" .
       " name='radio_{$field_id}'" .
       " id='radio_{$field_id}[not_applicable]'" .
       " value='not_applicable".$field_id."'";
     if ($restype == "not_applicable".$field_id) echo " checked";
-    echo " if($data_type == 32) { onClick='smoking_statusClicked(this)' } />".htmlspecialchars( xl('N/A'), ENT_QUOTES)."&nbsp;</td>";
+    if($data_type == 32) {   echo " onClick='smoking_statusClicked(this)'"; } echo "/>".htmlspecialchars( xl('N/A'), ENT_QUOTES)."&nbsp;</td>";
     echo "</tr>";
     echo "</table>";
+   if($data_type == 32) echo "<script>radioChange('$reslist','default');</script>";
   }
 
   // static text.  read-only, of course.
@@ -1454,10 +1511,20 @@ function generate_display_field($frow, $currvalue) {
 
   // special case for history of lifestyle status; 3 radio buttons and a date text field:
   // VicarePlus :: A selection list for smoking status.
-  else if ($data_type == 28 || $data_type == 32) {
+ else if ($data_type == 28 || $data_type == 32) {
     $tmp = explode('|', $currvalue);
     switch(count($tmp)) {
-      case "4": {
+        //note|type|qdate|list|sdate|packs|amount
+       case "7": {
+        $resnote = $tmp[0];
+        $restype = $tmp[1];
+        $resdate = $tmp[2];
+        $reslist = $tmp[3];
+        $resSdate = $tmp[4];
+        $respacks = $tmp[5];
+        $resamount = $tmp[6];
+      } break;
+        case "4": {
         $resnote = $tmp[0];
         $restype = $tmp[1];
         $resdate = $tmp[2];
@@ -1503,7 +1570,24 @@ function generate_display_field($frow, $currvalue) {
     }
 
 	if (!empty($res)) $s .= "<td class='text' valign='top'><b>" . htmlspecialchars(xl('Status'),ENT_NOQUOTES) . "</b>:&nbsp;" . htmlspecialchars($res,ENT_NOQUOTES) . "&nbsp;</td>";
-    if ($restype == "quit".$field_id) $s .= "<td class='text' valign='top'>" . htmlspecialchars($resdate,ENT_NOQUOTES) . "&nbsp;</td>";
+        if($data_type == 28){
+             if ($restype == "quit".$field_id) $s .= "<td class='text' valign='top'>" .htmlspecialchars($resdate,ENT_NOQUOTES) .   "&nbsp;</td>";
+        }
+        else if($data_type == 32){
+            if($respacks=="d"){
+                $respacks='per day';
+            }else if($respacks=="w"){
+                $respacks='per week';
+            }
+            else{
+                $respacks='per year';
+            }
+                
+               
+            if ($restype == "quit".$field_id) $s .= "<td class='text' valign='top'> (" . htmlspecialchars(xl('Started in(Yr) : '),ENT_NOQUOTES)."&nbsp;". htmlspecialchars($resSdate,ENT_NOQUOTES)."&nbsp;". htmlspecialchars(xl('Quit on: '),ENT_NOQUOTES)."&nbsp;". htmlspecialchars($resdate,ENT_NOQUOTES) . ")&nbsp;</td>";
+            if ($restype == "current".$field_id) $s .= "<td class='text' valign='top'> (" . htmlspecialchars($resamount,ENT_NOQUOTES)."&nbsp;". htmlspecialchars(xl('packs'),ENT_NOQUOTES)."&nbsp;". htmlspecialchars($respacks,ENT_NOQUOTES)."&nbsp;&nbsp;&nbsp;". htmlspecialchars(xl('Started in(Yr) : '),ENT_NOQUOTES)."&nbsp;". htmlspecialchars($resSdate,ENT_NOQUOTES).")&nbsp;</td>";
+        }
+    
     $s .= "</tr>";
     $s .= "</table>";
   }
@@ -1965,13 +2049,29 @@ function get_layout_form_value($frow, $maxlength=255) {
       $resnote = str_replace('|', ' ', $_POST["form_$field_id"]);
       if ($data_type == 32)
       {
-      //VicarePlus :: Smoking status data is imploded into "note|type|date|list".
-      $reslist = str_replace('|', ' ', $_POST["form_$field_id"]);
-      $res_text_note = str_replace('|', ' ', $_POST["form_text_$field_id"]);
-      $value = "$res_text_note|$restype|$resdate|$reslist";
+          //Netsity :: Smoking status data is imploded into "note|type|qdate|list|sdate|packs|amount".
+          $reslist = str_replace('|', ' ', $_POST["form_$field_id"]);
+          $res_text_note = str_replace('|', ' ', $_POST["form_text_$field_id"]);
+          $quitdate=str_replace('|', ' ', $_POST["date_$field_id"]);;
+          $sdate=str_replace('|', ' ', $_POST["form_text_{$field_id}_startedOn"]);;
+          $packs=str_replace('|', ' ', $_POST["radio_per"]);;
+          $amount=str_replace('|', ' ', $_POST["form_Packs"]);;
+          if($restype=="quit".$field_id){
+               $packs='';
+               $amount='';
+          }else if($restype=="current".$field_id){
+              $quitdate='';
+          }else{
+             $quitdate='';
+             $sdate='';
+             $packs='';
+             $amount='';
+          }
+         
+          $value = "$res_text_note|$restype|$quitdate|$reslist|$sdate|$packs|$amount";
       }
       else
-      $value = "$resnote|$restype|$resdate";
+         $value = "$resnote|$restype|$resdate";
     }
     else {
       $value = $_POST["form_$field_id"];
@@ -2230,5 +2330,61 @@ function billing_facility($name,$select){
 				}
 			  echo "</select>";
 }
+// function added  for displaying other text box in checkbox
+function generatecheckbox($frow,$currvalue){
+$data_type   = $frow['data_type'];
+  $field_id    = $frow['field_id'];
+  $list_id     = $frow['list_id'];
+    $cols = max(1, $frow['fld_length']);
+    $avalue = explode(',', $currvalue);
+	//print_r($avalue);
+   $end_val_array=end($avalue);
+	list($end_split_check,$end_val)=explode(":",$end_val_array);
+	if($end_split_check=='Other Reaction') {  $var="checked";}
+	echo "<script language='javascript'>";
+	echo " var val_text='$end_val';</script>";
+	if($end_val)
+	{
+		$readonly="";
+	}else
+	{
+		$readonly="readonly=readonly";
+	}
+	//echo $currvalue;
+    $lres = sqlStatement("SELECT * FROM list_options " .
+      "WHERE list_id = ? ORDER BY seq, title", array($list_id) );
+    echo "<table cellpadding='0' cellspacing='0' width='100%'>";
+    $tdpct = (int) (100 / $cols);
+    for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
+      $option_id = $lrow['option_id'];
+      $option_id_esc = htmlspecialchars( $option_id, ENT_QUOTES);
+      // if ($count) echo "<br />";
+      if ($count % $cols == 0) {
+        if ($count) echo "</tr>";
+        echo "<tr>";
+      }
+      echo "<td width='$tdpct%'>";
+	   
+      echo "<input type='checkbox' name='form_{$field_id}[]' id='form_{$field_id}[]' value='$option_id_esc' ";
+
+	  if (in_array($option_id, $avalue)) echo " checked";
+	 if($option_id=='Other Reaction') echo $var;
+      // Added 5-09 by BM - Translate label if applicable
+      echo ">" . htmlspecialchars( xl_list_label($lrow['title']), ENT_NOQUOTES);
+	  if($option_id=='Other Reaction'){ echo "&nbsp;&nbsp;&nbsp;<input type='text' $readonly value='$end_val' name='other_reaction' id='other_reaction'>";}
+	
+      echo "</td>";
+    }
+    if ($count) {
+      echo "</tr>";
+      if ($count > $cols) {
+        // Add some space after multiple rows of checkboxes.
+	$cols = htmlspecialchars( $cols, ENT_QUOTES);
+        echo "<tr><td colspan='$cols' style='height:0.7em'></td></tr>";
+      }
+    }
+    echo "</table>";
+  }
+
 
 ?>
