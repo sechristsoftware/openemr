@@ -15,40 +15,74 @@ include_once("$srcdir/options.inc.php");
 if (isset($_GET['mode'])) {
     
     if ($_GET['mode'] == "add" ) {
-    	
-        $sql = "REPLACE INTO immunizations set 
-                      id = ?,
-                      administered_date = if(?,?,NULL),  
-                      immunization_id = ?,
-                      cvx_code = ?, 
-                      manufacturer = ?,
-                      lot_number = ?,
-                      administered_by_id = if(?,?,NULL),
-                      administered_by = if(?,?,NULL),
-                      education_date = if(?,?,NULL), 
-                      vis_date = if(?,?,NULL), 
-                      note   = ?,
-                      patient_id   = ?,
-                      created_by = ?,
-                      updated_by = ?,
-                      create_date = now() ";
-	$sqlBindArray = array(
+		$reaction_al=$_GET['form_reaction']; // this is for form reaction added for alergy 
+			$medication_series_number=$_GET['medication_series_number'];		 // this is for form severity added for alergy 
+			if(!empty($reaction_al)){
+				if(in_array("Other Reaction",$reaction_al)){
+				$reaction_al=implode(",",$reaction_al);
+					if(isset($_GET['other_reaction']) and $_GET['other_reaction']!='')
+					{
+						$reaction_al=$reaction_al.":".$_GET['other_reaction'];
+					}
+				}else
+				{
+					$reaction_al=implode(",",$reaction_al);
+				}
+			}
+	    	$admin_date=$_GET['administered_date']?$_GET['administered_date']:'NULL';
+			$administered_by_id=$_GET['administered_by_id']?$_GET['administered_by_id']:'NULL';
+			$administered_by=$_GET['administered_by']?$_GET['administered_by']:'NULL';
+			$education_date=$_GET['education_date']?$_GET['education_date']:'NULL';
+			$vis_date=$_GET['vis_date']?$_GET['vis_date']:'NULL';
+        $sql = sprintf("REPLACE INTO immunizations set 
+                      id = '%s',
+                      administered_date = '%s',  
+                      immunization_id = '%s',
+                      cvx_code = '%s', 
+                      manufacturer = '%s',
+                      lot_number = '%s',
+                      administered_by_id = '%s',
+                      administered_by = '%s',
+                      education_date = '%s', 
+                      vis_date = '%s', 
+                      note   = '%s',
+                      patient_id   = '%s',
+                      created_by = '%s',
+                      updated_by = '%s',
+                      create_date = now(),
+					  reaction  = '%s',
+					  medication_series_number = '%s'	
+					",	
 	             trim($_GET['id']),
-		     trim($_GET['administered_date']), trim($_GET['administered_date']),
+		    $admin_date,
 		     trim($_GET['form_immunization_id']),
 		     trim($_GET['cvx_code']),
 		     trim($_GET['manufacturer']),
 		     trim($_GET['lot_number']),
-		     trim($_GET['administered_by_id']), trim($_GET['administered_by_id']),
-		     trim($_GET['administered_by']), trim($_GET['administered_by']),
-		     trim($_GET['education_date']), trim($_GET['education_date']),
-		     trim($_GET['vis_date']), trim($_GET['vis_date']),
+		     $administered_by_id,
+		     $administered_by,
+		     $education_date,
+		     $vis_date,
 		     trim($_GET['note']),
 		     $pid,
 		     $_SESSION['authId'],
-		     $_SESSION['authId']
+		     $_SESSION['authId'],
+			 $reaction_al,
+			 $medication_series_number
 		     );
-        sqlStatement($sql,$sqlBindArray);
+			 //echo $sql;
+       $cur_issue = sqlInsert($sql);
+    $list_id = $cur_issue.id;
+		
+		if( $GLOBALS['rh_summary'] ) { 
+				if( file_exists( "$srcdir/outbox.inc" ) ) {  
+				require_once("$srcdir/outbox.inc"); 
+			queueMessage($list_id,'immunizations','CCD', $pid); 
+			} 
+		} 
+		//exit;
+		
+		
         $administered_date=$education_date=date('Y-m-d');
         $immunization_id=$cvx_code=$manufacturer=$lot_number=$administered_by_id=$note=$id="";
         $administered_by=$vis_date="";
@@ -307,6 +341,27 @@ var mypcc = '<?php echo htmlspecialchars( $GLOBALS['phone_country_code'], ENT_QU
             />
           </td>
         </tr>
+				<!--  Add immunization reaction and and medication series number-->
+		 <tr>
+          <td align="right" class='text'>
+              <?php echo htmlspecialchars( xl('Medication Series Number'), ENT_NOQUOTES); ?>
+          </td>
+          <td>
+           <input type='text' size='10' name="medication_series_number" id="medication_series_number" value="<?php echo htmlspecialchars( $medication_series_number, ENT_QUOTES); ?>" />
+          </td>
+        </tr>
+		 <tr>
+          <td align="right" class='text' valign="top">
+              <?php echo htmlspecialchars( xl('Reaction'), ENT_NOQUOTES); ?>
+          </td>
+          <td class='text'>
+           <?php
+ 
+ 
+			generatecheckbox(array('data_type'=>21,'fld_length'=>2,'field_id'=>'reaction','list_id'=>'Allergy_Reaction','empty_title'=>'SKIP'), $reaction);
+		?>  
+          </td>
+        </tr>
         <tr>
           <td align="right" class='text'>
               <?php echo htmlspecialchars( xl('Notes'), ENT_NOQUOTES); ?>
@@ -351,12 +406,14 @@ var mypcc = '<?php echo htmlspecialchars( $GLOBALS['phone_country_code'], ENT_QU
     <th><?php echo htmlspecialchars( xl('Administered By'), ENT_NOQUOTES); ?></th>
     <th><?php echo htmlspecialchars( xl('Education Date'), ENT_NOQUOTES); ?></th>
     <th><?php echo htmlspecialchars( xl('Note'), ENT_NOQUOTES); ?></th>
+	<th><?php echo htmlspecialchars( xl('Reaction'), ENT_NOQUOTES); ?></th>
+	  <th><?php echo htmlspecialchars( xl('Series Number'), ENT_NOQUOTES); ?></th>
     <th>&nbsp;</th>
     </tr>
     
 <?php
         $sql = "select i1.id ,i1.immunization_id, i1.cvx_code, i1.administered_date, c.code_text_short, c.code".
-                ",i1.manufacturer ,i1.lot_number ".
+                ",i1.manufacturer ,i1.lot_number,i1.medication_series_number,i1.reaction ".
                 ",ifnull(concat(u.lname,', ',u.fname),'Other') as administered_by ".
                 ",i1.education_date ,i1.note ".
                 " from immunizations i1 ".
@@ -402,6 +459,9 @@ var mypcc = '<?php echo htmlspecialchars( $GLOBALS['phone_country_code'], ENT_QU
             echo "<td>" . htmlspecialchars( $row["administered_by"], ENT_NOQUOTES) . "</td>";
             echo "<td>" . htmlspecialchars( $row["education_date"], ENT_NOQUOTES) . "</td>";
             echo "<td>" . htmlspecialchars( $row["note"], ENT_NOQUOTES) . "</td>";
+			 $d=str_replace(",","<br>",$row["reaction"]);
+			  echo "<td>" . $d . "</td>";
+			    echo "<td>" . htmlspecialchars( $row["medication_series_number"], ENT_NOQUOTES) . "</td>";
             echo "<td><input type='button' class='delete' id='".htmlspecialchars( $row["id"], ENT_QUOTES)."' value='" . htmlspecialchars( xl('Delete'), ENT_QUOTES) . "'></td>";
             echo "</tr>";
         }
@@ -420,7 +480,27 @@ Calendar.setup({inputField:"education_date", ifFormat:"%Y-%m-%d", button:"img_ed
 Calendar.setup({inputField:"vis_date", ifFormat:"%Y-%m-%d", button:"img_vis_date"});
 
 // jQuery stuff to make the page a little easier to use
+$(function(){
 
+	$('input:checkbox').click(function(){
+	//alert($(this).val())
+	
+		var val=$(this).val();
+		if(val=='Other Reaction')
+		{
+			if($(this).is(':checked'))
+			{
+				$("#other_reaction").attr('readonly',false);
+				$("#other_reaction").focus();
+			}else
+			{
+				$("#other_reaction").val(val_text);
+				$("#other_reaction").attr('readonly',true);
+			}
+		}
+	});
+
+})
 $(document).ready(function(){
     <?php if (!($useCVX)) { ?>
       $("#save").click(function() { SaveForm(); });

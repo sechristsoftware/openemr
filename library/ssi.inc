@@ -6,16 +6,27 @@
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
 
-	include_once('../../interface/globals.php');
-
-function getRelayHealthLink() {
-	$result = sqlQuery("select ssi_relayhealth from users where id={$_SESSION['authUserID']};");
-	$trimmed = trim($result['ssi_relayhealth']);
-	if (!empty($trimmed)) {
-		return '<a href="../jump_to_RelayHealth.php" target="_new" class="navitem" id="rh_link">Relay Health</a>';
-	} else {
-		// default link
-		return '<a href="https://app.relayhealth.com/welcome.asp?bid=phyaura" target="_new" class="navitem" id="rh_link">Relay Health</a>';
-	}
+function getRelayHealthLink( $dest ) {
+      switch( trim($dest) )
+      {
+        case "inbox":
+		
+	  return "<div id='rhmsgcount'><a   onclick=\"return loadFrame2('','RTop','jump_to_RelayHealth.php?dest=inbox')\"  href=''  class='rhesuites' id='rh_link'>". xl('e-messages') .'<span id="unreadMessage"></span></a><script>$(document).ready(function(){$("#unreadMessage").load("../jump_to_RelayHealth.php?dest=CountMessages");});</script></div>';
+          break;
+      case "renewals":
+            return "<a href='' onclick=\"return loadFrame2('','RTop','jump_to_RelayHealth.php?dest=renewals')\"   class='rhesuites' id='rh_link'>". xl('e-renewals') .'</a>';
+        break;
+      case "escripts":
+            return "<a href='' onclick=\"return loadFrame2('','RTop','jump_to_RelayHealth.php?dest=escripts')\" class='rhesuites' id='rh_link'>". xl('e-scripts') .'</a>';
+        break;
+      case "home":
+        return "<a href='' onclick=\"return loadFrame2('','RTop','jump_to_RelayHealth.php?dest=home')\" class='navitem' id='h_link'>". xl('E-suites') .'</a>';
+        break;
+		case "summary":
+        return "<a href='' onclick=\"return loadFrame2('','RTop','jump_to_RelayHealth.php?dest=summary')\"  class='rhesuites' id='rh_link'>". xl('Summary') .'</a>';
+        break;
+      default:
+        return "<a href='' onclick=\"return loadFrame2('','RTop','jump_to_RelayHealth.php?dest=home')\" class='navitem' id='h_link'>". xl('E-suites') .'</a>';
+      }
 }
 ?>

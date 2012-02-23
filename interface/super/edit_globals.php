@@ -306,6 +306,23 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
       }
       echo "  </select>\n";
     }
+	   else if ($fldtype == 'Primary_provider') {
+      $res = sqlStatement("SELECT id, fname, lname, specialty FROM users WHERE active =1 AND ( info IS NULL OR info NOT LIKE '%Inactive%' )  AND authorized =1");
+      echo "  <select name='form_$i' id='form_$i'>\n";
+      while ($row = sqlFetchArray($res)) {
+        echo "   <option value='" . $row['id'] . "'";
+        foreach ($glarr as $glrow) {
+          if ($glrow['gl_value'] == $row['id']) {
+            echo " selected";
+            break;
+          }
+        }
+        echo ">";
+        echo xl($row['lname'])." ".xl($row['fname']);
+        echo "</option>\n";
+      }
+      echo "  </select>\n";
+    }
 
     else if ($fldtype == 'css') {
       if ($_GET['mode'] == "user") {

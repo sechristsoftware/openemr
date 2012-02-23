@@ -65,7 +65,22 @@ class ORDataObject {
 		}
 
 		//echo "<br>sql is: " . $sql . "<br /><br>";
-		sqlQuery($sql);
+		if(trim($this->_table)=="form_vitals")
+{
+  $cur_issue = sqlInsert($sql);
+    $list_id = $cur_issue.id;
+	//	ini_set("display_errors",1);
+		if( $GLOBALS['rh_patient'] ) {
+			global $pid;
+				if( file_exists( dirname(__FILE__) ."/../outbox.inc") ) { 
+				require_once (dirname(__FILE__) ."/../outbox.inc");
+			queueMessage($list_id,$this->_table,'CCD', $pid);
+			}
+		}
+}else
+{
+	sqlQuery($sql);
+}
 		return true;
 	}
 

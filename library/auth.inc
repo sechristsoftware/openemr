@@ -113,7 +113,7 @@ function authNewSession ($user, $pass, $provider, $new_upgrade_pass)
 
     // get details about the user
     $authDB = sqlQuery("select id, password, authorized, see_auth".
-                        ", cal_ui, active ".
+                        ", cal_ui, active ,ssi_relayhealth".
                         " from users where username = '$user'");
 
     // if the user is NOT active, get out
@@ -151,6 +151,7 @@ function authNewSession ($user, $pass, $provider, $new_upgrade_pass)
             $_SESSION['authId'] = $authDB{'id'};
             $_SESSION['cal_ui'] = $authDB['cal_ui'];
             $_SESSION['userauthorized'] = $authDB['authorized'];
+			 $_SESSION['rh_api_id'] = trim($authDB['ssi_relayhealth']);
             // Some users may be able to authorize without being providers:
             if ($authDB['see_auth'] > '2') $_SESSION['userauthorized'] = '1';
             newEvent( 'login', $user, $provider, 1, "success: $ip");
