@@ -6,6 +6,9 @@
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
 
+$fake_register_globals=false;
+$sanitize_all_escapes=true;
+
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/patient.inc");
@@ -95,8 +98,8 @@ function echoLine($iname, $date, $charges, $ptpaid, $inspaid, $duept,$encounter=
   $balance = (round($duept,2) != 0) ? 0 : $balance;
   $encounter = $encounter ? $encounter : '';
   echo " <tr id='tr_".attr($var_index)."' >\n";
-  echo "  <td class='detail'>" . oeFormatShortDate($date) . "</td>\n";
-  echo "  <td class='detail' id='$date' align='center'>" . htmlspecialchars($encounter, ENT_QUOTES) . "</td>\n";
+  echo "  <td class='detail'>" . text(oeFormatShortDate($date)) . "</td>\n";
+  echo "  <td class='detail' id='".attr($date)."' align='center'>" . htmlspecialchars($encounter, ENT_QUOTES) . "</td>\n";
   echo "  <td class='detail' align='center' id='td_charges_$var_index' >" . htmlspecialchars(bucks($charges), ENT_QUOTES) . "</td>\n";
   echo "  <td class='detail' align='center' id='td_drop_down_$var_index' style='display:none'>" . generate_drop_down($var_index,$encounter) . "</td>\n";
   echo "  <td class='detail' align='center' id='td_description_$var_index' style='display:none'>" . '' . "</td>\n";
@@ -105,7 +108,7 @@ function echoLine($iname, $date, $charges, $ptpaid, $inspaid, $duept,$encounter=
   echo "  <td class='detail' align='center' id='td_copay_$var_index' >" . htmlspecialchars(bucks($copay), ENT_QUOTES) . "</td>\n";
   echo "  <td class='detail' align='center' id='balance_$var_index'>" . htmlspecialchars(bucks($balance), ENT_QUOTES) . "</td>\n";
   echo "  <td class='detail' align='center' id='duept_$var_index'>" . htmlspecialchars(bucks(round($duept,2)*1), ENT_QUOTES) . "</td>\n";
-  echo "  <td class='detail' align='right'><input type='text' name='$iname'  id='paying_".attr($var_index)."' " .
+  echo "  <td class='detail' align='right'><input type='text' name='".attr($iname)."'  id='paying_".attr($var_index)."' " .
     " value='" .  '' . "' onchange='coloring();calctotal()'  autocomplete='off' " .
     "onkeyup='calctotal()'  style='width:50px'/></td>\n";
   echo " </tr>\n";
@@ -139,16 +142,7 @@ function frontPayment($patient_id, $encounter, $method, $source, $amount1, $amou
    }
   $payid = sqlInsert("INSERT INTO payments ( " .
     "pid, encounter, dtime, user, method, source, amount1, amount2 " .
-    ") VALUES ( " .
-    "'$patient_id', " .
-    "'$encounter', " .
-    "'$timestamp', " .
-    "'" . $_SESSION['authUser']  . "', " .
-    "'$method', " .
-    "'$source', " .
-    "'$amount1', " .
-    "'$amount2' " .
-    ")");
+    ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ?)", array($patient_id,$encounter,$timestamp,$_SESSION['authUser'],$method,$source,$amount1,$amount2) );
   return $payid;
 }
 
@@ -158,8 +152,8 @@ function frontPayment($patient_id, $encounter, $method, $source, $amount1, $amou
 function todaysEncounterIf($patient_id) {
   global $today;
   $tmprow = sqlQuery("SELECT encounter FROM form_encounter WHERE " .
-    "pid = '$patient_id' AND date = '$today 00:00:00' " .
-    "ORDER BY encounter DESC LIMIT 1");
+    "pid = ? AND date = ? " .
+    "ORDER BY encounter DESC LIMIT 1", array($patient_id, $today." 00:00:00") );
   return empty($tmprow['encounter']) ? 0 : $tmprow['encounter'];
 }
 
@@ -172,7 +166,7 @@ function todaysEncounter($patient_id) {
   if ($encounter) return $encounter;
 
   $tmprow = sqlQuery("SELECT username, facility, facility_id FROM users " .
-    "WHERE id = '" . $_SESSION["authUserID"] . "'");
+    "WHERE id = ?", array($_SESSION["authUserID"]) );
   $username = $tmprow['username'];
   $facility = $tmprow['facility'];
   $facility_id = $tmprow['facility_id'];
@@ -180,14 +174,14 @@ function todaysEncounter($patient_id) {
   $encounter = $conn->GenID("sequences");
   addForm($encounter, "New Patient Encounter",
     sqlInsert("INSERT INTO form_encounter SET " .
-      "date = '$today', " .
-      "onset_date = '$today', " .
+      "date = ?, " .
+      "onset_date = ?, " .
       "reason = 'Please indicate visit reason', " .
-      "facility = '$facility', " .
-      "facility_id = '$facility_id', " .
-      "billing_facility = '$facility_id', " .
-      "pid = '$patient_id', " .
-      "encounter = '$encounter'"
+      "facility = ?, " .
+      "facility_id = ?, " .
+      "billing_facility = ?, " .
+      "pid = ?, " .
+      "encounter = ?", array($today,$today,$facility,$facility_id,$facility_id,$patient_id,$encounter )
     ),
     "newpatient", $patient_id, "1", "NOW()", $username
   );
@@ -221,9 +215,9 @@ function calcTaxes($row, $amount) {
   foreach ($arates as $value) {
     if (empty($value)) continue;
     $trow = sqlQuery("SELECT option_value FROM list_options WHERE " .
-      "list_id = 'taxrate' AND option_id = '$value' LIMIT 1");
+      "list_id = 'taxrate' AND option_id = ? LIMIT 1", array($value) );
     if (empty($trow['option_value'])) {
-      echo "<!-- Missing tax rate '$value'! -->\n";
+      echo "<!-- Missing tax rate '".text($value)."'! -->\n";
       continue;
     }
     $tax = sprintf("%01.2f", $amount * $trow['option_value']);
@@ -255,7 +249,7 @@ $patdata = sqlQuery("SELECT " .
   "FROM patient_data AS p " .
   "LEFT OUTER JOIN insurance_data AS i ON " .
   "i.pid = p.pid AND i.type = 'primary' " .
-  "WHERE p.pid = '$pid' ORDER BY i.date DESC LIMIT 1");
+  "WHERE p.pid = ? ORDER BY i.date DESC LIMIT 1", array($pid) );
 
 $alertmsg = ''; // anything here pops up in an alert box
 
@@ -788,25 +782,23 @@ if ($_POST['form_save'] || $_REQUEST['receipt']) {
     "MAX(user) AS user, " .
     "MAX(encounter) as encounter ".
     "FROM payments WHERE " .
-    "pid = '$form_pid' AND dtime = '$timestamp'");
+    "pid = ? AND dtime = ?", array($form_pid,$timestamp) );
 
   // Create key for deleting, just in case.
   $payment_key = $form_pid . '.' . preg_replace('/[^0-9]/', '', $timestamp);
 
   // get facility from encounter
-  $tmprow = sqlQuery(sprintf("
+  $tmprow = sqlQuery("
     SELECT facility_id
     FROM form_encounter
-    WHERE encounter = '%s'",
-    $payrow['encounter']
-    ));
-  $frow = sqlQuery(sprintf("SELECT * FROM facility " .
-    " WHERE id = '%s'",$tmprow['facility_id']));
+    WHERE encounter = ?", array($payrow['encounter']) );
+  $frow = sqlQuery("SELECT * FROM facility " .
+    " WHERE id = ?", array($tmprow['facility_id']) );
 
   // Now proceed with printing the receipt.
 ?>
 
-<title><?php xl('Receipt for Payment','e'); ?></title>
+<title><?php echo xlt('Receipt for Payment'); ?></title>
 <script type="text/javascript" src="../../library/dialog.js"></script>
 <script language="JavaScript">
 
@@ -853,56 +845,56 @@ if ($_POST['form_save'] || $_REQUEST['receipt']) {
 <body bgcolor='#ffffff'>
 <center>
 
-<p><h2><?php xl('Receipt for Payment','e'); ?></h2>
+<p><h2><?php echo xlt('Receipt for Payment'); ?></h2>
 
-<p><?php echo htmlentities($frow['name']) ?>
-<br><?php echo htmlentities($frow['street']) ?>
-<br><?php echo htmlentities($frow['city'] . ', ' . $frow['state']) . ' ' .
-    $frow['postal_code'] ?>
+<p><?php echo text($frow['name']) ?>
+<br><?php echo text($frow['street']) ?>
+<br><?php echo text($frow['city'] . ', ' . $frow['state']) . ' ' .
+    text($frow['postal_code']) ?>
 <br><?php echo htmlentities($frow['phone']) ?>
 
 <p>
 <table border='0' cellspacing='8'>
  <tr>
-  <td><?php xl('Date','e'); ?>:</td>
-  <td><?php echo oeFormatSDFT(strtotime($payrow['dtime'])) ?></td>
+  <td><?php echo xlt('Date'); ?>:</td>
+  <td><?php echo text(oeFormatSDFT(strtotime($payrow['dtime']))) ?></td>
  </tr>
  <tr>
-  <td><?php xl('Patient','e'); ?>:</td>
-  <td><?php echo $patdata['fname'] . " " . $patdata['mname'] . " " .
-       $patdata['lname'] . " (" . $patdata['pubpid'] . ")" ?></td>
+  <td><?php echo xlt('Patient'); ?>:</td>
+  <td><?php echo text($patdata['fname']) . " " . text($patdata['mname']) . " " .
+       text($patdata['lname']) . " (" . text($patdata['pubpid']) . ")" ?></td>
  </tr>
  <tr>
-  <td><?php xl('Paid Via','e'); ?>:</td>
-  <td><?php echo $payrow['method'] ?></td>
+  <td><?php echo xlt('Paid Via'); ?>:</td>
+  <td><?php echo text($payrow['method']) ?></td>
  </tr>
  <tr>
-  <td><?php xl('Check/Ref Number','e'); ?>:</td>
-  <td><?php echo $payrow['source'] ?></td>
+  <td><?php echo xlt('Check/Ref Number'); ?>:</td>
+  <td><?php echo text($payrow['source']) ?></td>
  </tr>
  <tr>
-  <td><?php xl('Amount for This Visit','e'); ?>:</td>
-  <td><?php echo oeFormatMoney($payrow['amount1']) ?></td>
+  <td><?php echo xlt('Amount for This Visit'); ?>:</td>
+  <td><?php echo text(oeFormatMoney($payrow['amount1'])) ?></td>
  </tr>
  <tr>
-  <td><?php xl('Amount for Past Balance','e'); ?>:</td>
-  <td><?php echo oeFormatMoney($payrow['amount2']) ?></td>
+  <td><?php echo xlt('Amount for Past Balance'); ?>:</td>
+  <td><?php echo text(oeFormatMoney($payrow['amount2'])) ?></td>
  </tr>
  <tr>
-  <td><?php xl('Received By','e'); ?>:</td>
-  <td><?php echo $payrow['user'] ?></td>
+  <td><?php echo xlt('Received By'); ?>:</td>
+  <td><?php echo text($payrow['user']) ?></td>
  </tr>
 </table>
 
 <div id='hideonprint'>
 <p>
-<input type='button' value='<?php xl('Print','e'); ?>' onclick='printme()' />
+<input type='button' value='<?php echo xla('Print'); ?>' onclick='printme()' />
 
 <?php
   $todaysenc = todaysEncounterIf($pid);
   if ($todaysenc && $todaysenc != $encounter) {
     echo "&nbsp;<input type='button' " .
-      "value='" . htmlspecialchars(xl('Open Today`s Visit')) . "' " .
+      "value='" . xla('Open Today`s Visit') . "' " .
       "onclick='toencounter($todaysenc,\"$today\",opener.top)' />\n";
   }
 ?>
@@ -925,7 +917,7 @@ if ($_POST['form_save'] || $_REQUEST['receipt']) {
   // Here we display the form for data entry.
   //
 ?>
-<title><?php xl('Record Payment','e'); ?></title>
+<title><?php echo xlt('Record Payment'); ?></title>
 
 <style type="text/css">
  body    { font-family:sans-serif; font-size:10pt; font-weight:normal }
@@ -1117,7 +1109,7 @@ function validate()
 		{
 		 if (elem.value*1 > 60)
 		  {
-			 if(confirm("<?php echo addslashes( xl('Co Pay is above $ 60?')) ?>"))
+			 if(confirm("<?php echo addslashes( xl('Co Pay is above $60 ?')) ?>"))
 			  {
 			   ok=1;
 			  }
@@ -1143,7 +1135,7 @@ function validate()
 		{
 		 if (elem.value*1 > 0)
 		  {
-			  alert("<?php echo addslashes( xl('Invoice Balance cannot be posted.No Encounter is created.')) ?>");
+			  alert("<?php echo addslashes( xl('Invoice Balance cannot be posted. No Encounter is created.')) ?>");
 			  return false;
 		 }
 		 break;
@@ -1351,7 +1343,7 @@ function display_details(index,order)
 
 <form method='post' action='front_payment.php<?php if ($payid) echo "?payid=$payid"; ?>'
  onsubmit='return validate();'>
-<input type='hidden' name='form_pid' value='<?php echo $pid ?>' />
+<input type='hidden' name='form_pid' value='<?php echo attr($pid) ?>' />
 
 
 <table border='0' cellspacing='0' cellpadding="0">
@@ -1375,7 +1367,7 @@ function display_details(index,order)
 
  <tr>
   <td class='text' >
-   <?php xl('Payment Method','e'); ?>:
+   <?php echo xlt('Payment Method'); ?>:
   </td>
   <td colspan='2' >
   <select name="form_method" id="form_method"  class="text" onChange='CheckVisible("yes")'>
@@ -1513,16 +1505,19 @@ function display_details(index,order)
     } else {
       $encs[$key]['charges']  += $brow['fee'];
       // Add taxes.
+      $sql_array=array();
       $query = "SELECT taxrates FROM codes WHERE " .
-        "code_type = '" . $code_types[$brow['code_type']]['id'] . "' AND " .
-        "code = '" . $brow['code'] . "' AND ";
+        "code_type = ? AND " .
+        "code = ? AND ";
+      array_push($sql_array,$code_types[$brow['code_type']]['id'],$brow['code']);
       if ($brow['modifier']) {
-        $query .= "modifier = '" . $brow['modifier'] . "'";
+        $query .= "modifier = ?";
+        array_push($sql_array,$brow['modifier']);
       } else {
         $query .= "(modifier IS NULL OR modifier = '')";
       }
       $query .= " LIMIT 1";
-      $trow = sqlQuery($query);
+      $trow = sqlQuery($query,$sql_array);
       $encs[$key]['charges'] += calcTaxes($trow, $brow['fee']);
     }
   }
@@ -1551,8 +1546,8 @@ function display_details(index,order)
     }
     $encs[$key]['charges'] += $drow['fee'];
     // Add taxes.
-    $trow = sqlQuery("SELECT taxrates FROM drug_templates WHERE drug_id = '" .
-      $drow['drug_id'] . "' ORDER BY selector LIMIT 1");
+    $trow = sqlQuery("SELECT taxrates FROM drug_templates WHERE drug_id = ? " .
+      "ORDER BY selector LIMIT 1", array($drow['drug_id']) );
     $encs[$key]['charges'] += calcTaxes($trow, $drow['fee']);
   }
 
@@ -1641,12 +1636,12 @@ function display_details(index,order)
       "(SELECT SUM(invoice.sellprice * invoice.qty) FROM invoice WHERE " .
       "invoice.trans_id = ar.id AND invoice.sellprice < 0) AS adjustments, " .
       "(SELECT SUM(acc_trans.amount) FROM acc_trans WHERE " .
-      "acc_trans.trans_id = ar.id AND acc_trans.chart_id = $chart_id_cash " .
+      "acc_trans.trans_id = ar.id AND acc_trans.chart_id = ? " .
       "AND acc_trans.source NOT LIKE 'Ins%') AS ptpayments " .
-      "FROM ar WHERE ar.invnumber LIKE '$pid.%' AND " .
+      "FROM ar WHERE ar.invnumber LIKE ? AND " .
       "ar.amount != ar.paid " .
       "ORDER BY ar.invnumber";
-    $ires = SLQuery($query);
+    $ires = SLQuery($query, array($chart_id_cash,$pid."%") );
     if ($sl_err) die($sl_err);
     $num_invoices = SLRowCount($ires);
 
@@ -1656,7 +1651,7 @@ function display_details(index,order)
       // Get encounter ID and date of service.
       list($patient_id, $enc) = explode(".", $irow['invnumber']);
       $tmp = sqlQuery("SELECT LEFT(date, 10) AS encdate FROM form_encounter " .
-        "WHERE encounter = '$enc'");
+        "WHERE encounter = ?", array($enc) );
       $svcdate = $tmp['encdate'];
 
       // Compute $duncount as in sl_eob_search.php to determine if
@@ -1707,9 +1702,9 @@ function display_details(index,order)
 
 <p>
 <input type='submit' name='form_save' value='<?php echo htmlspecialchars( xl('Generate Invoice'), ENT_QUOTES);?>' /> &nbsp;
-<input type='button' value='<?php xl('Cancel','e'); ?>' onclick='window.close()' />
+<input type='button' value='<?php echo xla('Cancel'); ?>' onclick='window.close()' />
 
-<input type="hidden" name="hidden_patient_code" id="hidden_patient_code" value="<?php echo $pid;?>"/>
+<input type="hidden" name="hidden_patient_code" id="hidden_patient_code" value="<?php echo attr($pid);?>"/>
 <input type='hidden' name='ajax_mode' id='ajax_mode' value='' />
 <input type='hidden' name='mode' id='mode' value='' />
 </form>

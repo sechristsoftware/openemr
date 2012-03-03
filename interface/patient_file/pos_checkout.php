@@ -785,7 +785,7 @@ if ($_POST['form_save']) {
       // Maybe this should even be done for the SL case.
       if (!empty($form_source)) $paydesc .= " $form_source";
       # jason forced auth line to 1 here
-      addBilling($form_encounter, 'COPAY', $amount, $paydesc, $form_pid,
+      addBilling($form_encounter, 'COPAY', $amount, strip_escape_custom($paydesc), $form_pid,
         1, 0, '', '', 0 - $amount, '', '', 1);
     }
     else {
