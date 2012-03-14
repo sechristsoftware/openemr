@@ -264,7 +264,10 @@ $(document).ready(function(){
                 $("#ccr_form").submit();
                 ccr_form.setAttribute("target", "");
         });
-
+        $(".generateDoc_download").click(
+        function() {
+                $("#doc_form").submit();
+        });
 });
 
 </script>
@@ -375,6 +378,28 @@ $(document).ready(function(){
         </td>
        </tr>
 <?php } // end CCR/CCD reporting options ?>
+
+<?php echo "<tr><td width='650px'>";
+$widgetTitle = xl('Documents');
+$widgetLabel = "documents";
+$widgetButtonLabel = htmlspecialchars( xl('Download'), ENT_QUOTES);
+$widgetButtonClass = "hidden";
+$linkMethod = "html";
+$bodyClass = "notab";
+$widgetAuth = false;
+$fixedWidth = true;
+expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
+  $widgetButtonLink, $widgetButtonClass, $linkMethod, $bodyClass,
+ $widgetAuth, $fixedWidth);
+?>
+<span class="text"><?php echo htmlspecialchars( xl('Download all patient documents'), ENT_NOQUOTES);?></span>
+<br /><br />
+<form name='doc_form' id='doc_form' action='get_patient_documents.php' method='post'>
+	<input type="button" class="generateDoc_download" value="<?php echo htmlspecialchars( xl('Download'), ENT_QUOTES); ?>" />
+</form>
+</div>
+</td>
+</tr>
 
 <?php echo "<tr><td width='650px'>";
 // Lab tests results expand collapse widget
