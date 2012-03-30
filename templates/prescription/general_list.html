@@ -100,7 +100,11 @@ function Checking(chk) {
 <body class="body_top">
 
 {if $prescriptions}
-<span class="title"><b>{xl t='List'}</b></span>
+<span class="title"><b>{xl t='List'}</b></span><br>
+
+<span class="title"><b>{xl t='Name:'}</b></span><br>
+
+<span class="title"><b>{xl t='Patient ID:'}</b></span>
 
 <div id="prescription_list">
 
@@ -120,6 +124,9 @@ function Checking(chk) {
                         </td>
                         <td style="border-style:none;">
                             <a id="multiprintToFax" href="{$CONTROLLER}prescription&multiprintfax&id={$printm}" onclick="top.restoreSession()" class="css_button"><span>{xl t='Print'} ({xl t='Fax'})</span></a>
+                        </td>
+                        <td style="border-style:none;">
+                           <a id="multiprintToFax"  href="#" onclick="window.print()" class="css_button"><span>{xl t='Print'} ({xl t='Printer'})</span></a>
                         </td>
                         {if $CAMOS_FORM == true}
                         <td>
@@ -164,10 +171,7 @@ function Checking(chk) {
     <td class="editscript"  id="{$prescription->id}">
         <a class='editscript css_button_small' id='{$prescription->id}' href="controller.php?prescription&edit&id={$prescription->id}" style="margin-top:-2px"><span>{xl t='Edit'}</span></a>
         {if $prescription->active > 0}<b>{/if}{$prescription->drug}{if $prescription->active > 0}</b>{/if}&nbsp;
-    </td>
-	<td class="editscript"  id="{$prescription->id}">
-	{if $prescription->active > 0}<b>{/if}{$prescription->drug}{if $prescription->active > 0}</b>{/if}&nbsp;
-    </td>
+    </td>	
 	{else}
     <td id="{$prescription->id}">
 	{if $prescription->active > 0}<b>{/if}{$prescription->drug}{if $prescription->active > 0}</b>{/if}&nbsp;
