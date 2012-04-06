@@ -18,6 +18,11 @@
 // rel  - 1 if other billing codes may be "related" to this code type
 // nofs - 1 if this code type should NOT appear in the Fee Sheet
 // diag - 1 if this code type is for diagnosis
+// active - 1 if this code type is activated
+// label - label used for code type
+// external - 0 for storing codes in the code table
+//            1 for storing codes in external ICD10 tables
+//            2 for storing codes in external SNOMED (RF1) tables
 //
 /*********************************************************************
 if ($GLOBALS['ippf_specific']) {
@@ -56,7 +61,7 @@ else {
 //
 $code_types = array();
 $default_search_type = '';
-$ctres = sqlStatement("SELECT * FROM code_types ORDER BY ct_seq, ct_key");
+$ctres = sqlStatement("SELECT * FROM code_types WHERE ct_active=1 ORDER BY ct_seq, ct_key");
 while ($ctrow = sqlFetchArray($ctres)) {
   $code_types[$ctrow['ct_key']] = array(
     'id'   => $ctrow['ct_id'  ],
@@ -67,6 +72,8 @@ while ($ctrow = sqlFetchArray($ctres)) {
     'nofs' => $ctrow['ct_nofs'],
     'diag' => $ctrow['ct_diag'],
     'mask' => $ctrow['ct_mask'],
+    'label'=> ( (empty($ctrow['ct_label'])) ? $ctrow['ct_key'] : $ctrow['ct_label'] ),
+    'external'=> $ctrow['ct_external']
   );
   if ($default_search_type === '') $default_search_type = $ctrow['ct_key'];
 }
