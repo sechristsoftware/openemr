@@ -18,6 +18,12 @@
 // rel  - 1 if other billing codes may be "related" to this code type
 // nofs - 1 if this code type should NOT appear in the Fee Sheet
 // diag - 1 if this code type is for diagnosis
+// active - 1 if this code type is activated
+// label - label used for code type
+// external - 0 for storing codes in the code table
+//            1 for storing codes in external ICD10 tables
+//            2 for storing codes in external SNOMED (RF1) tables
+//            3 for storing codes in external SNOMED (RF2) tables
 //
 /*********************************************************************
 if ($GLOBALS['ippf_specific']) {
@@ -56,7 +62,7 @@ else {
 //
 $code_types = array();
 $default_search_type = '';
-$ctres = sqlStatement("SELECT * FROM code_types ORDER BY ct_seq, ct_key");
+$ctres = sqlStatement("SELECT * FROM code_types WHERE ct_active=1 ORDER BY ct_seq, ct_key");
 while ($ctrow = sqlFetchArray($ctres)) {
   $code_types[$ctrow['ct_key']] = array(
     'id'   => $ctrow['ct_id'  ],
@@ -67,6 +73,8 @@ while ($ctrow = sqlFetchArray($ctres)) {
     'nofs' => $ctrow['ct_nofs'],
     'diag' => $ctrow['ct_diag'],
     'mask' => $ctrow['ct_mask'],
+    'label'=> ( (empty($ctrow['ct_label'])) ? $ctrow['ct_key'] : $ctrow['ct_label'] ),
+    'external'=> $ctrow['ct_external']
   );
   if ($default_search_type === '') $default_search_type = $ctrow['ct_key'];
 }
@@ -94,6 +102,47 @@ function related_codes_are_used() {
  return false;
 }
 
+function code_set_search($form_code_type,$search_term) {
+ global $code_types;
+  if ($form_code_type == 'PROD') { // Search for products/drugs
+   $query = "SELECT dt.drug_id, dt.selector, d.name " .
+            "FROM drug_templates AS dt, drugs AS d WHERE " .
+            "( d.name LIKE ? OR " .
+            "dt.selector LIKE ? ) " .
+            "AND d.drug_id = dt.drug_id " .
+            "ORDER BY d.name, dt.selector, dt.drug_id";
+   return sqlStatement($query, array("%".$search_term."%", "%".$search_term."%") );
+  }
+  else if ( !($code_types[$form_code_type]['external']) ) { // Search from default codes table
+   $query = "SELECT code_type, code, modifier, code_text FROM codes " .
+            "WHERE (code_text LIKE ? OR " .
+            "code LIKE ?) " .
+            "AND code_type = ? AND active = 1 " .
+            "ORDER BY code";
+   return sqlStatement($query, array("%".$search_term."%", "%".$search_term."%", $code_types[$form_code_type]['id']) );
+  }
+  else if ($code_types[$form_code_type]['external'] == 1 ) { // Search from ICD10 codeset tables
+   //placeholder
+  }
+  else if ($code_types[$form_code_type]['external'] == 2 ) { // Search from SNOMED (RF1) codeset tables
+   // Ensure the sct_concepts sql table exists
+   $check_table = sqlQuery("SHOW TABLES LIKE 'sct_concepts'");
+   if ( !(empty($check_table)) ) {
+    $query = "SELECT `ConceptId` as code, `FullySpecifiedName` as code_text FROM `sct_concepts` " .
+             "WHERE (`FullySpecifiedName` LIKE ? OR `ConceptId` LIKE ?) " .
+             "AND `ConceptStatus` = 0 " .
+             "ORDER BY `ConceptId`";
+    return sqlStatement($query, array( "%".$search_term."%"."(disorder)", "%".$search_term."%") );
+   }
+  }
+  else if ($code_types[$form_code_type]['external'] == 3 ) { // Search from SNOMED (RF2) codeset tables
+   //placeholder
+  }
+  else {
+   //using an external code that is not yet supported, so skip.
+  }
+}
+
 // Look up descriptions for one or more billing codes.  Input is of the
 // form "type:code;type:code; etc.".
 //
@@ -105,21 +154,47 @@ function lookup_code_descriptions($codes) {
     foreach ($relcodes as $codestring) {
       if ($codestring === '') continue;
       list($codetype, $code) = explode(':', $codestring);
-      $wheretype = "";
-      $sqlArray = array();
-      if (empty($code)) {
-        $code = $codetype;
-      } else {
-        $wheretype = "code_type = ? AND ";
-        array_push($sqlArray,$code_types[$codetype]['id']);
+      if ( !($code_types[$codetype]['external']) ) { // Collect from default codes table
+        $wheretype = "";
+        $sqlArray = array();
+        if (empty($code)) {
+          $code = $codetype;
+        } else {
+          $wheretype = "code_type = ? AND ";
+          array_push($sqlArray,$code_types[$codetype]['id']);
+        }
+        $sql = "SELECT code_text FROM codes WHERE " .
+          "$wheretype code = ? ORDER BY id LIMIT 1";
+        array_push($sqlArray,$code);
+        $crow = sqlQuery($sql,$sqlArray);
+        if (!empty($crow['code_text'])) {
+          if ($code_text) $code_text .= '; ';
+          $code_text .= $crow['code_text'];
+        }
       }
-      $sql = "SELECT code_text FROM codes WHERE " .
-        "$wheretype code = ? ORDER BY id LIMIT 1";
-      array_push($sqlArray,$code);
-      $crow = sqlQuery($sql,$sqlArray);
-      if (!empty($crow['code_text'])) {
-        if ($code_text) $code_text .= '; ';
-        $code_text .= $crow['code_text'];
+      else if ($code_types[$codetype]['external'] == 1) { // Collect from ICD10 codeset tables
+        //placeholder
+      }
+      else if ($code_types[$codetype]['external'] == 2) { // Collect from SNOMED (RF1) codeset tables
+        // Ensure the sct_concepts sql table exists
+        $check_table = sqlQuery("SHOW TABLES LIKE 'sct_concepts'");
+        if ( !(empty($check_table)) ) {
+          if ( !(empty($code)) ) {
+            $sql = "SELECT `FullySpecifiedName` FROM `sct_concepts` " .
+                   "WHERE `ConceptId` = ? AND `ConceptStatus` = 0 LIMIT 1";
+            $crow = sqlQuery($sql, array($code) );
+            if (!empty($crow['FullySpecifiedName'])) {
+              if ($code_text) $code_text .= '; ';
+              $code_text .= $crow['FullySpecifiedName'];
+            }
+          }
+        }
+      }
+      else if ($code_types[$codetype]['external'] == 3) { // Collect from SNOMED (RF2) codeset tables
+        //placeholder
+      }
+      else {
+        //using an external code that is not yet supported, so skip. 
       }
     }
   }
