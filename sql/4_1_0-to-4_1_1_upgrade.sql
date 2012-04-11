@@ -250,3 +250,14 @@ INSERT INTO code_types (ct_key, ct_id, ct_seq, ct_mod, ct_just, ct_fee, ct_rel, 
 DROP TABLE `temp_table_one`;
 #EndIf
 
+#IfNotTable mc_provider_numbers
+CREATE TABLE  `mc_provider_numbers` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `pid` bigint(20) DEFAULT NULL,
+  `facility` varchar(255) DEFAULT NULL,
+  `facility_id` bigint(20) DEFAULT NULL,
+  `provider_number` varchar(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  AUTO_INCREMENT=1 ;
+#EndIf
+

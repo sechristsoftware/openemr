@@ -3349,6 +3349,22 @@ CREATE TABLE `log` (
 -- --------------------------------------------------------
 
 -- 
+-- Table structure for table `mc_prescriber_number`
+-- 
+
+DROP TABLE IF EXISTS `mc_provider_numbers`;
+CREATE TABLE  `mc_provider_numbers` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `pid` bigint(20) DEFAULT NULL,
+  `facility` varchar(255) DEFAULT NULL,
+  `facility_id` bigint(20) DEFAULT NULL,
+  `provider_number` varchar(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+-- 
 -- Table structure for table `notes`
 -- 
 
