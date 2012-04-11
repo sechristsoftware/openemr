@@ -972,6 +972,22 @@ CREATE TABLE `facility` (
 
 INSERT INTO `facility` VALUES (3, 'Your Clinic Name Here', '000-000-0000', '000-000-0000', '', '', '', '', '', '', NULL, NULL, 1, 1, 0, NULL, '', '', '', '', '','#99FFFF','0');
 
+
+-- --------------------------------------------------------
+
+-- 
+-- Table structure for table `facility_user_ids`
+-- 
+
+DROP TABLE IF EXISTS `facility_user_ids`;
+CREATE TABLE  `facility_user_ids` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `pid` bigint(20) DEFAULT NULL,
+  `facility_id` bigint(20) DEFAULT NULL,
+  `user_id` varchar(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  AUTO_INCREMENT=1 ;
+
 -- --------------------------------------------------------
 
 -- 
@@ -3345,6 +3361,7 @@ CREATE TABLE `log` (
   `crt_user` varchar(255) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;
+
 
 -- --------------------------------------------------------
 
