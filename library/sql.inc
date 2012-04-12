@@ -101,6 +101,32 @@ function sqlStatement($statement, $binds=NULL )
   }
 }
 
+// Function that is the equivalent of the above
+//   sqlStatement() function, EXCEPT it skips the
+//   audit engine. This function should only be used
+//   in very special situations.
+function sqlStatementNoLog($statement, $binds=NULL )
+{
+  if (is_array($binds)) {
+    // Use adodb Execute with binding and return a recordset.
+    //   Note that the auditSQLEvent function is embedded
+    //    in the adodb Execute command.
+    $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
+    if ($recordset === FALSE) {
+      HelpfulDie("query failed: $statement", $GLOBALS['adodb']['db']->ErrorMsg());
+    }
+    return $recordset;
+  }
+  else {
+    // Use mysql_query and return a resource.
+    $resource = mysql_query($statement, $GLOBALS['dbh']);
+    if ($resource === FALSE) {
+      HelpfulDie("query failed: $statement", mysql_error($GLOBALS['dbh']));
+    }
+    return $resource;
+  }
+}
+
 // Function that will allow use of the adodb binding
 //   feature to prevent sql-injection.
 // It will act upon the object returned from the 
