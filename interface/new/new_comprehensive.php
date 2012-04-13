@@ -47,6 +47,8 @@ function getSearchClass($data_type) {
     case 13: // squads
     case 14: // address book list
     case 26: // single-selection list with add
+    case 35: // facilities without All list
+    case 36: // facilities with All list
       return 2;
     case  2: // text field
     case  3: // textarea

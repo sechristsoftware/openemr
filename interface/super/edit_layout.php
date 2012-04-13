@@ -53,6 +53,8 @@ $datatypes = array(
   "32" => xl("Smoking Status"),
   "33" => xl("Race and Ethnicity"),
   "34" => xl("NationNotes"),
+  "35" => xl("Facilities without All"),
+  "36" => xl("Facilities with All"),
 );
 
 function nextGroupOrder($order) {

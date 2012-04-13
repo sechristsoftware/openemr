@@ -758,7 +758,22 @@ function generate_form_field($frow, $currvalue) {
     echo "<div style='display:none'><textarea name='form_{$field_id}' id='form_{$field_id}' stye='display:none'>".$currvalue."</textarea></div>";
     echo "</a>";
   }
-  
+
+  //facilities drop-down list without "All Facilities" option
+  else if ($data_type == 35) {   
+    if (empty($currvalue)){
+   	  $currvalue = 0;
+    }
+    dropdown_facility($selected = $currvalue, $name = "form_$field_id_esc", $allow_unspecified = true, $allow_allfacilities = false);
+  }
+
+  //facilities drop-down list with "All Facilities" option
+  else if ($data_type == 36) {   
+    if (empty($currvalue)){
+   	  $currvalue = 0;
+    }
+    dropdown_facility($selected = $currvalue, $name = "form_$field_id_esc", $allow_unspecified = true, $allow_allfacilities = true);
+  }  
 }
 
 function generate_print_field($frow, $currvalue) {
@@ -1234,6 +1249,15 @@ function generate_print_field($frow, $currvalue) {
     echo "</a>";
   }
 
+  //facilities drop-down list without "All Facilities" option
+  else if ($data_type == 35) {
+    dropdown_facility($selected = $currvalue, $name = "form_$field_id_esc", $allow_unspecified = true, $allow_allfacilities = false);
+  }
+
+  //facilities drop-down list with "All Facilities" option
+  else if ($data_type == 36) {
+    dropdown_facility($selected = $currvalue, $name = "form_$field_id_esc", $allow_unspecified = true, $allow_allfacilities = true);
+  }
 }
 
 function generate_display_field($frow, $currvalue) {
@@ -1502,6 +1526,13 @@ function generate_display_field($frow, $currvalue) {
     for($i=0;$i<sizeof($arr);$i++){
       $s.=$arr[$i];
     }
+  }
+
+  // facility
+  else if ($data_type == 35) {
+    $urow = sqlQuery("SELECT id, name FROM facility ".
+      "WHERE id = ?", array($currvalue) );
+    $s = htmlspecialchars($urow['name'],ENT_NOQUOTES);
   }
 
   return $s;
@@ -2042,23 +2073,34 @@ function generate_layout_validation($form_id) {
  *
  * Note: This should become a data-type at some point, according to Brady
  */
-function dropdown_facility($selected = '', $name = 'form_facility', $allow_unspecified = true) {
+function dropdown_facility($selected = '', $name = 'form_facility', $allow_unspecified = true, $allow_allfacilities = true) {
   $have_selected = false;
   $query = "SELECT id, name FROM facility ORDER BY name";
   $fres = sqlStatement($query);
 
   $name = htmlspecialchars($name, ENT_QUOTES);
-  echo "   <select name=\"$name\">\n";
+  echo "   <select name=\"$name\" id=\"$name\">\n";
 
-  $option_value = '';
-  $option_selected_attr = '';
-  if ($selected == '') {
-    $option_selected_attr = ' selected="selected"';
-    $have_selected = true;
-  }
-  $option_content = htmlspecialchars('-- ' . xl('All Facilities') . ' --', ENT_NOQUOTES);
-  echo "    <option value=\"$option_value\" $option_selected_attr>$option_content</option>\n";
-
+  if ($allow_allfacilities) {
+    $option_value = '';
+    $option_selected_attr = '';	
+    if ($selected == '') {
+      $option_selected_attr = ' selected="selected"';
+      $have_selected = true;
+    }
+    $option_content = htmlspecialchars('-- ' . xl('All Facilities') . ' --', ENT_NOQUOTES);
+    echo "    <option value=\"$option_value\" $option_selected_attr>$option_content</option>\n";
+  } elseif ($allow_unspecified) {
+  	$option_value = '0';
+    $option_selected_attr = '';
+    if ( $selected == '0' ) {
+      $option_selected_attr = ' selected="selected"';
+      $have_selected = true;
+    }
+    $option_content = htmlspecialchars('-- ' . xl('Unspecified') . ' --', ENT_NOQUOTES);
+    echo "    <option value=\"$option_value\" $option_selected_attr>$option_content</option>\n";
+    }
+  
   while ($frow = sqlFetchArray($fres)) {
     $facility_id = $frow['id'];
     $option_value = htmlspecialchars($facility_id, ENT_QUOTES);
@@ -2071,7 +2113,7 @@ function dropdown_facility($selected = '', $name = 'form_facility', $allow_unspe
     echo "    <option value=\"$option_value\" $option_selected_attr>$option_content</option>\n";
   }
 
-  if ($allow_unspecified) {
+  if ($allow_unspecified&&$allow_allfacilities) {
     $option_value = '0';
     $option_selected_attr = '';
     if ( $selected == '0' ) {
