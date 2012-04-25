@@ -250,3 +250,22 @@ INSERT INTO code_types (ct_key, ct_id, ct_seq, ct_mod, ct_just, ct_fee, ct_rel, 
 DROP TABLE `temp_table_one`;
 #EndIf
 
+#IfMissingColumn patient_data facilityID
+ALTER TABLE `patient_data` ADD COLUMN `facilityID` varchar(20) default '0' COMMENT 'store the Facility ID';
+#EndIf
+
+#IfNotRow2D layout_options form_id DEM field_id facilityID
+update `layout_options` SET `seq`= 13 where field_id='allow_patient_portal' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 12 where field_id='allow_health_info_ex' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 11 where field_id='allow_imm_info_share' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 10 where field_id='allow_imm_reg_use' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 9 where field_id='hipaa_allowemail' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 8 where field_id='hipaa_allowsms' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 7 where field_id='hipaa_mail' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 6 where field_id='hipaa_message' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 5 where field_id='hipaa_voice' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 4 where field_id='hipaa_notice' and form_id='DEM' and group_name = '3Choices';
+update `layout_options` SET `seq`= 3 where field_id='pharmacy_id' and form_id='DEM' and group_name = '3Choices';
+INSERT INTO `layout_options` (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('DEM', 'facilityID', '3Choices', 'Facility', 2, 35, 1, 0, 0, '', 1, 3, '0', '', 'Default Facility');
+#EndIf
+
