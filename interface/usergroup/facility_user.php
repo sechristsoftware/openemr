@@ -42,22 +42,13 @@ $alertmsg = '';
 if (isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id" && $_POST["newmode"] != "admin_facility_user") {
 	
 	$insert_id=sqlInsert("INSERT INTO facility_provider_ids SET pid = ?, facility_id = ?, user_id=?", array(trim($_POST['pid']), trim($_POST['facility_id']), trim($_POST['user_id'])) );
-/* 	$insert_id=sqlInsert("INSERT INTO facility_user_ids SET " .
-        "pid = '"         			. trim(formData('pid'        )) . "', " .
-		"facility_id = '"   		. trim(formData('facility_id'  		 )) . "', " .
-		"user_id = '"   		. trim(formData('user_id'  )) . "'"); */
 		}
 
 /*	Editing existing facility user id  */
 if ($_POST["mode"] == "facility_user_id" && $_POST["newmode"] == "admin_facility_user")
 {
 	sqlStatement("UPDATE facility_user_ids SET pid = ?, facility_id = ?, user_id=? WHERE id=?", array(trim($_POST['pid']), trim($_POST['facility_id']), trim($_POST['user_id']), trim($_POST['mid'])) );
-	/* sqlStatement("UPDATE facility_user_ids set 
-		pid='"         				. trim(formData('pid'  		 )) . "' ,
-		facility_id='"   			. trim(formData('facility_id'  		 )) . "' ,
-		user_id='"   			. trim(formData('user_id'  )) . "'
-		where id='" 				. trim(formData('mid')) . "'" ); */
-			}
+		}
 
 ?>
 <html>
