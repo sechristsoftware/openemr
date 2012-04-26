@@ -23,29 +23,40 @@
 // Author:   Scott Wakefield <scott@npclinics.com.au>
 //
 // +------------------------------------------------------------------------------+
+
+//SANITIZE ALL ESCAPES
+$sanitize_all_escapes=true;
+
+
+//STOP FAKE REGISTER GLOBALS
+$fake_register_globals=false;
+
+
 require_once("../globals.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formdata.inc.php");
 
 $alertmsg = '';
 
-/*	Inserting new facility provider id	*/
-if (isset($_POST["mode"]) && $_POST["mode"] == "facility_provider_id" && $_POST["newmode"] != "admin_facility_provider") {
+/*	Inserting new facility user id	*/
+if (isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id" && $_POST["newmode"] != "admin_facility_user") {
 	
-	$insert_id=sqlInsert("INSERT INTO facility_provider_ids SET " .
+	$insert_id=sqlInsert("INSERT INTO facility_provider_ids SET pid = ?, facility_id = ?, user_id=?", array(trim($_POST['pid']), trim($_POST['facility_id']), trim($_POST['user_id'])) );
+/* 	$insert_id=sqlInsert("INSERT INTO facility_user_ids SET " .
         "pid = '"         			. trim(formData('pid'        )) . "', " .
 		"facility_id = '"   		. trim(formData('facility_id'  		 )) . "', " .
-		"provider_id = '"   		. trim(formData('provider_id'  )) . "'");
+		"user_id = '"   		. trim(formData('user_id'  )) . "'"); */
 		}
 
-/*	Editing existing facility provider id  */
-if ($_POST["mode"] == "facility_provider_id" && $_POST["newmode"] == "admin_facility_provider")
+/*	Editing existing facility user id  */
+if ($_POST["mode"] == "facility_user_id" && $_POST["newmode"] == "admin_facility_user")
 {
-	sqlStatement("UPDATE facility_provider_ids set 
+	sqlStatement("UPDATE facility_user_ids SET pid = ?, facility_id = ?, user_id=? WHERE id=?", array(trim($_POST['pid']), trim($_POST['facility_id']), trim($_POST['user_id']), trim($_POST['mid'])) );
+	/* sqlStatement("UPDATE facility_user_ids set 
 		pid='"         				. trim(formData('pid'  		 )) . "' ,
 		facility_id='"   			. trim(formData('facility_id'  		 )) . "' ,
-		provider_id='"   			. trim(formData('provider_id'  )) . "'
-		where id='" 				. trim(formData('mid')) . "'" );
+		user_id='"   			. trim(formData('user_id'  )) . "'
+		where id='" 				. trim(formData('mid')) . "'" ); */
 			}
 
 ?>
@@ -88,10 +99,10 @@ $(document).ready(function(){
     <div>
        <table>
 	  <tr >
-		<td><b><?php xl('Facility Provider IDs','e'); ?></b></td>
-		<td><a href="facility_provider_add.php" class="iframe_small css_button"><span><?php xl('Add New Facility Provider ID','e'); ?></span></a>
+		<td><b><?php echo xlt('Facility User IDs'); ?></b></td>
+		<td><a href="facility_user_add.php" class="iframe_small css_button" onclick="top.restoreSession()"><span><?php echo xlt('Add New Facility User ID'); ?></span></a>
 		</td>
-		<td><a href="usergroup_admin.php" class="css_button"><span><?php xl('Back to Users','e'); ?></span></a>
+		<td><a href="usergroup_admin.php" class="css_button" onclick="top.restoreSession()"><span><?php echo xlt('Back to Users'); ?></span></a>
 		</td>
 	 </tr>
 	</table>
@@ -102,14 +113,14 @@ $(document).ready(function(){
 
 			<table cellpadding="1" cellspacing="0" class="showborder">
 				<tbody><tr height="22" class="showborder_head">
-					<th width="180px"><b><?php xl('Username','e'); ?></b></th>
-					<th width="270px"><b><?php xl('Full Name','e'); ?></b></th>
-					<th width="190px"><b><span class="bold"><?php xl('Facility','e'); ?></span></b></th>
-					<th width="100px"><b><span class="bold"><?php xl('Provider ID','e'); ?></span></b></th>
+					<th width="180px"><b><?php echo xlt('Username'); ?></b></th>
+					<th width="270px"><b><?php echo xlt('Full Name'); ?></b></th>
+					<th width="190px"><b><span class="bold"><?php echo xlt('Facility'); ?></span></b></th>
+					<th width="100px"><b><span class="bold"><?php echo xlt('User ID'); ?></span></b></th>
 				</tr>
 					<?php
 						$query = "SELECT *, u.id as uid, fp.id as fpid, f.id as fid FROM users as u ";
-						$query .= "INNER JOIN facility_provider_ids as fp ON u.id = fp.pid ";
+						$query .= "INNER JOIN facility_user_ids as fp ON u.id = fp.pid ";
 						$query .= "INNER JOIN facility as f ON fp.facility_id = f.id ";
 						$query .= "WHERE username != '' ";
 						$query .= "ORDER BY username";
@@ -119,10 +130,10 @@ $(document).ready(function(){
 							foreach ($result4 as $iter) {
 					?>
 				<tr height="20"  class="text" style="border-bottom: 1px dashed;">
-				   <td class="text"><b><a href="facility_provider_admin.php?id=<?php echo $iter{fpid};?>" class="iframe_small" onclick="top.restoreSession()"><span><?php echo htmlspecialchars($iter{username});?></span></a></b>&nbsp;</td>
-				   <td><span class="text"><?php echo htmlspecialchars($iter{fname}. " " .$iter{lname});?></span>&nbsp;</td>
-				   <td><span class="text"><?php echo htmlspecialchars($iter{name});?>&nbsp;</td>
-				   <td><span class="text"><?php echo htmlspecialchars($iter{provider_id});?>&nbsp;</td>
+				   <td class="text"><b><a href="facility_user_admin.php?id=<?php echo $iter{fpid};?>" class="iframe_small" onclick="top.restoreSession()"><span><?php echo text($iter{username});?></span></a></b>&nbsp;</td>
+				   <td><span class="text"><?php echo text($iter{fname}. " " .$iter{lname});?></span>&nbsp;</td>
+				   <td><span class="text"><?php echo text($iter{name});?>&nbsp;</td>
+				   <td><span class="text"><?php echo text($iter{user_id});?>&nbsp;</td>
 				</tr>
 				<?php
 				}

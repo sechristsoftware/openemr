@@ -23,6 +23,15 @@
 // Author:   Scott Wakefield <scott@npclinics.com.au>
 //
 // +------------------------------------------------------------------------------+
+
+//SANITIZE ALL ESCAPES
+$sanitize_all_escapes=true;
+
+
+//STOP FAKE REGISTER GLOBALS
+$fake_register_globals=false;
+
+
 require_once("../globals.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formdata.inc.php");
@@ -43,7 +52,7 @@ $alertmsg = '';
 <?php
 // Old Browser comp trigger on js
 
-if (isset($_POST["mode"]) && $_POST["mode"] == "facility_provider_id") {
+if (isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id") {
   	echo '
 <script type="text/javascript">
 <!--
@@ -75,25 +84,25 @@ $(document).ready(function(){
 <table>
 	<tr>
 		<td>
-			<span class="title"><?php xl('Add Facility Provider ID','e'); ?></span>&nbsp;&nbsp;&nbsp;</td>
+			<span class="title"><?php echo xlt('Add Facility User ID'); ?></span>&nbsp;&nbsp;&nbsp;</td>
 			<td colspan=5 align=center style="padding-left:2px;">
 				<a onclick="submitform();" class="css_button large_button" name='form_save' id='form_save' href='#'>
-					<span class='css_button_span large_button_span'><?php xl('Save','e');?></span>
+					<span class='css_button_span large_button_span'><?php echo xlt('Save');?></span>
 				</a>
 				<a class="css_button large_button" id='cancel' href='#' >
-					<span class='css_button_span large_button_span'><?php xl('Cancel','e');?></span>
+					<span class='css_button_span large_button_span'><?php echo xlt('Cancel');?></span>
 				</a>
 		</td>
 	</tr>
 </table>
 <br>
 
-<form name='medicare' method='post' action="facility_provider.php" target='_parent'>
-<input type=hidden name=mode value="facility_provider_id">
+<form name='medicare' method='post' action="facility_user.php" target='_parent'>
+<input type=hidden name=mode value="facility_user_id">
 <table border=0 cellpadding=0 cellspacing=0 style="width:450px;">
 	<tr>
 		<td>
-			<span class="text"><?php xl('User','e'); ?>: </span>
+			<span class="text"><?php echo xlt('User'); ?>: </span>
 		</td>
 		<td>
 			<select style="width:150px;" name=pid>
@@ -104,7 +113,7 @@ $(document).ready(function(){
 					$result[$iter] = $frow;
 				  foreach($result as $iter) {
 				?>
-				<option value="<?php echo $iter{id};?>"><?php echo $iter{username};?></option>
+				<option value="<?php echo attr($iter{id});?>"><?php echo text($iter{username});?></option>
 				<?php
 				}
 				}
@@ -115,7 +124,7 @@ $(document).ready(function(){
 	
 	<tr>
 		<td>
-			<span class="text"><?php xl('Facility','e'); ?>: </span>
+			<span class="text"><?php echo xlt('Facility'); ?>: </span>
 		</td>
 		<td>
 			<select style="width:150px;" name=facility_id>
@@ -126,7 +135,7 @@ $(document).ready(function(){
 					$result[$iter1] = $frow;
 				  foreach($result as $iter1) {
 				?>
-				<option value="<?php echo $iter1{id};?>"><?php echo $iter1{name};?></option>
+				<option value="<?php echo attr($iter1{id});?>"><?php echo text($iter1{name});?></option>
 				<?php
 				}
 				}
@@ -137,10 +146,10 @@ $(document).ready(function(){
 	
 	<tr>
 		<td style="width:150px;">
-			<span class="text"><?php xl('Provider ID','e'); ?>: </span>
+			<span class="text"><?php echo xlt('User ID'); ?>: </span>
 		</td>
 		<td  style="width:150px;">
-			<input type=entry name=provider_id style="width:150px;">
+			<input type=entry name=user_id style="width:150px;">
 		</td>
 	</tr>
 
@@ -151,7 +160,7 @@ $(document).ready(function(){
 <script language="JavaScript">
 <?php
   if ($alertmsg = trim($alertmsg)) {
-    echo "alert('$alertmsg');\n";
+    echo "alert(" . addslashes('$alertmsg') . ");\n";
   }
 ?>
 </script>

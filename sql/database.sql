@@ -976,15 +976,15 @@ INSERT INTO `facility` VALUES (3, 'Your Clinic Name Here', '000-000-0000', '000-
 -- --------------------------------------------------------
 
 -- 
--- Table structure for table `facility_provider_ids`
+-- Table structure for table `facility_user_ids`
 -- 
 
-DROP TABLE IF EXISTS `facility_provider_ids`;
-CREATE TABLE  `facility_provider_ids` (
+DROP TABLE IF EXISTS `facility_user_ids`;
+CREATE TABLE  `facility_user_ids` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `pid` bigint(20) DEFAULT NULL,
   `facility_id` bigint(20) DEFAULT NULL,
-  `provider_id` varchar(11) DEFAULT NULL,
+  `user_id` varchar(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  AUTO_INCREMENT=1 ;
 

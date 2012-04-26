@@ -23,6 +23,15 @@
 // Author:   Scott Wakefield <scott@npclinics.com.au>
 //
 // +------------------------------------------------------------------------------+
+
+//SANITIZE ALL ESCAPES
+$sanitize_all_escapes=true;
+
+
+//STOP FAKE REGISTER GLOBALS
+$fake_register_globals=false;
+
+
 require_once("../globals.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formdata.inc.php");
@@ -36,7 +45,7 @@ if (isset($_GET["id"])) {
 if (isset($_POST["id"])) {
 	$my_id = $_POST["id"];
 }
-if ($_POST["mode"] == "facility_provider_id")
+if ($_POST["mode"] == "facility_user_id")
 {
   
   echo '
@@ -101,27 +110,27 @@ $(document).ready(function(){
 <table>
     <tr>
         <td>
-        <span class="title"><?php xl('Edit Facility Provider ID','e'); ?></span>&nbsp;&nbsp;&nbsp;</td><td>
+        <span class="title"><?php echo xlt('Edit Facility User ID'); ?></span>&nbsp;&nbsp;&nbsp;</td><td>
         <a class="css_button large_button" name='form_save' id='form_save' onclick='submitform()' href='#' >
-            <span class='css_button_span large_button_span'><?php xl('Save','e');?></span>
+            <span class='css_button_span large_button_span'><?php echo xlt('Save');?></span>
         </a>
         <a class="css_button large_button" id='cancel' href='#'>
-            <span class='css_button_span large_button_span'><?php xl('Cancel','e');?></span>
+            <span class='css_button_span large_button_span'><?php echo xlt('Cancel');?></span>
         </a>
      </td>
   </tr>
 </table>
 
-<form name='medicare' method='post' action="facility_provider.php" target="_parent">
-    <input type=hidden name=mode value="facility_provider_id">
-    <input type=hidden name=newmode value="admin_facility_provider">	<!--	Diffrentiate Admin and add post backs -->
-    <input type=hidden name=mid value="<?php echo $my_id;?>">
-    <?php $iter = sqlQuery("select * from facility_provider_ids where id='$my_id'"); ?>
+<form name='medicare' method='post' action="facility_user.php" target="_parent">
+    <input type=hidden name=mode value="facility_user_id">
+    <input type=hidden name=newmode value="admin_facility_user">	<!--	Diffrentiate Admin and add post backs -->
+    <input type=hidden name=mid value="<?php echo attr($my_id);?>">
+    <?php $iter = sqlQuery("select * from facility_user_ids where id='$my_id'"); ?>
 
 <table border=0 cellpadding=0 cellspacing=0>
 <tr>
 	<td>
-		<span class=text><?php xl('User','e'); ?>: </span>
+		<span class=text><?php echo xlt('User'); ?>: </span>
 	</td>
 	<td>
 		<select name=pid style="width:150px;" >
@@ -129,10 +138,10 @@ $(document).ready(function(){
 			$fres = sqlStatement("select * from users WHERE authorized = 1 AND active = 1 order by username");
 			if ($fres) {
 			for ($iter3 = 0; $frow = sqlFetchArray($fres); $iter3++)
-							$result[$iter3] = $frow;
+				$result[$iter3] = $frow;
 			foreach($result as $iter3) {
 			?>
-			<option value="<?php echo $iter3['id']; ?>" <?php if ($iter['pid'] == $iter3['id']) echo "selected"; ?>><?php echo htmlspecialchars($iter3['username']); ?></option>
+			<option value="<?php echo attr($iter3{id}); ?>" <?php if ($iter{pid} == $iter3{id}) echo "selected"; ?>><?php echo text($iter3{username}); ?></option>
 			<?php
 			}
 			}
@@ -143,7 +152,7 @@ $(document).ready(function(){
 
 <tr>
 	<td>
-		<span class=text><?php xl('Facility','e'); ?>: </span>
+		<span class=text><?php echo xlt('Facility'); ?>: </span>
 	</td>
 	<td>
 		<select name=facility_id style="width:150px;" >
@@ -151,10 +160,10 @@ $(document).ready(function(){
 			$fres = sqlStatement("select * from facility where service_location != 0 order by name");
 			if ($fres) {
 			for ($iter2 = 0; $frow = sqlFetchArray($fres); $iter2++)
-            $result[$iter2] = $frow;
+				$result[$iter2] = $frow;
 			foreach($result as $iter2) {
 			?>
-			<option value="<?php echo $iter2['id']; ?>" <?php if ($iter['facility_id'] == $iter2['id']) echo "selected"; ?>><?php echo htmlspecialchars($iter2['name']); ?></option>
+			<option value="<?php echo attr($iter2{id}); ?>" <?php if ($iter{facility_id} == $iter2{id}) echo "selected"; ?>><?php echo text($iter2{name}); ?></option>
 			<?php
 			}
 			}
@@ -165,10 +174,10 @@ $(document).ready(function(){
 
 <tr>
 	<td style="width:180px;">
-		<span class=text><?php xl('Provider ID','e'); ?>: </span>
+		<span class=text><?php echo xlt('User ID'); ?>: </span>
 	</td>
 	<td style="width:270px;">
-		<input type=entry name=provider_id  style="width:150px;" value="<?php echo $iter["provider_id"]; ?>">
+		<input type=entry name=user_id  style="width:150px;" value="<?php echo text($iter{user_id}); ?>">
 	</td>
 </tr>
 
