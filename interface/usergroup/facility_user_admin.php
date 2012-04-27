@@ -36,29 +36,18 @@ require_once("../globals.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/options.inc.php");
+require_once("$srcdir/acl.inc");
 
-
-if (isset($_GET["id"])) {
-	$my_id = $_GET["id"];
+// Ensure authorized
+if (!acl_check('admin', 'users')) {
+  die(xlt("Unauthorized"));
 }
 
-if (isset($_POST["id"])) {
-	$my_id = $_POST["id"];
+// Ensure variables exist
+if (!isset($_GET["user_id"]) || !isset($_GET["fac_id"])) {
+  die(xlt("Error"));
 }
-if ($_POST["mode"] == "facility_user_id")
-{
-  
-  echo '
-<script type="text/javascript">
-<!--
-parent.$.fn.fancybox.close();
-//-->
-</script>
 
-	';
-  
-
-}
 ?>
 
 <html>
@@ -70,6 +59,12 @@ parent.$.fn.fancybox.close();
 <script type="text/javascript" src="../../library/js/jquery.1.3.2.js"></script>
 <script type="text/javascript" src="../../library/js/common.js"></script>
 <script type="text/javascript" src="../../library/js/fancybox/jquery.fancybox-1.2.6.js"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery-ui.js"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery.easydrag.handler.beta2.js"></script>
+<script type="text/javascript" src="../../library/textformat.js"></script>
+<script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
+<?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
+<script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 <script language="JavaScript">
 
 function submitform() {
@@ -102,15 +97,52 @@ $(document).ready(function(){
 	 });
 
 });
+
+// This is for callback by the find-code popup.
+// Appends to or erases the current list of related codes.
+function set_related(codetype, code, selector, codedesc) {
+ var frc = document.getElementById('form_related_code');
+ var s = frc.value;
+ if (code) {
+  if (s.length > 0) s += ';';
+  s += codetype + ':' + code;
+ } else {
+  s = '';
+ }
+ frc.value = s;
+}
+
+// This invokes the find-code popup.
+function sel_related() {
+ dlgopen('<?php echo $rootdir ?>/patient_file/encounter/find_code_popup.php', '_blank', 500, 400);
+}
+
 </script>
 
 </head>
 <body class="body_top" style="width:450px;height:200px !important;">
 
+<?php
+// Collect user information
+$user_info = sqlQuery("select * from `users` WHERE `id` = ?", array($_GET["user_id"]) );
+
+// Collect facility information
+$fac_info = sqlQuery("select * from `facility` where `id` = ?", array($_GET["fac_id"]) );
+
+// Collect layout information and store them in an array
+$l_res = sqlStatement("SELECT * FROM layout_options " .
+                      "WHERE form_id = 'FACUSR' AND uor > 0 AND field_id != '' " .
+                      "ORDER BY group_name, seq");
+$l_arr = array();
+for($i=0; $row=sqlFetchArray($l_res); $i++) {
+  $l_arr[$i]=$row;
+}
+?>
+
 <table>
     <tr>
         <td>
-        <span class="title"><?php echo xlt('Edit Facility User ID'); ?></span>&nbsp;&nbsp;&nbsp;</td><td>
+        <span class="title"><?php echo xlt('Edit Facility Specific User Information'); ?></span>&nbsp;&nbsp;&nbsp;</td><td>
         <a class="css_button large_button" name='form_save' id='form_save' onclick='submitform()' href='#' >
             <span class='css_button_span large_button_span'><?php echo xlt('Save');?></span>
         </a>
@@ -123,8 +155,8 @@ $(document).ready(function(){
 
 <form name='medicare' method='post' action="facility_user.php" target="_parent">
     <input type=hidden name=mode value="facility_user_id">
-    <input type=hidden name=newmode value="admin_facility_user">	<!--	Diffrentiate Admin and add post backs -->
-    <input type=hidden name=mid value="<?php echo attr($my_id);?>">
+    <input type=hidden name=user_id value="<?php echo attr($_GET["user_id"]);?>">
+    <input type=hidden name=fac_id value="<?php echo attr($_GET["fac_id"]);?>">
     <?php $iter = sqlQuery("select * from facility_user_ids where id=?", array($my_id)); ?>
 
 <table border=0 cellpadding=0 cellspacing=0>
@@ -133,20 +165,7 @@ $(document).ready(function(){
 		<span class=text><?php echo xlt('User'); ?>: </span>
 	</td>
 	<td>
-		<select name=uid style="width:150px;" >
-			<?php
-			$fres = sqlStatement("select * from users WHERE authorized = 1 AND active = 1 order by username");
-			if ($fres) {
-			for ($iter3 = 0; $frow = sqlFetchArray($fres); $iter3++)
-				$result[$iter3] = $frow;
-			foreach($result as $iter3) {
-			?>
-			<option value="<?php echo attr($iter3{id}); ?>" <?php if ($iter{uid} == $iter3{id}) echo "selected"; ?>><?php echo text($iter3{username}); ?></option>
-			<?php
-			}
-			}
-			?>
-		</select>
+		<span class=text><?php echo text($user_info['username']); ?> </span>
 	</td>
 </tr>
 
@@ -155,34 +174,35 @@ $(document).ready(function(){
 		<span class=text><?php echo xlt('Facility'); ?>: </span>
 	</td>
 	<td>
-		<select name=facility_id style="width:150px;" >
-			<?php
-			$fres = sqlStatement("select * from facility where service_location != 0 order by name");
-			if ($fres) {
-			for ($iter2 = 0; $frow = sqlFetchArray($fres); $iter2++)
-				$result[$iter2] = $frow;
-			foreach($result as $iter2) {
-			?>
-			<option value="<?php echo attr($iter2{id}); ?>" <?php if ($iter{facility_id} == $iter2{id}) echo "selected"; ?>><?php echo text($iter2{name}); ?></option>
-			<?php
-			}
-			}
-			?>
-		</select>
+		<span class=text><?php echo text($fac_info['name']); ?> </span>
 	</td>
 </tr>
 
-<tr>
+<?php foreach ($l_arr as $layout_entry) { ?>
+  <tr>
 	<td style="width:180px;">
-		<span class=text><?php echo xlt('User ID'); ?>: </span>
+		<span class=text><?php echo text(xl_layout_label($layout_entry['title'])) ?>: </span>
 	</td>
 	<td style="width:270px;">
-		<input type=entry name=user_id  style="width:150px;" value="<?php echo attr($iter{user_id}); ?>">
+                <?php
+                $entry_data = sqlQuery("SELECT `field_value` FROM `facility_user_ids` " .
+                                       "WHERE `uid` = ? AND `facility_id` = ? AND `field_id` = ?", array($user_info['id'],$fac_info['id'],$layout_entry['field_id']) );
+                echo "<td><span class='text'>" . generate_form_field($layout_entry,$entry_data['field_value']) . "&nbsp;</td>";
+                ?> 
 	</td>
-</tr>
+  </tr>
+<?php } ?>
 
 </table>
 </form>
+
+<!-- include support for the list-add selectbox feature -->
+<?php include $GLOBALS['fileroot'] . "/library/options_listadd.inc"; ?>
+
+<script language="JavaScript">
+<?php echo $date_init; ?>
+</script>
+
 </body>
 </html>
 

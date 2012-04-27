@@ -984,8 +984,10 @@ CREATE TABLE  `facility_user_ids` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `uid` bigint(20) DEFAULT NULL,
   `facility_id` bigint(20) DEFAULT NULL,
-  `user_id` varchar(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `field_id`    varchar(31)  NOT NULL COMMENT 'references layout_options.field_id',
+  `field_value` TEXT NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `uid` (`uid`)
 ) ENGINE=MyISAM  AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
@@ -2294,6 +2296,8 @@ INSERT INTO layout_options VALUES ('HIS','value_2'           ,'5Other',''       
 INSERT INTO layout_options VALUES ('HIS','additional_history','5Other','Additional History',5, 3,1,30,  3,'',1,3,'' ,'' ,'Additional history notes');
 INSERT INTO layout_options VALUES ('HIS','userarea11'        ,'5Other','User Defined Area 11',6,3,0,30,3,'',1,3,'','','User Defined');
 INSERT INTO layout_options VALUES ('HIS','userarea12'        ,'5Other','User Defined Area 12',7,3,0,30,3,'',1,3,'','','User Defined');
+
+INSERT INTO `layout_options` VALUES ('FACUSR', 'provider_id', '1General', 'Provider ID', 1, 2, 1, 15, 63, '', 1, 1, '', '', 'Provider ID at Specified Facility');
 
 -- --------------------------------------------------------
 

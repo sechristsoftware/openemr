@@ -35,20 +35,34 @@ $fake_register_globals=false;
 require_once("../globals.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/options.inc.php");
+require_once("$srcdir/acl.inc");
+
+// Ensure authorized
+if (!acl_check('admin', 'users')) {
+  die(xlt("Unauthorized"));
+}
 
 $alertmsg = '';
 
-/*	Inserting new facility user id	*/
-if (isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id" && $_POST["newmode"] != "admin_facility_user") {
-	
-	$insert_id=sqlInsert("INSERT INTO facility_user_ids SET uid = ?, facility_id = ?, user_id=?", array(trim($_POST['uid']), trim($_POST['facility_id']), trim($_POST['user_id'])) );
-		}
-
-/*	Editing existing facility user id  */
-if ($_POST["mode"] == "facility_user_id" && $_POST["newmode"] == "admin_facility_user")
-{
-	sqlStatement("UPDATE facility_user_ids SET uid = ?, facility_id = ?, user_id=? WHERE id=?", array(trim($_POST['uid']), trim($_POST['facility_id']), trim($_POST['user_id']), trim($_POST['mid'])) );
-		}
+if ( isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id" && isset($_POST["user_id"]) && isset($_POST["fac_id"]) ) {
+  // Inserting/Updating new facility specific user information
+  $fres = sqlStatement("SELECT * FROM `layout_options` " .
+                       "WHERE `form_id` = 'FACUSR' AND `uor` > 0 AND `field_id` != '' " .
+                       "ORDER BY `group_name`, `seq`");
+  while ($frow = sqlFetchArray($fres)) {
+    $value = get_layout_form_value($frow);
+    $entry_id = sqlQuery("SELECT `id` FROM `facility_user_ids` WHERE `uid` = ? AND `facility_id` = ? AND `field_id` =?", array($_POST["user_id"],$_POST["fac_id"],$frow['field_id']) );
+    if (empty($entry_id)) {
+      // Insert new entry
+      sqlInsert("INSERT INTO `facility_user_ids` (`uid`, `facility_id`, `field_id`, `field_value`) VALUES (?,?,?,?)", array($_POST["user_id"],$_POST["fac_id"],$frow['field_id'], $value) );
+    }
+    else {
+      // Update existing entry
+      sqlStatement("UPDATE `facility_user_ids` SET `field_value` = ? WHERE `id` = ?", array($value,$entry_id['id']) );
+    }
+  }
+}
 
 ?>
 <html>
@@ -60,6 +74,8 @@ if ($_POST["mode"] == "facility_user_id" && $_POST["newmode"] == "admin_facility
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/common.js"></script>
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/fancybox/jquery.fancybox-1.2.6.js"></script>
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery-ui.js"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery.easydrag.handler.beta2.js"></script>
+
 <script type="text/javascript">
 
 $(document).ready(function(){
@@ -86,13 +102,33 @@ $(document).ready(function(){
 </head>
 <body class="body_top">
 
+<?php
+// Collect all users
+$u_res = sqlStatement("select * from `users` WHERE `username` != '' AND `active` = 1 order by `username`");
+
+// Collect all facilities and store them in an array
+$f_res = sqlStatement("select * from `facility` order by `name`");
+$f_arr = array();
+for($i=0; $row=sqlFetchArray($f_res); $i++) {
+  $f_arr[$i]=$row;
+}
+
+// Collect layout information and store them in an array
+$l_res = sqlStatement("SELECT * FROM layout_options " .
+                      "WHERE form_id = 'FACUSR' AND uor > 0 AND field_id != '' " .
+                      "ORDER BY group_name, seq");
+$l_arr = array();
+for($i=0; $row=sqlFetchArray($l_res); $i++) {
+  $l_arr[$i]=$row;
+}
+
+?>
+
 <div>
     <div>
        <table>
 	  <tr >
-		<td><b><?php echo xlt('Facility User IDs'); ?></b></td>
-		<td><a href="facility_user_add.php" class="iframe_small css_button" onclick="top.restoreSession()"><span><?php echo xlt('Add New Facility User ID'); ?></span></a>
-		</td>
+		<td><b><?php echo xlt('Facility Specific User Information'); ?></b></td>
 		<td><a href="usergroup_admin.php" class="css_button" onclick="top.restoreSession()"><span><?php echo xlt('Back to Users'); ?></span></a>
 		</td>
 	 </tr>
@@ -107,27 +143,30 @@ $(document).ready(function(){
 					<th width="180px"><b><?php echo xlt('Username'); ?></b></th>
 					<th width="270px"><b><?php echo xlt('Full Name'); ?></b></th>
 					<th width="190px"><b><span class="bold"><?php echo xlt('Facility'); ?></span></b></th>
-					<th width="100px"><b><span class="bold"><?php echo xlt('User ID'); ?></span></b></th>
+                                        <?php
+                                        foreach ($l_arr as $layout_entry) {
+                                          echo "<th width='100px'><b><span class='bold'>" . text(xl_layout_label($layout_entry['title'])) . "&nbsp;</span></b></th>";
+                                        }
+                                        ?>
 				</tr>
 					<?php
-						$query = "SELECT *, u.id as uid, fp.id as fpid, f.id as fid FROM users as u ";
-						$query .= "INNER JOIN facility_user_ids as fp ON u.id = fp.uid ";
-						$query .= "INNER JOIN facility as f ON fp.facility_id = f.id ";
-						$query .= "WHERE username != '' ";
-						$query .= "ORDER BY username";
-						$res = sqlStatement($query);
-							for ($iter = 0;$row = sqlFetchArray($res);$iter++)
-							  $result4[$iter] = $row;
-							foreach ($result4 as $iter) {
+					while ($user = sqlFetchArray($u_res)) {
+						foreach ($f_arr as $facility) {
 					?>
 				<tr height="20"  class="text" style="border-bottom: 1px dashed;">
-				   <td class="text"><b><a href="facility_user_admin.php?id=<?php echo $iter{fpid};?>" class="iframe_small" onclick="top.restoreSession()"><span><?php echo text($iter{username});?></span></a></b>&nbsp;</td>
-				   <td><span class="text"><?php echo text($iter{fname}. " " .$iter{lname});?></span>&nbsp;</td>
-				   <td><span class="text"><?php echo text($iter{name});?>&nbsp;</td>
-				   <td><span class="text"><?php echo text($iter{user_id});?>&nbsp;</td>
+				   <td class="text"><b><a href="facility_user_admin.php?user_id=<?php echo attr($user['id']);?>&fac_id=<?php echo attr($facility['id']);?>" class="iframe_small" onclick="top.restoreSession()"><span><?php echo text($user['username']);?></span></a></b>&nbsp;</td>
+				   <td><span class="text"><?php echo text($user['fname'] . " " . $user['lname']);?></span>&nbsp;</td>
+				   <td><span class="text"><?php echo text($facility['name']);?>&nbsp;</td>
+                                   <?php
+                                   foreach ($l_arr as $layout_entry) {
+                                     $entry_data = sqlQuery("SELECT `field_value` FROM `facility_user_ids` " .
+                                                            "WHERE `uid` = ? AND `facility_id` = ? AND `field_id` = ?", array($user['id'],$facility['id'],$layout_entry['field_id']) );
+                                     echo "<td><span class='text'>" . generate_display_field($layout_entry,$entry_data['field_value']) . "&nbsp;</td>";
+                                   }
+                                   ?>  
 				</tr>
 				<?php
-				}
+				}}
 				?>
 				</tbody>
 			</table>
