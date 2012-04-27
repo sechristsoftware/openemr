@@ -41,13 +41,13 @@ $alertmsg = '';
 /*	Inserting new facility user id	*/
 if (isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id" && $_POST["newmode"] != "admin_facility_user") {
 	
-	$insert_id=sqlInsert("INSERT INTO facility_provider_ids SET pid = ?, facility_id = ?, user_id=?", array(trim($_POST['pid']), trim($_POST['facility_id']), trim($_POST['user_id'])) );
+	$insert_id=sqlInsert("INSERT INTO facility_user_ids SET uid = ?, facility_id = ?, user_id=?", array(trim($_POST['uid']), trim($_POST['facility_id']), trim($_POST['user_id'])) );
 		}
 
 /*	Editing existing facility user id  */
 if ($_POST["mode"] == "facility_user_id" && $_POST["newmode"] == "admin_facility_user")
 {
-	sqlStatement("UPDATE facility_user_ids SET pid = ?, facility_id = ?, user_id=? WHERE id=?", array(trim($_POST['pid']), trim($_POST['facility_id']), trim($_POST['user_id']), trim($_POST['mid'])) );
+	sqlStatement("UPDATE facility_user_ids SET uid = ?, facility_id = ?, user_id=? WHERE id=?", array(trim($_POST['uid']), trim($_POST['facility_id']), trim($_POST['user_id']), trim($_POST['mid'])) );
 		}
 
 ?>
@@ -111,7 +111,7 @@ $(document).ready(function(){
 				</tr>
 					<?php
 						$query = "SELECT *, u.id as uid, fp.id as fpid, f.id as fid FROM users as u ";
-						$query .= "INNER JOIN facility_user_ids as fp ON u.id = fp.pid ";
+						$query .= "INNER JOIN facility_user_ids as fp ON u.id = fp.uid ";
 						$query .= "INNER JOIN facility as f ON fp.facility_id = f.id ";
 						$query .= "WHERE username != '' ";
 						$query .= "ORDER BY username";

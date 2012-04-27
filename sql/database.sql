@@ -982,7 +982,7 @@ INSERT INTO `facility` VALUES (3, 'Your Clinic Name Here', '000-000-0000', '000-
 DROP TABLE IF EXISTS `facility_user_ids`;
 CREATE TABLE  `facility_user_ids` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `pid` bigint(20) DEFAULT NULL,
+  `uid` bigint(20) DEFAULT NULL,
   `facility_id` bigint(20) DEFAULT NULL,
   `user_id` varchar(11) DEFAULT NULL,
   PRIMARY KEY (`id`)

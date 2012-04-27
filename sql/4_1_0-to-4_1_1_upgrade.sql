@@ -253,7 +253,7 @@ DROP TABLE `temp_table_one`;
 #IfNotTable facility_user_ids
 CREATE TABLE  `facility_user_ids` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `pid` bigint(20) DEFAULT NULL,
+  `uid` bigint(20) DEFAULT NULL,
   `facility_id` bigint(20) DEFAULT NULL,
   `user_id` varchar(11) DEFAULT NULL,
   PRIMARY KEY (`id`)

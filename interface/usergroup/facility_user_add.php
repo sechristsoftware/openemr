@@ -105,7 +105,7 @@ $(document).ready(function(){
 			<span class="text"><?php echo xlt('User'); ?>: </span>
 		</td>
 		<td>
-			<select style="width:150px;" name=pid>
+			<select style="width:150px;" name=uid>
 				<?php
 				$fres = sqlStatement("select * from users WHERE authorized = 1 AND active = 1 order by username");
 				if ($fres) {

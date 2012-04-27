@@ -125,7 +125,7 @@ $(document).ready(function(){
     <input type=hidden name=mode value="facility_user_id">
     <input type=hidden name=newmode value="admin_facility_user">	<!--	Diffrentiate Admin and add post backs -->
     <input type=hidden name=mid value="<?php echo attr($my_id);?>">
-    <?php $iter = sqlQuery("select * from facility_user_ids where id='$my_id'"); ?>
+    <?php $iter = sqlQuery("select * from facility_user_ids where id=?", array($my_id)); ?>
 
 <table border=0 cellpadding=0 cellspacing=0>
 <tr>
@@ -133,7 +133,7 @@ $(document).ready(function(){
 		<span class=text><?php echo xlt('User'); ?>: </span>
 	</td>
 	<td>
-		<select name=pid style="width:150px;" >
+		<select name=uid style="width:150px;" >
 			<?php
 			$fres = sqlStatement("select * from users WHERE authorized = 1 AND active = 1 order by username");
 			if ($fres) {
@@ -141,7 +141,7 @@ $(document).ready(function(){
 				$result[$iter3] = $frow;
 			foreach($result as $iter3) {
 			?>
-			<option value="<?php echo attr($iter3{id}); ?>" <?php if ($iter{pid} == $iter3{id}) echo "selected"; ?>><?php echo text($iter3{username}); ?></option>
+			<option value="<?php echo attr($iter3{id}); ?>" <?php if ($iter{uid} == $iter3{id}) echo "selected"; ?>><?php echo text($iter3{username}); ?></option>
 			<?php
 			}
 			}
@@ -177,7 +177,7 @@ $(document).ready(function(){
 		<span class=text><?php echo xlt('User ID'); ?>: </span>
 	</td>
 	<td style="width:270px;">
-		<input type=entry name=user_id  style="width:150px;" value="<?php echo text($iter{user_id}); ?>">
+		<input type=entry name=user_id  style="width:150px;" value="<?php echo attr($iter{user_id}); ?>">
 	</td>
 </tr>
 
