@@ -24,6 +24,7 @@
 //            1 for storing codes in external ICD10 tables
 //            2 for storing codes in external SNOMED (RF1) tables
 //            3 for storing codes in external SNOMED (RF2) tables
+//            4 for storing codes in external ICD9 tables
 //
 /*********************************************************************
 if ($GLOBALS['ippf_specific']) {
@@ -159,7 +160,14 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
    $res = sqlStatement($query, array("%".$search_term."%", "%".$search_term."%", $code_types[$form_code_type]['id']) );
   }
   else if ($code_types[$form_code_type]['external'] == 1 ) { // Search from ICD10 codeset tables
-   //placeholder
+   // Ensure the icd10_dx_order_code sql table exists
+   $check_table = sqlQuery("SHOW TABLES LIKE 'icd10_dx_order_code'");
+   if ( !(empty($check_table)) ) {
+    $query = "SELECT `dx_code` as code, `long_desc` as code_text FROM `icd10_dx_order_code` " .
+             "WHERE `long_desc` LIKE ? OR `dx_code` LIKE ? " .
+             "ORDER BY `dx_code`+0, `dx_code` $limit_query";
+    $res = sqlStatement($query, array("%".$search_term."%", "%".$search_term."%") );
+   }
   }
   else if ($code_types[$form_code_type]['external'] == 2 ) { // Search from SNOMED (RF1) codeset tables
    // Ensure the sct_concepts sql table exists
@@ -174,6 +182,16 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
   }
   else if ($code_types[$form_code_type]['external'] == 3 ) { // Search from SNOMED (RF2) codeset tables
    //placeholder
+  }
+  else if ($code_types[$form_code_type]['external'] == 4 ) { // Search from ICD9 codeset tables
+   // Ensure the icd9_dx_code sql table exists
+   $check_table = sqlQuery("SHOW TABLES LIKE 'icd9_dx_code'");
+   if ( !(empty($check_table)) ) {
+    $query = "SELECT `dx_code` as code, `long_desc` as code_text FROM `icd9_dx_code` " .
+             "WHERE `long_desc` LIKE ? OR `dx_code` LIKE ? " .
+             "ORDER BY `dx_code`+0, `dx_code` $limit_query";
+    $res = sqlStatement($query, array("%".$search_term."%", "%".$search_term."%") );
+   }
   }
   else {
    //using an external code that is not yet supported, so skip.
@@ -220,7 +238,19 @@ function lookup_code_descriptions($codes) {
         }
       }
       else if ($code_types[$codetype]['external'] == 1) { // Collect from ICD10 codeset tables
-        //placeholder
+        // Ensure the icd10_dx_order_code sql table exists
+        $check_table = sqlQuery("SHOW TABLES LIKE 'icd10_dx_order_code'");
+        if ( !(empty($check_table)) ) {
+          if ( !(empty($code)) ) {
+            $sql = "SELECT `long_desc` FROM `icd10_dx_order_code` " .
+                   "WHERE `dx_code` = ? LIMIT 1";
+            $crow = sqlQuery($sql, array($code) );
+            if (!empty($crow['long_desc'])) {
+              if ($code_text) $code_text .= '; ';
+              $code_text .= $crow['long_desc'];
+            }
+          }
+        }
       }
       else if ($code_types[$codetype]['external'] == 2) { // Collect from SNOMED (RF1) codeset tables
         // Ensure the sct_concepts sql table exists
@@ -239,6 +269,21 @@ function lookup_code_descriptions($codes) {
       }
       else if ($code_types[$codetype]['external'] == 3) { // Collect from SNOMED (RF2) codeset tables
         //placeholder
+      }
+      else if ($code_types[$codetype]['external'] == 4) { // Collect from ICD9 codeset tables
+        // Ensure the icd9_dx_code sql table exists
+        $check_table = sqlQuery("SHOW TABLES LIKE 'icd9_dx_code'");
+        if ( !(empty($check_table)) ) {
+          if ( !(empty($code)) ) {
+            $sql = "SELECT `long_desc` FROM `icd9_dx_code` " .
+                   "WHERE `dx_code` = ? LIMIT 1";
+            $crow = sqlQuery($sql, array($code) );
+            if (!empty($crow['long_desc'])) {
+              if ($code_text) $code_text .= '; ';
+              $code_text .= $crow['long_desc'];
+            }
+          }
+        }
       }
       else {
         //using an external code that is not yet supported, so skip. 
