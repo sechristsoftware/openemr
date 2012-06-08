@@ -195,7 +195,10 @@ echo '
 <?php elseif (count($result)>=100): ?>
 <div id="searchstatus" class="tooManyResults"><?php echo htmlspecialchars( xl('More than 100 records found. Please narrow your search criteria.'), ENT_NOQUOTES); ?></div>
 <?php elseif (count($result)<100): ?>
-<div id="searchstatus" class="howManyResults"><?php echo htmlspecialchars( count($result), ENT_NOQUOTES); ?> <?php echo htmlspecialchars( xl('records found.'), ENT_NOQUOTES); ?></div>
+<div id="searchstatus" class="howManyResults"><?php echo htmlspecialchars( count($result), ENT_NOQUOTES); ?> <?php echo htmlspecialchars( xl('records found.'), ENT_NOQUOTES); ?><br>
+<!-- ALB If there are patients that have been found, but not the ones that we are trying to add, there has to be an option to add a new patient. -->
+<a class="noresult" href='find_patient_popup.php?res=noresult' <?php if(isset($_GET['pflag'])) { ?> style="display:none;" <?php } ?>  ><?php echo htmlspecialchars( xl('Or Click Here to add a new patient.'), ENT_NOQUOTES); ?></a>
+</div>
 <?php endif; ?>
 
 <?php if (isset($result)): ?>

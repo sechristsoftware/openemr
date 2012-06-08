@@ -286,7 +286,9 @@ function validate(f) {
     if (!confirm("<?php xl('Subscriber relationship is not self but name is the same! Is this really OK?','e'); ?>"))
      return false;
    }
-   if (samess) {
+
+//ALB Need to check if SSN is empty, then ok to have the same. Otherwise, it kicks it out. ONly a problem if SSN is entered AND is the same.
+   if ((f.form_ss.value != '') && samess) {
     alert("<?php xl('Subscriber relationship is not self but SS number is the same!','e'); ?>");
     return false;
    }

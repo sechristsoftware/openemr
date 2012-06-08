@@ -549,7 +549,7 @@ if ($INTEGRATED_AR) {
   <td>
    <select name='form_category'>
 <?php
- foreach (array(xl('Open'), xl('All'), xl('Due Pt'), xl('Due Ins')) as $value) {
+ foreach (array(xl('Open'), xl('All'), xl('Due Pt'), xl('Due Pt (New)'), xl('Due Pt (>30d)'), xl('Due Ins'), xl('Owe Pt')) as $value) {
   echo "    <option value='$value'";
   if ($_POST['form_category'] == $value) echo " selected";
   echo ">$value</option>\n";
@@ -783,10 +783,12 @@ if ($_POST['form_search'] || $_POST['form_print']) {
       "FROM ar, customer WHERE ( $where ) AND customer.id = ar.customer_id ";
     if ($_POST['form_category'] != 'All' && !$eracount) {
       $query .= "AND ar.amount != ar.paid ";
+    }
+
       // if ($_POST['form_category'] == 'Due') {
       //   $query .= "AND ar.duedate <= CURRENT_DATE ";
       // }
-    }
+    
     $query .= "ORDER BY lname, fname, ar.invnumber";
 
     // echo "<!-- $query -->\n"; // debugging
@@ -864,22 +866,43 @@ if ($_POST['form_search'] || $_POST['form_print']) {
       }
 
       $isdueany = ($balance > 0);
+//ALB - 'Owed Pt' category
+      $isowedany  = ($balance < 0);
 
       // An invoice is now due from the patient if money is owed and we are
       // not waiting for insurance to pay.
       //
       $isduept = ($duncount >= 0 && $isdueany) ? " checked" : "";
 
+      //ALB Skip invoices not in the "Owed" category.
+      if (substr($_POST['form_category'], 0, 3) == 'Owe' && (!$isowedany || $duncount < 0)) continue;
+
       // Skip invoices not in the desired "Due..." category.
       //
       if (substr($_POST['form_category'], 0, 3) == 'Due' && !$isdueany) continue;
       if ($_POST['form_category'] == 'Due Ins' && ($duncount >= 0 || !$isdueany)) continue;
       if ($_POST['form_category'] == 'Due Pt'  && ($duncount <  0 || !$isdueany)) continue;
-
-      $bgcolor = ((++$orow & 1) ? "#ffdddd" : "#ddddff");
+      if ($_POST['form_category'] == 'Due Pt (>30d)'  && ($duncount <  0 || !$isdueany)) continue;
+      if ($_POST['form_category'] == 'Due Pt (New)'  && ($duncount <  0 || !$isdueany)) continue;
 
       $svcdate = substr($row['date'], 0, 10);
       $last_stmt_date = empty($row['last_stmt_date']) ? '' : $row['last_stmt_date'];
+
+      //ALB For New statements, skip the ones that have been billed previously.
+      if ($_POST['form_category'] == 'Due Pt (New)') { 
+        if ($last_stmt_date != '') continue;
+      }
+
+      //ALB Skip invoices that are <=30 days since last statement in the Due Pt(>30d) category.
+
+      if ($_POST['form_category'] == 'Due Pt (>30d)') { 
+        if ($last_stmt_date == '') continue;
+        $diff = strtotime(date('Y-m-d')) - strtotime   ($last_stmt_date); 
+        $days = floor($diff/ (60*60*24));
+        if ($days <= 30) continue;
+      }
+
+      $bgcolor = ((++$orow & 1) ? "#ffdddd" : "#ddddff");
 
       // Determine if customer is in collections.
       //
@@ -1052,12 +1075,15 @@ if (!$INTEGRATED_AR) SLClose();
 <?php } else { ?>
 <input type='button' value='<?php xl('Select All','e')?>' onclick='checkAll(true)' /> &nbsp;
 <input type='button' value='<?php xl('Clear All','e')?>' onclick='checkAll(false)' /> &nbsp;
-<input type='submit' name='form_print' value='<?php xl('Print Selected Statements','e'); ?>' /> &nbsp;
-<input type='submit' name='form_download' value='<?php xl('Download Selected Statements','e'); ?>' /> &nbsp;
+
+<!-- ALB Not using these 2 buttons <input type='submit' name='form_print' value='<?php xl('Print Selected Statements','e'); ?>' /> &nbsp;
+<input type='submit' name='form_download' value='<?php xl('Download Selected Statements','e'); ?>' /> &nbsp; -->
+
 <input type='submit' name='form_pdf' value='<?php xl('PDF Download Selected Statements','e'); ?>' /> &nbsp;
 <?php } ?>
 <input type='checkbox' name='form_without' value='1' /> <?php xl('Without Update','e'); ?>
 </p>
+<input type='button' value='<?php xl('Close Window','e'); ?>'  onclick='window.close()'> &nbsp;
 
 </form>
 </center>
