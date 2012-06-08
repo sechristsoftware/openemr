@@ -760,6 +760,40 @@ if ($isBilled) {
 else { // the encounter is not yet billed
 ?>
 
+<!-- ALB: The part below to next comment was moved up from the bottom of this file -->
+
+<table width='80%'>
+<tr><td width='80%' align='center' nowrap>
+<?php
+
+// Allow the patient price level to be fixed here.
+$plres = sqlStatement("SELECT option_id, title FROM list_options " .
+  "WHERE list_id = 'pricelevel' ORDER BY seq");
+if (true) {
+  $trow = sqlQuery("SELECT pricelevel FROM patient_data WHERE " .
+    "pid = '$pid' LIMIT 1");
+  $pricelevel = $trow['pricelevel'];
+  echo "   <span class='billcell'><b>" . xl('Price Level') . ":</b></span>\n";
+  echo "   <select name='pricelevel'";
+  if ($isBilled) echo " disabled";
+  echo ">\n";
+  while ($plrow = sqlFetchArray($plres)) {
+    $key = $plrow['option_id'];
+    $val = $plrow['title'];
+    echo "    <option value='$key'";
+    if ($key == $pricelevel) echo ' selected';
+    echo ">$val</option>\n";
+  }
+  echo "   </select>\n";
+}
+
+?>
+</td></tr></table>
+
+<p><p>
+
+<!-- ALB: The part above to previous comment was moved up from the bottom of this file -->
+
 <table width='95%'>
 <?php
 $i = 0;
@@ -837,6 +871,50 @@ if ($GLOBALS['sell_non_drug_products']) {
   }
 }
 
+?>
+
+<!-- ALB: This is where I took out Search drop-down box -->
+
+</table>
+
+<p style='margin-top:8px;margin-bottom:8px'>
+<table>
+ <tr>
+
+  <!-- ALB: So far, I don't need Add Copay on Fee Sheet, may need to add back later
+
+<td>
+   <input type='button' value='<?php xl('Add Copay','e');?>'
+    onclick="copayselect()" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </td> -->
+
+  <td>
+   <?php xl('Search','e'); ?>&nbsp;
+<?php
+  foreach ($code_types as $key => $value) {
+    if (!empty($value['nofs'])) continue;
+    echo "   <input type='radio' name='search_type' value='$key'";
+    if ($key == $default_search_type) echo " checked";
+    echo " />$key&nbsp;\n";
+  }
+?>
+   <?php xl('for','e'); ?>&nbsp;
+  </td>
+  <td>
+   <input type='text' name='search_term' value=''> &nbsp;
+  </td>
+  <td>
+   <input type='submit' name='bn_search' value='<?php xl('Search','e');?>'>
+  </td>
+ </tr>
+
+<!-- ALB: Added the following 3 lines -->
+<!-- ALB: then below is where I placed Search drop-down box -->
+
+<tr>
+<td>
+<?php
+
 $search_type = $default_search_type;
 if ($_POST['search_type']) $search_type = $_POST['search_type'];
 
@@ -877,8 +955,9 @@ echo "  </td>\n";
 echo " </tr>\n";
 ?>
 
-</table>
+<!-- ALB: Above is where I placed Search drop-down box -->
 
+<<<<<<< HEAD
 <p style='margin-top:8px;margin-bottom:8px'>
 <table>
  <tr>
@@ -905,6 +984,8 @@ echo " </tr>\n";
    <input type='submit' name='bn_search' value='<?php echo xla('Search');?>'>
   </td>
  </tr>
+=======
+>>>>>>> eb51c82... Mixed modification from Alex, take 1.
 </table>
 </p>
 <p style='margin-top:16px;margin-bottom:8px'>
@@ -1182,6 +1263,7 @@ if ($prod_lino > 0) { // if any products are in this form
   }
 }
 
+<<<<<<< HEAD
 // Allow the patient price level to be fixed here.
 $plres = sqlStatement("SELECT option_id, title FROM list_options " .
   "WHERE list_id = 'pricelevel' ORDER BY seq");
@@ -1202,6 +1284,10 @@ if (true) {
   }
   echo "   </select>\n";
 }
+=======
+// ALB This is where I took out the price-level fixing paragraph.
+
+>>>>>>> eb51c82... Mixed modification from Alex, take 1.
 ?>
 
 &nbsp; &nbsp; &nbsp;

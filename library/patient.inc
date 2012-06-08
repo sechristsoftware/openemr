@@ -7,6 +7,7 @@
 require_once("{$GLOBALS['srcdir']}/sql.inc");
 require_once(dirname(__FILE__) . "/classes/WSWrapper.class.php");
 require_once("{$GLOBALS['srcdir']}/formdata.inc.php");
+require_once("$srcdir/sl_eob.inc.php");
 
 // These are for sports team use:
 $PLAYER_FITNESSES = array(
@@ -1486,6 +1487,58 @@ function get_patient_balance($pid) {
   }
   return '';
 }
+
+//ALB Calculates patient due balance
+function get_due_patient_balance($pid) {
+  if ($GLOBALS['oer_config']['ws_accounting']['enabled'] === 2) {
+  $query = "SELECT f.id, f.pid, f.encounter, f.date, " .
+      "f.last_level_billed, f.last_level_closed, f.last_stmt_date, f.stmt_count, " .
+      "p.fname, p.mname, p.lname, p.pubpid, p.genericname2, p.genericval2, " .
+      "( SELECT SUM(b.fee) FROM billing AS b WHERE " .
+      "b.pid = f.pid AND b.encounter = f.encounter AND " .
+      "b.activity = 1 AND b.code_type != 'COPAY' ) AS charges, " .
+      "( SELECT SUM(b.fee) FROM billing AS b WHERE " .
+      "b.pid = f.pid AND b.encounter = f.encounter AND " .
+      "b.activity = 1 AND b.code_type = 'COPAY' ) AS copays, " .
+      "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
+      "a.pid = f.pid AND a.encounter = f.encounter ) AS payments, " .
+      "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
+      "a.pid = f.pid AND a.encounter = f.encounter ) AS adjustments " .
+      "FROM form_encounter AS f " .
+      "JOIN patient_data AS p ON p.pid = f.pid " .
+      "WHERE p.pid = " .$pid ." " .
+      "ORDER BY p.lname, p.fname, p.mname, f.pid, f.encounter";
+
+    $t_res = sqlStatement($query);
+    while ($row = sqlFetchArray($t_res)) {
+      $balance = sprintf("%.2f", $row['charges'] + $row['copays'] - $row['payments'] - $row['adjustments']);
+
+      if ($balance == 0) continue;
+
+      // $duncount was originally supposed to be the number of //times that
+      // the patient was sent a statement for this invoice.
+      //
+      $duncount = $row['stmt_count'];
+
+      // But if we have not yet billed the patient, then compute //$duncount as a
+      // negative count of the number of insurance plans for //which we have not
+      // yet closed out insurance.
+      //
+
+      if (! $duncount) {
+        for ($i = 1; $i <= 3 && arGetPayerID($row['pid'], $row['date'], $i); ++$i) ;
+        $duncount = $row['last_level_closed'] + 1 - $i;
+      }
+      //$isdueany = ($balance > 0);
+      if ($duncount < 0) continue;
+
+      $pt_due_balance = $pt_due_balance + $balance;
+  }
+    return sprintf('%01.2f', $pt_due_balance);
+  }
+  return '';
+}
+
 
 // Function to check if patient is deceased.
 //  Param:

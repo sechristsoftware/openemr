@@ -70,6 +70,7 @@ function getPatientCopay($patient_id, $encounter) {
 
 // Display a row of data for an encounter.
 //
+<<<<<<< HEAD
 $var_index=0;
 function echoLine($iname, $date, $charges, $ptpaid, $inspaid, $duept,$encounter=0,$copay=0,$patcopay=0) {
   global $var_index;
@@ -90,6 +91,35 @@ function echoLine($iname, $date, $charges, $ptpaid, $inspaid, $duept,$encounter=
   echo "  <td class='detail' align='right'><input type='text' name='".attr($iname)."'  id='paying_".attr($var_index)."' " .
     " value='" .  '' . "' onchange='coloring();calctotal()'  autocomplete='off' " .
     "onkeyup='calctotal()'  style='width:50px'/></td>\n";
+=======
+function echoLine($iname, $date, $charges, $ptpaid, $inspaid, $duept) {
+  global $today;
+  $balance = bucks($charges - $ptpaid - $inspaid);
+  $getfrompt = ($duept > 0) ? $duept : 0;
+  echo " <tr>\n";
+  
+//ALB If today's date, display Today
+  if (substr($date, 0, 10) == $today) {
+     echo "  <td class='detail'>Today</td>\n";
+  } else {
+     echo "  <td class='detail'>" . oeFormatShortDate($date) . "</td>\n";
+  }
+
+//ALB I would like to display where the charge is 0 (global period), so that the front desk knows that a charge has actually been entered.
+
+  if ($charges == 0) {
+    echo "  <td class='detail' align='right'>0.00</td>\n";
+  } else {
+    echo "  <td class='detail' align='right'>" . bucks($charges) . "</td>\n";
+  }
+  echo "  <td class='detail' align='right'>" . bucks($ptpaid) . "</td>\n";
+  echo "  <td class='detail' align='right'>" . bucks($inspaid) . "</td>\n";
+  echo "  <td class='detail' align='right'>$balance</td>\n";
+  echo "  <td class='detail' align='right'>" . bucks($duept) . "</td>\n";
+  echo "  <td class='detail' align='right'><input type='text' name='$iname' " .
+    "size='6' value='" . rawbucks($getfrompt) . "' onchange='calctotal()' " .
+    "onkeyup='calctotal()' /></td>\n";
+>>>>>>> eb51c82... Mixed modification from Alex, take 1.
   echo " </tr>\n";
 }
 
@@ -212,6 +242,7 @@ if ($_POST['form_save']) {
   if ($_POST['form_upay'] && $_REQUEST['radio_type_of_payment']!='pre_payment') {
     foreach ($_POST['form_upay'] as $enc => $payment) {
       if ($amount = 0 + $payment) {
+<<<<<<< HEAD
 	       $zero_enc=$enc;
 	       if($_REQUEST['radio_type_of_payment']=='invoice_balance')
 		    { 
@@ -367,6 +398,48 @@ if ($_POST['form_save']) {
 		}//foreach
 	 }//if ($_POST['form_upay'])
   }//if ($_POST['form_save'])
+=======
+        if (!$enc) $enc = todaysEncounter($form_pid);
+        addBilling($enc, 'COPAY', sprintf('%.2f', $amount),
+          $form_method, $form_pid, 1, $_SESSION["authUserID"],
+          '', 1, 0 - $amount, '', '');
+        frontPayment($form_pid, $enc, $form_method, $form_source, $amount, 0);
+      }
+    }
+  }
+
+  // Post payments for previously billed encounters.  These go to A/R.
+  if ($_POST['form_bpay']) {
+    foreach ($_POST['form_bpay'] as $enc => $payment) {
+      if ($amount = 0 + $payment) {
+        if ($INTEGRATED_AR) {
+          $thissrc = '';
+          if ($form_method) {
+            $thissrc .= $form_method;
+            if ($form_source) $thissrc .= " $form_source";
+          }
+          $session_id = 0; // Is this OK?
+          arPostPayment($form_pid, $enc, $session_id, $amount, 'CO-PAY', 0, $thissrc, 0);
+        }
+        else {
+          $thissrc = 'Pt/';
+          if ($form_method) {
+            $thissrc .= $form_method;
+            if ($form_source) $thissrc .= " $form_source";
+          }
+          $trans_id = SLQueryValue("SELECT id FROM ar WHERE " .
+            "ar.invnumber = '$form_pid.$enc' LIMIT 1");
+          if (! $trans_id) die("Cannot find invoice '$form_pid.$enc'!");
+          slPostPayment($trans_id, $amount, date('Y-m-d'), $thissrc,
+            '', 0, 0);
+        }
+        frontPayment($form_pid, $enc, $form_method, $form_source, 0, $amount);
+      }
+    }
+  }
+}
+?>
+>>>>>>> eb51c82... Mixed modification from Alex, take 1.
 
 if ($_POST['form_save'] || $_REQUEST['receipt']) {
 
@@ -1050,6 +1123,7 @@ function make_insurance()
  </tr>
 
 <?php
+<<<<<<< HEAD
   $encs = array();
 
   // Get the unbilled service charges and payments by encounter for this patient.
@@ -1194,13 +1268,181 @@ function make_insurance()
     echoLine("form_upay[$enc]", $dispdate, $value['charges'],
       $dpayment_pat, ($dpayment + $dadjustment), $duept,$enc,$inscopay,$patcopay);
   }
+=======
+
+//ALB - Commenting all of this out. It doesn't work well to separate billed and unbilled services, because the billed flag sometimes doesn't flip and one encounter is then separated into two lines
+//  $encs = array();
+//
+//  // Get the unbilled service charges and payments by //encounter for this patient.
+//  //
+//  $query = "SELECT b.encounter, b.code_type, b.code, //b.modifier, b.fee, " .
+//    "LEFT(fe.date, 10) AS encdate " .
+//    "FROM billing AS b, form_encounter AS fe WHERE " .
+//    "b.pid = '$pid' AND b.activity = 1 AND b.billed = 0 AND " //.
+//    "b.code_type != 'TAX' AND b.fee != 0 " .
+//    "AND fe.pid = b.pid AND fe.encounter = b.encounter " .
+//    "ORDER BY b.encounter";
+//  $bres = sqlStatement($query);
+//  //
+//  while ($brow = sqlFetchArray($bres)) {
+//    $key = 0 - $brow['encounter'];
+//    if (empty($encs[$key])) {
+//      $encs[$key] = array(
+//        'encounter' => $brow['encounter'],
+//        'date' => $brow['encdate'],
+//        'charges' => 0,
+//        'payments' => 0);
+//    }
+//    if ($brow['code_type'] === 'COPAY') {
+//      $encs[$key]['payments'] -= $brow['fee'];
+//    } else {
+//      $encs[$key]['charges']  += $brow['fee'];
+//      // Add taxes.
+//      $query = "SELECT taxrates FROM codes WHERE " .
+//        "code_type = '" . $code_types[$brow['code_type']]['id'] . "' AND " .
+//        "code = '" . $brow['code'] . "' AND ";
+//      if ($brow['modifier']) {
+//        $query .= "modifier = '" . $brow['modifier'] . "'";
+//      } else {
+//        $query .= "(modifier IS NULL OR modifier = '')";
+//      }
+//      $query .= " LIMIT 1";
+//      $trow = sqlQuery($query);
+//      $encs[$key]['charges'] += calcTaxes($trow, $brow['fee']);
+//    }
+//  }
+
+//  // Do the same for unbilled product sales.
+//  //
+//  $query = "SELECT s.encounter, s.drug_id, s.fee, " .
+//    "LEFT(fe.date, 10) AS encdate " .
+//    "FROM drug_sales AS s, form_encounter AS fe " .
+//    "WHERE s.pid = '$pid' AND s.billed = 0 AND s.fee != 0 " .
+//    "AND fe.pid = s.pid AND fe.encounter = s.encounter " .
+//    "ORDER BY s.encounter";
+//  $dres = sqlStatement($query);
+  //
+//  while ($drow = sqlFetchArray($dres)) {
+//    $key = 0 - $drow['encounter'];
+//    if (empty($encs[$key])) {
+//      $encs[$key] = array(
+//        'encounter' => $drow['encounter'],
+//        'date' => $drow['encdate'],
+//        'charges' => 0,
+//        'payments' => 0);
+//    }
+//    $encs[$key]['charges'] += $drow['fee'];
+//    // Add taxes.
+//    $trow = sqlQuery("SELECT taxrates FROM drug_templates //WHERE drug_id = '" .
+//      $drow['drug_id'] . "' ORDER BY selector LIMIT 1");
+//    $encs[$key]['charges'] += calcTaxes($trow, $drow['fee']);
+//  }
+
+//  ksort($encs, SORT_NUMERIC);
+//  $gottoday = false;
+//  foreach ($encs as $key => $value) {
+//    $enc = $value['encounter'];
+//    $dispdate = $value['date'];
+//    //ALB There could be more than one encounter for today - //display all of them separately (e.g. medical vs cosmetic //visit)
+//    //if (strcmp($dispdate, $today) == 0 && !$gottoday) {
+//    if (strcmp($dispdate, $today) == 0) {
+//      $dispdate = xl('Today');
+//      $gottoday = true;
+//    }
+//    $inscopay = getCopay($pid, $value['date']);
+//    $balance = rawbucks($value['charges'] - $value['payments']);
+//    $duept = (($inscopay >= 0) ? $inscopay : $value['charges']) - $value['payments'];
+//    echoLine("form_upay[$enc]", $dispdate, $value['charges'],
+//      $value['payments'], 0, $duept);
+//  }
+
+  // If no billing was entered yet for today, then generate a line for
+  // entering today's co-pay.
+  // ALB If there is no encounter for today, don't display it.
+  //if (! $gottoday) {
+  //  $inscopay = getCopay($pid, $today);
+  //  $duept = ($inscopay >= 0) ? $inscopay : 0;
+  //  echoLine("form_upay[0]", xl('Today'), 0, 0, 0, $duept);
+  //}
+>>>>>>> eb51c82... Mixed modification from Alex, take 1.
 
 
   // Now list previously billed visits.
-
+  //ALB Took out AND s. billed !=0 and AND b.billed !=0 from the WHERE clause of the SELECT s.fee and b.fee lines below
   if ($INTEGRATED_AR) {
+<<<<<<< HEAD
 
  } // end $INTEGRATED_AR
+=======
+    $query = "SELECT f.id, f.pid, f.encounter, f.date, " .
+      "f.last_level_billed, f.last_level_closed, f.stmt_count, " .
+      "p.fname, p.mname, p.lname, p.pubpid, p.genericname2, p.genericval2, " .
+      "( SELECT SUM(s.fee) FROM drug_sales AS s WHERE " .
+      "s.pid = f.pid AND s.encounter = f.encounter ) AS sales, " .
+      "( SELECT SUM(b.fee) FROM billing AS b WHERE " .
+      "b.pid = f.pid AND b.encounter = f.encounter AND " .
+      "b.activity = 1 AND b.code_type != 'COPAY' ) AS charges, " .
+      "( SELECT SUM(b.fee) FROM billing AS b WHERE " .
+      "b.pid = f.pid AND b.encounter = f.encounter AND " .
+      "b.activity = 1 AND b.code_type = 'COPAY' ) AS copays, " .
+      "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND " .
+      "a.payer_type = 0 ) AS ptpaid, " .
+      "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND " .
+      "a.payer_type != 0 ) AS inspaid, " .
+      "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
+      "a.pid = f.pid AND a.encounter = f.encounter ) AS adjustments " .
+      "FROM form_encounter AS f " .
+      "JOIN patient_data AS p ON p.pid = f.pid " .
+      "WHERE f.pid = '$pid' " .
+      "ORDER BY f.pid, f.encounter DESC";
+
+    // Note that unlike the SQL-Ledger case, this query does not weed
+    // out encounters that are paid up.  Also the use of sub-selects
+    // will require MySQL 4.1 or greater.
+
+    $ires = sqlStatement($query);
+    $num_invoices = mysql_num_rows($ires);
+
+    while ($irow = sqlFetchArray($ires)) {
+      $balance = $irow['charges'] + $irow['sales'] + $irow['copays'] - $irow['ptpaid'] - $irow['inspaid'] - $irow['adjustments'];
+      
+      //ALB If balance is empty or 0 AND encounter is not from today, skip it. The reason is that some services are within a global period and front desk needs to know that a charge has been entered, but was 0, not that the charge has not yet been entered at all.
+
+      if (is_null($irow['charges'])) { 
+         $ncdate   = (substr($irow['date'], 0, 10) == $today) ? 'Today' : oeFormatShortDate(substr($irow['date'], 0, 10));
+         echo "<td class='detail'>" . $ncdate . " </td>";
+         echo "<td class='detail' align='right' style='color:red'>Charges not yet entered</td>\n";
+         continue;
+      }
+      if ((!$balance || bucks(abs($balance)) == 0.00) && substr($irow['date'], 0, 10) != $today) continue;
+
+      $patient_id = $irow['pid'];
+      $enc = $irow['encounter'];
+      $svcdate = substr($irow['date'], 0, 10);
+      $duncount = $irow['stmt_count'];
+      if (! $duncount) {
+        for ($i = 1; $i <= 3 && arGetPayerID($irow['pid'], $irow['date'], $i); ++$i) ;
+        $duncount = $irow['last_level_closed'] + 1 - $i;
+      }
+
+      $inspaid = $irow['inspaid'] + $irow['adjustments'];
+      $ptpaid  = $irow['ptpaid'] - $irow['copays'];
+      $duept   = ($duncount < 0) ? 0 : $balance;
+
+      //ALB If visit is today, get the copay, but only if it is greater than the total charges due for the visit and has not yet been paid.
+      if (substr($irow['date'], 0, 10) == $today) {
+        $inscopay = getCopay($pid, $irow['date']);
+        if ((!$ptpaid || $ptpaid == 0.00) && $inscopay > 0) {
+           $duept = (($inscopay <= $balance) ? $inscopay : $balance);
+        }
+      }
+
+      echoLine("form_bpay[$enc]", $svcdate, $irow['charges'] + $irow['sales'], $ptpaid, $inspaid, $duept);
+    }
+  } // end $INTEGRATED_AR
+>>>>>>> eb51c82... Mixed modification from Alex, take 1.
   else {
     // Query for all open invoices.
     $query = "SELECT ar.id, ar.invnumber, ar.amount, ar.paid, " .

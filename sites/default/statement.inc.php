@@ -61,44 +61,10 @@ $STMT_PRINT_CMD = $GLOBALS['print_command'];
 // feed if that is appropriate.
 //
 
-// A sample of the text based format follows:
+// ALB If the resulting statement is printed out using PDF format in actual size (don't shrink to fit), once folded at the bottom and halfway down the middle, it fits a 2-window #10 envelope perfectly, with both addresses showing.
 
-//[Your Clinic Name]             Patient Name          2009-12-29
-//[Your Clinic Address]          Chart Number: 1848
-//[City, State Zip]              Insurance information on file
-//
-//
-//ADDRESSEE                      REMIT TO
-//Patient Name                     [Your Clinic Name]
-//patient address                  [Your Clinic Address]
-//city, state zipcode              [City, State Zip]
-//                                 If paying by VISA/MC/AMEX/Dis
-//
-//Card_____________________  Exp______ Signature___________________
-//                     Return above part with your payment
-//-----------------------------------------------------------------
-//
-//_______________________ STATEMENT SUMMARY _______________________
-//
-//Visit Date  Description                                    Amount
-//
-//2009-08-20  Procedure 99345                                198.90
-//            Paid 2009-12-15:                               -51.50
-//... more details ...
-//...
-//...
-// skipping blanks in example
-//
-//
-//Name: Patient Name              Date: 2009-12-29     Due:   147.40
-//_________________________________________________________________
-//
-//Please call if any of the above information is incorrect
-//We appreciate prompt payment of balances due
-//
-//[Your billing contact name]
-//  Billing Department
-//  [Your billing dept phone]
+//ALB The statement uses Guardian's name from the demographics for addressing the letter, if present. That way, if the patient is a minor, it's addressed to the parent, but still has the correct patient identified on the statement.
+
 
 function create_statement($stmt) {
  if (! $stmt['pid']) return ""; // get out if no data
@@ -107,7 +73,7 @@ function create_statement($stmt) {
  // TBD: read this from the facility table
  
  // Facility (service location)
-  $atres = sqlStatement("select f.name,f.street,f.city,f.state,f.postal_code from facility f " .
+  $atres = sqlStatement("select f.name,f.street,f.city,f.state,f.postal_code,f.phone,f.fax from facility f " .
     " left join users u on f.id=u.facility_id " .
     " left join  billing b on b.provider_id=u.id and b.pid = '".$stmt['pid']."' " .
     " where  service_location=1");
@@ -117,8 +83,10 @@ function create_statement($stmt) {
  
  $clinic_name = "{$row['name']}";
  $clinic_addr = "{$row['street']}";
- $clinic_csz = "{$row['city']}, {$row['state']}, {$row['postal_code']}";
- 
+ $clinic_csz = "{$row['city']}, {$row['state']} {$row['postal_code']}";
+ $clinic_phone = "{$row['phone']}";
+ $clinic_fax = "{$row['fax']}";
+
  
  // Billing location
  $remit_name = $clinic_name;
@@ -138,19 +106,81 @@ function create_statement($stmt) {
  
  $label_addressee = xl('ADDRESSEE');
  $label_remitto = xl('REMIT TO');
- $label_chartnum = xl('Chart Number');
- $label_insinfo = xl('Insurance information on file');
- $label_totaldue = xl('Total amount due');
- $label_payby = xl('If paying by');
- $label_cards = xl('VISA/MC/AMEX/Dis');  
- $label_cardnum = xl('Card');
- $label_expiry = xl('Exp');
- $label_sign = xl('Signature');
- $label_retpay = xl('Return above part with your payment');
+ $label_ptname = xl('Patient');
+ $label_chartnum = xl('Account Number');
+ $label_statdate = xl('Statement Date');
+
+// If negative balance, we owe the patient, so change labels
+ if ($stmt['amount']>=0) {
+   $stmtamount = $stmt['amount'];
+   $label_paydate = xl('Balance due within 2 weeks');
+   $label_totaldue = xl('Balance Due');
+   $label_due = xl('Remaining Balance');
+   $label_payby = xl('If paying by');
+   $label_cards = xl('VISA, MC, or Discover');  
+   $label_cardnum = xl('Card Number');
+   $label_expiry = xl('Exp Date');
+   $label_seccode = xl('Security Code');
+   $label_sign = xl('Signature');
+   $label_prompt = xl('We appreciate prompt payment of balances due.');
+ } else {
+   $stmtamount = -$stmt['amount'];
+   $label_paydate = xl('Refund check enclosed below');
+   $label_totaldue = xl('Refund Due');
+   $label_due = xl('Remaining Balance');
+   $label_payby = xl('');
+   $label_cards = xl('');  
+   $label_cardnum = xl('');
+   $label_expiry = xl('');
+   $label_seccode = xl('');
+   $label_sign = xl('');
+   $label_remitto = xl('REFUND FROM');
+   $label_prompt = xl('Refund check enclosed. We appreciate your business.');
+ }
+
+ $label_keep = xl('Keep the above portion for your records.');
+ $label_retpay = xl('Please return this portion with your payment. DO NOT SEND CASH.');
  $label_pgbrk = xl('STATEMENT SUMMARY');
  $label_visit = xl('Visit Date');
- $label_desc = xl('Description');
+ $label_desc = xl('Code and Description');
+ $label_qty = xl('Qty');
  $label_amt = xl('Amount');
+ $label_ptname = xl('Patient');
+ $label_today = xl('Statement Date');
+ $label_thanks = xl('Thank you for choosing');
+ $label_call = xl('Please call if any of the above information is incorrect.');
+ $label_dept = xl('Billing Department');
+
+//Get statement number, so we can change the wording on it.
+ $stmtno = 0;
+ foreach ($stmt['lines'] as $line) {
+   $stmtnonext = $line['notice'];
+   if ($stmtnonext > $stmtno) {
+ 	$stmtno = $stmtnonext;
+   }
+ }
+
+ if ($stmtno < 2 || $stmt['amount']<0) {
+   $stmtnotice1 = '';
+   $stmtnotice2 = '';
+   $stmtnotice3 = '';
+   $stmtnotice4 = '';
+ } else if ($stmtno == 2) {
+   $stmtnotice1 = '';
+   $stmtnotice2 = 'SECOND NOTICE';
+   $stmtnotice3 = '';
+   $stmtnotice4 = '';
+ } else if ($stmtno == 3) {
+   $stmtnotice1 = 'THIRD NOTICE';
+   $stmtnotice2 = 'PLEASE CALL US TODAY TO';
+   $stmtnotice3 = 'SETTLE YOUR BALANCE OR TO';
+   $stmtnotice4 = 'ARRANGE A PAYMENT PLAN';
+ } else {
+   $stmtnotice1 = 'FINAL NOTICE';
+   $stmtnotice2 = 'YOUR ACCOUNT WILL BE TURNED';
+   $stmtnotice3 = 'OVER TO A COLLECTION AGENCY';
+   $stmtnotice4 = 'IF NOT PAID OFF IN 2 WEEKS';
+ }
 
  // This is the text for the top part of the page, up to but not
  // including the detail lines.  Some examples of variable fields are:
@@ -160,45 +190,62 @@ function create_statement($stmt) {
  // Note that "\n" is a line feed (new line) character.
  // reformatted to handle i8n by tony
 
-$out  = sprintf("%-30s %-23s %-s\n",$clinic_name,$stmt['patient'],$stmt['today']);
-$out .= sprintf("%-30s %s: %-s\n",$clinic_addr,$label_chartnum,$stmt['pid']);
-$out .= sprintf("%-30s %-s\n",$clinic_csz,$label_insinfo);
-$out .= sprintf("%-30s %s: %-s\n",null,$label_totaldue,null);
-$out .= "\n\n";
-$out .= sprintf("%-30s %-s\n",$label_addressee,$label_remitto);
-$out .= sprintf("%-32s %s\n",$stmt['to'][0],$remit_name);
-$out .= sprintf("%-32s %s\n",$stmt['to'][1],$remit_addr);
-$out .= sprintf("%-32s %s\n",$stmt['to'][2],$remit_csz);
 
-if($stmt['to'][3]!='')//to avoid double blank lines the if condition is put.
- 	$out .= sprintf("   %-32s\n",$stmt['to'][3]);
-$out .= sprintf("_________________________________________________________________\n");
 $out .= "\n";
-$out .= sprintf("%-32s\n",$label_payby.' '.$label_cards);
+$out .= sprintf("%-45s\n",$clinic_name);
+$out .= sprintf("%-45s %s\n",$clinic_addr,$stmtnotice1);
+$out .= sprintf("%-45s %s\n",$clinic_csz,$stmtnotice2);
+$out .= sprintf("%-45s %s\n",'Phone: '.$clinic_phone,$stmtnotice3);
+$out .= sprintf("%-45s %s\n",'Fax: '.$clinic_fax,$stmtnotice4);
 $out .= "\n";
-$out .= sprintf("%s_____________________  %s______ %s___________________\n",
-                $label_cardnum,$label_expiry,$label_sign);
-$out .= sprintf("%-20s %s\n",null,$label_retpay);
-$out .= sprintf("-----------------------------------------------------------------\n");
+$out .= sprintf("_______________________________________________________________________\n");
+
 $out .= "\n";
-$out .= sprintf("_______________________ %s _______________________\n",$label_pgbrk);
+
+//Need to get guardian's name for children for letter address
+$guard = sqlStatement("select p.guardiansname from patient_data p ". 
+    "where p.pid = '".$stmt['pid']."' ");
+$guardrow = sqlFetchArray($guard);
+if ($guardrow['guardiansname']!='') {
+ $legal_addressee = "{$guardrow['guardiansname']}";
+} else {
+$legal_addressee = $stmt['to'][0];
+}
+
+$out .= sprintf("%-36s | %s: %-s\n",$label_addressee,$label_ptname,substr($stmt['patient'],0,20));
+$out .= sprintf("%-36s | %s: %-s\n",null,$label_statdate,$stmt['today']);
+$out .= sprintf("%-36s | %s: %-s\n",$legal_addressee,$label_chartnum,$stmt['pid']);
+$out .= sprintf("%-36s | %s: %-s\n",$stmt['to'][1],$label_totaldue,'$'.$stmtamount);
+$out .= sprintf("%-36s | %s\n",$stmt['to'][2],$label_paydate);
+
+$out .= sprintf("_______________________________________________________________________\n");
 $out .= "\n";
-$out .= sprintf("%-11s %-46s %s\n",$label_visit,$label_desc,$label_amt);
+$out .= sprintf("__________________________ %s __________________________\n",$label_pgbrk);
+$out .= "\n";
+$out .= sprintf("%-12s %-42s %-7s %s\n",$label_visit,$label_desc,$label_qty,$label_amt);
 $out .= "\n";
  
  // This must be set to the number of lines generated above.
  //
- $count = 21;
+ $count = 19;
 
  // This generates the detail lines.  Again, note that the values must
  // be specified in the order used.
  //
  foreach ($stmt['lines'] as $line) {
   $description = $line['desc'];
-  $tmp = substr($description, 0, 14);
-  if ($tmp == 'Procedure 9920' || $tmp == 'Procedure 9921')
-   $description = xl('Office Visit');
+  $proccode = substr($description, 10, 5);
 
+//This will put in the description of the CPT code.
+
+  $getproc = sqlStatement("select c.code,c.code_text from codes c where c.code='".$proccode."'"); 
+  $procrow = sqlFetchArray($getproc);
+  $procdesc = "{$procrow['code_text']}";
+  if($procdesc !='') {
+    $description = $proccode.": ".$procdesc;
+  } else {
+    $description = $proccode;
+  }
   $dos = $line['dos'];
   ksort($line['detail']);
 
@@ -208,57 +255,87 @@ $out .= "\n";
     $ddate = $matches[1] . '-' . $matches[2] . '-' . $matches[3];
    }
    $amount = '';
+   $units = '';
 
    if ($ddata['pmt']) {
     $amount = sprintf("%.2f", 0 - $ddata['pmt']);
-    $desc = xl('Paid') .' '. $ddate .': '. $ddata['src'].' '. $ddata['insurance_company'];
+    $desc = xl(' Paid') .' '. $ddate .': '. $ddata['src'].' '. $ddata['insurance_company'];
    } else if ($ddata['rsn']) {
     if ($ddata['chg']) {
      $amount = sprintf("%.2f", $ddata['chg']);
-     $desc = xl('Adj') .' '.  $ddate .': ' . $ddata['rsn'].' '. $ddata['insurance_company'];
+     $desc = xl(' Adj') .' '.  $ddate .': ' . $ddata['rsn'].' '. $ddata['insurance_company'];
     } else {
-     $desc = xl('Note') .' '. $ddate .': '. $ddata['rsn'].' '. $ddata['insurance_company'];
+     $desc = xl(' Note') .' '. $ddate .': '. $ddata['rsn'].' '. $ddata['insurance_company'];
     }
    } else if ($ddata['chg'] < 0) {
     $amount = sprintf("%.2f", $ddata['chg']);
-    $desc = xl('Patient Payment');
+    $desc = xl(' Patient Payment');
    } else {
     $amount = sprintf("%.2f", $ddata['chg']);
     $desc = $description;
+    //Getting the number of units
+    $getunits = sqlStatement("select b.units from billing b where   	b.code = '".$proccode."' and b.fee = '".$amount."' and b.pid 	= '".$stmt['pid']."' ");
+    $unitsrow = sqlFetchArray($getunits);
+    $unitnumber = $unitsrow['units'];
+    if ($unitnumber>0) {
+	$units = $unitnumber;
+    }
    }
 
-   $out .= sprintf("%-10s  %-45s%8s\n", $dos, $desc, $amount);
+//Trimming line description if too long.
+   if(strlen($desc)>40) {
+    $desc = substr($desc,0,37)."...";
+   } 
+
+//Deductible is misspelled in the system. Hardcoding change a>i
+//   $pos = strpos($desc, 'eductab', 1);
+//   if($pos!=false) {
+
+
+   $out .= sprintf("%-10s | %-40s | %3s | %8s\n", $dos, $desc, $units,$amount);
    $dos = '';
    ++$count;
   }
  }
 
- // This generates blank lines until we are at line 42.
+ // This generates blank lines until we are at line 39.
  //
- while ($count++ < 42) $out .= "\n";
+ while ($count++ < 39) $out .= sprintf("%-10s | %-40s | %-3s | %8s\n", null, null, null, null);
 
- // Fixed text labels
- $label_ptname = xl('Name');
- $label_today = xl('Date');
- $label_due = xl('Due');
- $label_thanks = xl('Thank you for choosing');
- $label_call = xl('Please call if any of the above information is incorrect');
- $label_prompt = xl('We appreciate prompt payment of balances due');
- $label_dept = xl('Billing Department');
- 
+ $out .= "\n";
+
  // This is the bottom portion of the page.
  
- $out .= sprintf("%-s: %-25s %-s: %-14s %-s: %8s\n",$label_ptname,$stmt['patient'],
-                 $label_today,$stmt['today'],$label_due,$stmt['amount']);
- $out .= sprintf("__________________________________________________________________\n");
+ $out .= sprintf("%60s: %8s\n",$label_due,$stmt['amount']);
+ $out .= sprintf("_______________________________________________________________________\n");
  $out .= "\n";
- $out .= sprintf("%-s\n",$label_call);
- $out .= sprintf("%-s\n",$label_prompt);
- $out .= "\n";
- $out .= sprintf("%-s\n",$billing_contact);
- $out .= sprintf("  %-s\n",$label_dept);
- $out .= sprintf("  %-s\n",$billing_phone);
+
+if ($stmt['amount']<0) {
+ $out .= $label_prompt;
  $out .= "\014"; // this is a form feed
+ return $out;
+}
+
+$out .= sprintf("%55s\n",$label_keep);
+$out .= sprintf("-----------------------------------------------------------------------\n");
+$out .= sprintf("%67s\n",$label_retpay);
+$out .= "\n";
+
+$out .= sprintf("%s: %-29s %-s\n",$label_ptname,substr($stmt['patient'],0,20),$label_remitto);
+$out .= sprintf("%s: %-22s %-s\n",$label_statdate,$stmt['today'],$remit_name);
+$out .= sprintf("%s: %-22s %-s\n",$label_chartnum,$stmt['pid'],$remit_addr);
+$out .= sprintf("%s: %-25s %-s\n",$label_totaldue,'$'.$stmtamount,$remit_csz);
+$out .= "\n";
+$out .= sprintf("Please make checks payable to: %-s.\n",$remit_name);
+$out .= sprintf("%-s, please fill out below:\n",$label_payby.' '.$label_cards);
+$out .= "\n";
+$out .= sprintf("%s:_____________________________________ %s:____/____\n",$label_cardnum,$label_expiry);
+$out .= "\n";
+$out .= sprintf("%s:__________ %s:_________________________________\n",$label_seccode,$label_sign);
+$out .= "\n";
+$out .= sprintf("%-s\n",$label_prompt);
+
+$out .= "\014"; // this is a form feed
  
  return $out;
 }
