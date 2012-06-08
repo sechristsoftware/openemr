@@ -53,7 +53,7 @@
     }
     if ($count) {
       $query = "DELETE FROM $table WHERE $where";
-      echo $query . "<br>\n";
+      //echo $query . "<br>\n";
       sqlStatement($query);
     }
   }
@@ -918,5 +918,12 @@ while ($orow = sqlFetchArray($ores)) {
  }
  setins("Ins1");
 </script>
+
+<!-- ALB Close window button-->
+<table width='100%'><tr align='center'>
+<td>
+<input type='button' value='<?php xl('Close Window','e'); ?>'  onclick='window.close()'>
+</td></tr></table>
+
 </body>
 </html>
