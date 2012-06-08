@@ -562,6 +562,8 @@ while ($result4 = sqlFetchArray($res4)) {
         $arid = 0;
         if ($thisauth && $auth_sensitivity) {
             $binfo = array('', '', '', '', '');
+            //ALB Checking to see if the total balance is 0, in which case no need to display Patient in red
+            $totalbalance = 0;
             if ($subresult2 = getBillingByEncounter($pid, $result4['encounter'], "code_type, code, modifier, code_text, fee"))
             {
                 // Get A/R info, if available, for this encounter.
@@ -641,6 +643,8 @@ while ($result4 = sqlFetchArray($res4)) {
                             $binfo[2] .= htmlspecialchars( oeFormatMoney($arinvoice[$codekey]['chg'] - $arinvoice[$codekey]['bal']), ENT_NOQUOTES);
                             $binfo[3] .= htmlspecialchars( oeFormatMoney($arinvoice[$codekey]['adj']), ENT_NOQUOTES);
                             $binfo[4] .= htmlspecialchars( oeFormatMoney($arinvoice[$codekey]['bal']), ENT_NOQUOTES);
+                            //ALB Keeping the running total balance
+                            $totalbalance = oeFormatMoney($totalbalance + $arinvoice[$codekey]['bal']);
                             unset($arinvoice[$codekey]);
                         }
                     }
@@ -648,18 +652,23 @@ while ($result4 = sqlFetchArray($res4)) {
 
                 // Pick up any remaining unmatched invoice items from the accounting
                 // system.  Display them in red, as they should be unusual.
+//ALB - These are not errors, just coming from different sources, such as front_payment, so display in blue instead of red.
                 if ($accounting_enabled && !empty($arinvoice)) {
                     foreach ($arinvoice as $codekey => $val) {
                         if ($binfo[0]) {
                             for ($i = 0; $i < 5; ++$i) $binfo[$i] .= '<br>';
                         }
-                        for ($i = 0; $i < 5; ++$i) $binfo[$i] .= "<font color='red'>";
+                        for ($i = 0; $i < 5; ++$i) $binfo[$i] .= "<font color='blue'>";
                         $binfo[0] .= htmlspecialchars( $codekey, ENT_NOQUOTES);
                         $binfo[1] .= htmlspecialchars( oeFormatMoney($val['chg'] + $val['adj']), ENT_NOQUOTES);
                         $binfo[2] .= htmlspecialchars( oeFormatMoney($val['chg'] - $val['bal']), ENT_NOQUOTES);
                         $binfo[3] .= htmlspecialchars( oeFormatMoney($val['adj']), ENT_NOQUOTES);
                         $binfo[4] .= htmlspecialchars( oeFormatMoney($val['bal']), ENT_NOQUOTES);
+                        //ALB Keeping the running total balance
+                        $totalbalance = oeFormatMoney($totalbalance + $val['bal']); 
+                        
                         for ($i = 0; $i < 5; ++$i) $binfo[$i] .= "</font>";
+
                     }
                 }
             } // end if there is billing
@@ -704,7 +713,8 @@ while ($result4 = sqlFetchArray($res4)) {
                     $insured .= "<span class='text'$style>&nbsp;" . htmlspecialchars( xl('Tertiary'), ENT_NOQUOTES) . ": " .
                     htmlspecialchars( $subresult7{"provider_name"}, ENT_NOQUOTES) . "</span><br>\n";
                 }
-                if ($responsible == 0) {
+                //ALB If total balance is 0, no need to display Patient in red.
+                if ($responsible == 0 && $totalbalance !=0) {
                     $insured .= "<span class='text' style='color:red'>&nbsp;" . htmlspecialchars( xl('Patient'), ENT_NOQUOTES) .
                                 "</span><br>\n";
                 }
@@ -712,8 +722,12 @@ while ($result4 = sqlFetchArray($res4)) {
             else {
                 $insured = " (".htmlspecialchars( xl("No access"), ENT_NOQUOTES).")";
             }
-      
-            echo "<td>".$insured."</td>\n";
+            //ALB Display Self Pay instead of service date if no insurance data (self pay)
+            if ($insured != oeFormatShortDate($raw_encounter_date)) {
+              echo "<td>".$insured."</td>\n";
+            } else {
+              echo "<td>Self-Pay</td>\n";
+            }
         }
 
         echo "</tr>\n";

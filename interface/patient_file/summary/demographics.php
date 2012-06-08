@@ -556,10 +556,14 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
 <?php
  if ($GLOBALS['oer_config']['ws_accounting']['enabled']) {
  // Show current balance and billing note, if any.
+ //ALB Added a new line (IMHO more important for clinics on what the patient actually ows after the insurances paid up. The whole balance is displayed, together with the actual patient due amount that the front desk person can collect.
   echo "        <div style='margin-left: 10px; margin-right: 10px'>" .
-   "<span class='bold'><font color='#ee6600'>" .
+   "<span class='bold'>" .
    htmlspecialchars(xl('Balance Due'),ENT_NOQUOTES) .
    ": " . htmlspecialchars(oeFormatMoney(get_patient_balance($pid)),ENT_NOQUOTES) .
+"<br><font color='#ee6600'>" .
+htmlspecialchars(xl(' Patient Due'),ENT_NOQUOTES) . ": " . 
+htmlspecialchars(oeFormatMoney(get_due_patient_balance($pid)),ENT_NOQUOTES) .
    "</font></span><br>";
   if ($result['genericname2'] == 'Billing') {
    echo "<span class='bold'><font color='red'>" .
