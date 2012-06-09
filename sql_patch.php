@@ -29,14 +29,14 @@ $EMRversion = trim(preg_replace('/\s*\([^)]*\)/', '', $GLOBALS['openemr_version'
 
 <html>
 <head>
-<title>OpenEMR <?php echo attr($EMRversion) ?> Database Patch</title>
+<title>OpenEMR <?php echo attr($EMRversion) ?> <?php echo xlt('Database Patch'); ?></title>
 <link rel='STYLESHEET' href='interface/themes/style_blue.css'>
 </head>
 <body style="color:green;">
 <div style="box-shadow: 3px 3px 5px 6px #ccc; border-radius: 20px; padding: 10px 40px;background-color:#EFEFEF; width:500px; margin:40px auto"> 
   
-  <p style="font-weight:bold; font-size:1.8em; text-align:center"><?php echo xlt('OpenEMR'),' ',text($EMRversion),' ',xlt('Database Patch'),' ',text($v_realpatch) ?></p>      
-  <p style="font-weight:bold; text-align:center;"><?php echo xlt('Applying Patch to site :'),' ',$_GET['site'] ?></p>
+  <p style="font-weight:bold; font-size:1.8em; text-align:center">OpenEMR <?php echo text($EMRversion),' ',xlt('Database Patch'),' ',text($v_realpatch) ?></p>      
+  <p style="font-weight:bold; text-align:center;"><?php echo xlt('Applying Patch to site'),' : ',text($_SESSION['site_id']) ?></p>
    
   
   <?php
@@ -62,11 +62,11 @@ $EMRversion = trim(preg_replace('/\s*\([^)]*\)/', '', $GLOBALS['openemr_version'
   sqlStatement("UPDATE version SET v_realpatch = '$v_realpatch'");
    
                   
-  echo '<p style="text-align:center; font-size:1.8em;">',xlt('Database patch '),' ',text($v_realpatch),' ',xlt('finished'),'.</p>'; 
+  echo '<p style="text-align:center; font-size:1.8em;">',xlt('Database Patch'),' ',text($v_realpatch),' ',xlt('finished'),'.</p>'; 
   
-  echo '<p style="text-align:center; font-size:1.8em;">',xlt('OpenEMR Version'),' = ',text($EMRversion.'('.$v_realpatch.')'),'.</p>';  
+  echo '<p style="text-align:center; font-size:1.8em;">OpenEMR ',xlt('Version'),' = ',text($EMRversion.'('.$v_realpatch.')'),'.</p>';  
    
-  echo '<p><a style="border-radius: 10px; padding:5px; width:200px; margin:0 auto; background-color:green; color:white; font-weight:bold; display:block; text-align:center;" href="index.php?site=',$_GET['site'].'">',xlt('Log in'),'</a></p>';  
+  echo '<p><a style="border-radius: 10px; padding:5px; width:200px; margin:0 auto; background-color:green; color:white; font-weight:bold; display:block; text-align:center;" href="index.php?site=',attr($_SESSION['site_id']).'">',xlt('Log in'),'</a></p>';  
   
   if(isset($_SERVER['HTTP_REFERER'])) {
       $split = preg_split('/\//',$_SERVER['HTTP_REFERER']);
