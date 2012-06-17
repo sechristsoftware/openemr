@@ -788,9 +788,11 @@ if ($_POST['form_save']) {
 				array($form_pid,$form_encounter));
 			if($RowSearch = sqlFetchArray($ResultSearchNew))
 			{
+                                $Codetype=$RowSearch['code_type'];
 				$Code=$RowSearch['code'];
 				$Modifier=$RowSearch['modifier'];
 			}else{
+                                $Codetype='';
 				$Code='';
 				$Modifier='';
 			}
@@ -798,9 +800,9 @@ if ($_POST['form_save']) {
         " global_amount,payment_type,description,patient_id,payment_method,adjustment_code,post_to_date) ".
         " VALUES ('0',?,?,now(),?,?,'','patient','COPAY',?,?,'patient_payment',now())",
         array($_SESSION['authId'],$form_source,$dosdate,$amount,$form_pid,$paydesc));
-      $insrt_id=idSqlStatement("INSERT INTO ar_activity (pid,encounter,code,modifier,payer_type,post_time,post_user,session_id,pay_amount,account_code)".
-        " VALUES (?,?,?,?,0,?,?,?,?,'PCP')",
-        array($form_pid,$form_encounter,$Code,$Modifier,$dosdate,$_SESSION['authId'],$session_id,$amount));
+      $insrt_id=idSqlStatement("INSERT INTO ar_activity (pid,encounter,code_type,code,modifier,payer_type,post_time,post_user,session_id,pay_amount,account_code)".
+        " VALUES (?,?,?,?,?,0,?,?,?,?,'PCP')",
+        array($form_pid,$form_encounter,$Codetype,$Code,$Modifier,$dosdate,$_SESSION['authId'],$session_id,$amount));
     }
     else {
       $msg = invoice_add_line_item($invoice_info, 'COPAY',
