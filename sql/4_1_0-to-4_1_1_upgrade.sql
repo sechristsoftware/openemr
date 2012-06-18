@@ -130,6 +130,11 @@ INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('nat
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('nation_notes_replace_buttons','Abnormal','Abnormal',40);
 #EndIf
 
+#IfNotRow2D list_options list_id lists option_id Svc_Codes_Financial_Summary
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq` ) VALUES ('lists','Svc_Codes_Financial_Summary','Service Codes for Financial Summary', 1);
+#EndIf
+
+
 #IfMissingColumn insurance_data policy_type
 ALTER TABLE `insurance_data` ADD COLUMN `policy_type` varchar(25) NOT NULL default '';
 #EndIf
