@@ -513,7 +513,7 @@ if ($taxline) {
  </tr>
 
 </table>
-
+<br>
 <table border='0' cellpadding='5' cellspacing='0' width='96%'>
  <tr>
 

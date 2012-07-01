@@ -211,7 +211,8 @@ $grand_total_amt_balance  = 0;
     $sqlBindArray = array();
     if ($INTEGRATED_AR) {
     $query = "select b.code,sum(b.units) as units,sum(b.fee) as billed,sum(ar_act.paid) as PaidAmount, " .
-        "sum(ar_act.adjust) as AdjustAmount,(sum(b.fee)-(sum(ar_act.paid)+sum(ar_act.adjust))) as Balance " .
+        "sum(ar_act.adjust) as AdjustAmount,(sum(b.fee)-(sum(ar_act.paid)+sum(ar_act.adjust))) as Balance, " .
+        "c.financial_reporting " .
         "FROM form_encounter as fe " .
         "JOIN billing as b on b.pid=fe.pid and b.encounter=fe.encounter " .
         "JOIN (select pid,encounter,code,sum(pay_amount) as paid,sum(adj_amount) as adjust from ar_activity group by pid,encounter,code) as ar_act " .
@@ -253,6 +254,7 @@ $grand_total_amt_balance  = 0;
       $row['Paid Amt'] = $erow['PaidAmount'];
       $row['Adjustment Amt'] = $erow['AdjustAmount'];
       $row['Balance Amt'] = $erow['Balance'];
+      $row['financial_reporting'] = $erow['financial_reporting'];
       $rows[$erow['pid'] . '|' . $erow['code'] . '|' . $erow['units']] = $row;
       }
               if ($_POST['form_csvexport']) {
@@ -296,7 +298,7 @@ $grand_total_amt_balance  = 0;
 $print = '';
 $csv = '';
 
-if($_POST['form_details']){ $bgcolor = "#FFFFDD";  }else { $bgcolor = "#FFDDDD";  }
+if($row['financial_reporting']){ $bgcolor = "#FFFFDD";  }else { $bgcolor = "#FFDDDD";  }
 $print = "<tr bgcolor='$bgcolor'><td class='detail'>".text($row['Procedure codes'])."</td><td class='detail'>".text($row['Units'])."</td><td class='detail'>".text(oeFormatMoney($row['Amt Billed']))."</td><td class='detail'>".text(oeFormatMoney($row['Paid Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Adjustment Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Balance Amt']))."</td>"; 
 
 $csv = '"' . text($row['Procedure codes']) . '","' . text($row['Units']) . '","' . text(oeFormatMoney($row['Amt Billed'])) . '","' . text(oeFormatMoney($row['Paid Amt'])) . '","' . text(oeFormatMoney($row['Adjustment Amt'])) . '","' . text(oeFormatMoney($row['Balance Amt'])) . '"' . "\n";
