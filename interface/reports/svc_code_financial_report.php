@@ -1,16 +1,30 @@
 <?php
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-
-// This is a report of Financial Summary by Service Code.
-// This is a summary of service code charge/pay/adjust and balance, 
-// with the ability to pick "important" codes to either highlight or
-// limit to list to. 
-// Important codes can be configured in Adminstration->List section, 
-// under 'Service Codes for Financial Summary' category
-// Author : Visolve
+/**
+ * This is a report of Financial Summary by Service Code.
+ *
+ * This is a summary of service code charge/pay/adjust and balance,
+ * with the ability to pick "important" codes to either highlight or
+ * limit to list to. Important codes can be configured in
+ * Administration->Service section by assigning code with
+ * 'Service Reporting'.
+ *
+ * Copyright (C) 2006-2010 Rod Roark <rod@sunsetsystems.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Visolve
+ * @link    http://www.open-emr.org
+ */
 
 $sanitize_all_escapes=true;
 $fake_register_globals=false;
@@ -105,7 +119,7 @@ $grand_total_amt_balance  = 0;
 				<?php echo xlt('Facility'); ?>:
 			</td>
 			<td>
-			<?php dropdown_facility(strip_escape_custom($form_facility), 'form_facility', true); ?>
+			<?php dropdown_facility($form_facility, 'form_facility', true); ?>
 			</td>
                         <td><?php echo xlt('Provider'); ?>:</td>
                 <td><?php
@@ -202,9 +216,9 @@ $grand_total_amt_balance  = 0;
         "JOIN billing as b on b.pid=fe.pid and b.encounter=fe.encounter " .
         "JOIN (select pid,encounter,code,sum(pay_amount) as paid,sum(adj_amount) as adjust from ar_activity group by pid,encounter,code) as ar_act " .
         "ON ar_act.pid=b.pid and ar_act.encounter=b.encounter and ar_act.code=b.code " .
-        "LEFT OUTER JOIN codes AS c ON c.code = b.code AND c.modifier = b.modifier AND c.code_type = b.code_type " .
-        "WHERE b.code_type != 'COPAY' AND b.activity = 1 /* AND b.fee != 0 */ " .
-        "AND b.code_type =(select ct_key from code_types where ct_id='1') AND " .
+        "LEFT OUTER JOIN codes AS c ON c.code = b.code " .
+        "INNER JOIN code_types AS ct ON ct.ct_id = c.code_type AND ct.ct_key = b.code_type AND ct.ct_fee = '1' " .
+        "WHERE b.code_type != 'COPAY' AND b.activity = 1 /* AND b.fee != 0 */ AND " .
         "fe.date >=  ? AND fe.date <= ?";
    array_push($sqlBindArray,"$from_date 00:00:00","$to_date 23:59:59");
     // If a facility was specified.
@@ -216,6 +230,10 @@ $grand_total_amt_balance  = 0;
       if ($form_provider) {
         $query .= " AND b.provider_id = ?";
         array_push($sqlBindArray,$form_provider);
+      }
+      // If selected important codes
+      if($_POST['form_details']) {
+        $query .= " AND c.financial_reporting = '1'";
       }
       $query .= " GROUP BY b.code ORDER BY b.code, fe.date, fe.id ";
       $res = sqlStatement($query,$sqlBindArray);
@@ -273,17 +291,13 @@ $grand_total_amt_balance  = 0;
  <?php
               }
      $orow = -1;
- $code_query = "select option_id from list_options where list_id='Svc_Codes_Financial_Summary';";
-        $cores = sqlStatement($code_query);
- while($result=sqlFetchArray($cores)){
- $core[] = $result['option_id'];
- }
+
      foreach ($rows as $key => $row) {
 $print = '';
 $csv = '';
-		if($_POST['form_details']) {
-			 if(in_array($row['Procedure codes'],$core)){
-$print = "<tr bgcolor='#FFFFDD'><td class='detail'>".text($row['Procedure codes'])."</td><td class='detail'>".text($row['Units'])."</td><td class='detail'>".text(oeFormatMoney($row['Amt Billed']))."</td><td class='detail'>".text(oeFormatMoney($row['Paid Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Adjustment Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Balance Amt']))."</td>";
+
+if($_POST['form_details']){ $bgcolor = "#FFFFDD";  }else { $bgcolor = "#FFDDDD";  }
+$print = "<tr bgcolor='$bgcolor'><td class='detail'>".text($row['Procedure codes'])."</td><td class='detail'>".text($row['Units'])."</td><td class='detail'>".text(oeFormatMoney($row['Amt Billed']))."</td><td class='detail'>".text(oeFormatMoney($row['Paid Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Adjustment Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Balance Amt']))."</td>"; 
 
 $csv = '"' . text($row['Procedure codes']) . '","' . text($row['Units']) . '","' . text(oeFormatMoney($row['Amt Billed'])) . '","' . text(oeFormatMoney($row['Paid Amt'])) . '","' . text(oeFormatMoney($row['Adjustment Amt'])) . '","' . text(oeFormatMoney($row['Balance Amt'])) . '"' . "\n";
 
@@ -293,21 +307,7 @@ $bgcolor = ((++$orow & 1) ? "#ffdddd" : "#ddddff");
                                                 $grand_total_amt_paid  += $row['Paid Amt'];
                                                 $grand_total_amt_adjustment  += $row['Adjustment Amt'];
                                                 $grand_total_amt_balance  += $row['Balance Amt'];
-	                }
 
-		} else {
- if(in_array($row['Procedure codes'],$core)){ $bgcolor = "#FFFFDD";  }else { $bgcolor = "#FFDDDD";  }
-$print = "<tr bgcolor='$bgcolor'><td class='detail'>".text($row['Procedure codes'])."</td><td class='detail'>".text(oeFormatMoney($row['Units']))."</td><td class='detail'>".text(oeFormatMoney($row['Amt Billed']))."</td><td class='detail'>".text(oeFormatMoney($row['Paid Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Adjustment Amt']))."</td><td class='detail'>".text(oeFormatMoney($row['Balance Amt']))."</td>"; 
-
-$csv = '"' . text($row['Procedure codes']) . '","' . text($row['Units']) . '","' . text(oeFormatMoney($row['Amt Billed'])) . '","' . text(oeFormatMoney($row['Paid Amt'])) . '","' . text(oeFormatMoney($row['Adjustment Amt'])) . '","' . text(oeFormatMoney($row['Balance Amt'])) . '"' . "\n";
-
-$bgcolor = ((++$orow & 1) ? "#ffdddd" : "#ddddff");
-                                $grand_total_units  += $row['Units'];
-                                                $grand_total_amt_billed  += $row['Amt Billed'];
-                                                $grand_total_amt_paid  += $row['Paid Amt'];
-                                                $grand_total_amt_adjustment  += $row['Adjustment Amt'];
-                                                $grand_total_amt_balance  += $row['Balance Amt'];
-}
         if ($_POST['form_csvexport']) { echo $csv; } 
 	else { echo $print;
  }
