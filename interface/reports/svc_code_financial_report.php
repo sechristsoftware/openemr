@@ -218,7 +218,7 @@ $grand_total_amt_balance  = 0;
         "JOIN (select pid,encounter,code,sum(pay_amount) as paid,sum(adj_amount) as adjust from ar_activity group by pid,encounter,code) as ar_act " .
         "ON ar_act.pid=b.pid and ar_act.encounter=b.encounter and ar_act.code=b.code " .
         "LEFT OUTER JOIN codes AS c ON c.code = b.code " .
-        "INNER JOIN code_types AS ct ON ct.ct_id = c.code_type AND ct.ct_key = b.code_type AND ct.ct_fee = '1' " .
+        "INNER JOIN code_types AS ct ON ct.ct_key = b.code_type AND ct.ct_fee = '1' " .
         "WHERE b.code_type != 'COPAY' AND b.activity = 1 /* AND b.fee != 0 */ AND " .
         "fe.date >=  ? AND fe.date <= ?";
    array_push($sqlBindArray,"$from_date 00:00:00","$to_date 23:59:59");
