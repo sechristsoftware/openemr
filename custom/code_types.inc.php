@@ -21,10 +21,12 @@
 // active - 1 if this code type is activated
 // label - label used for code type
 // external - 0 for storing codes in the code table
-//            1 for storing codes in external ICD10 tables
-//            2 for storing codes in external SNOMED (RF1) tables
-//            3 for storing codes in external SNOMED (RF2) tables
-//            4 for storing codes in external ICD9 tables
+//            1 for storing codes in external ICD10 Diagnosis tables
+//            2 for storing codes in external SNOMED (RF1) Diagnosis tables
+//            3 for storing codes in external SNOMED (RF2) Diagnosis tables
+//            4 for storing codes in external ICD9 Diagnosis tables
+//            5 for storing codes in external ICD9 Procedure/Service tables
+//            6 for storing codes in external ICD10 Procedure/Service tables
 //
 
 /*********************************************************************
@@ -62,10 +64,12 @@ else {
 
 $cd_external_options = array(
   '0' => xl('No'),
-  '1' => xl('ICD10'),
-  '2' => xl('SNOMED (RF1)'),
-  '3' => xl('SNOMED (RF2)'),
-  '4' => xl('ICD9')
+  '4' => xl('ICD9 Diagnosis'),
+  '5' => xl('ICD9 Procedure/Service'),
+  '1' => xl('ICD10 Diagnosis'),
+  '6' => xl('ICD10 Procedure/Service'),
+  '2' => xl('SNOMED (RF1) Diagnosis'),
+  '3' => xl('SNOMED (RF2) Diagnosis'),
 );
 
 // Code types are now stored in the database.
@@ -191,7 +195,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
    array_push($sql_bind_array,$code_types[$form_code_type]['id']);
    $res = sqlStatement($query,$sql_bind_array);
   }
-  else if ($code_types[$form_code_type]['external'] == 1 ) { // Search from ICD10 codeset tables
+  else if ($code_types[$form_code_type]['external'] == 1 ) { // Search from ICD10 diagnosis codeset tables
    $active_query = '';
    if ($active) {
     // Only filter for active codes
@@ -223,7 +227,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
-  else if ($code_types[$form_code_type]['external'] == 2 ) { // Search from SNOMED (RF1) codeset tables
+  else if ($code_types[$form_code_type]['external'] == 2 ) { // Search from SNOMED (RF1) diagnosis codeset tables
    if ($active) {
     // Only filter for active codes
     // If there is no entry in codes sql table, then default to active
@@ -255,10 +259,10 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
-  else if ($code_types[$form_code_type]['external'] == 3 ) { // Search from SNOMED (RF2) codeset tables
+  else if ($code_types[$form_code_type]['external'] == 3 ) { // Search from SNOMED (RF2) diagnosis codeset tables
    //placeholder
   }
-  else if ($code_types[$form_code_type]['external'] == 4 ) { // Search from ICD9 codeset tables
+  else if ($code_types[$form_code_type]['external'] == 4 ) { // Search from ICD9 diagnosis codeset tables
    if ($active) {
     // Only filter for active codes
     // If there is no entry in codes sql table, then default to active
@@ -286,6 +290,69 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
     $query .= "ORDER BY `formatted_dx_code`+0, `formatted_dx_code` $limit_query";
+    $res = sqlStatement($query,$sql_bind_array);
+   }
+  }
+  else if ($code_types[$form_code_type]['external'] == 5 ) { // Search from ICD9 Procedure/Service codeset tables
+   if ($active) {
+    // Only filter for active codes
+    // If there is no entry in codes sql table, then default to active
+    //  (this is reason for including NULL below)
+    $active_query=" AND (codes.active = 1 || codes.active IS NULL) ";
+   }
+   // Ensure the icd9_sg_code sql table exists
+   $check_table = sqlQuery("SHOW TABLES LIKE 'icd9_sg_code'");
+   if ( !(empty($check_table)) ) {
+    $sql_bind_array = array();
+    $query = "SELECT icd9_sg_code.formatted_sg_code as code, icd9_sg_code.long_desc as code_text, " .
+             "codes.id, codes.code_type, codes.modifier, codes.units, codes.fee, " .
+             "codes.superbill, codes.related_code, codes.taxrates, codes.cyp_factor, codes.active, codes.reportable, " .
+             "'" . add_escape_custom($form_code_type) . "' as code_type_name " .
+             "FROM `icd9_sg_code` " .
+             "LEFT OUTER JOIN `codes` " .
+             "ON icd9_sg_code.formatted_sg_code = codes.code AND codes.code_type = ? ";
+    array_push($sql_bind_array,$code_types[$form_code_type]['id']);
+    if ($return_only_one) {
+     $query .= "WHERE icd9_sg_code.formatted_sg_code = ? $active_query ";
+     array_push($sql_bind_array,$search_term);
+    }
+    else {
+     $query .= "WHERE (icd9_sg_code.long_desc LIKE ? OR icd9_sg_code.formatted_sg_code LIKE ?) $active_query ";
+     array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
+    }
+    $query .= "ORDER BY `formatted_sg_code`+0, `formatted_sg_code` $limit_query";
+    $res = sqlStatement($query,$sql_bind_array);
+   }
+  }
+  else if ($code_types[$form_code_type]['external'] == 6 ) { // Search from ICD10 Procedure/Service codeset tables
+   $active_query = '';
+   if ($active) {
+    // Only filter for active codes
+    // If there is no entry in codes sql table, then default to active
+    //  (this is reason for including NULL below)
+    $active_query=" AND (codes.active = 1 || codes.active IS NULL) ";
+   }
+   // Ensure the icd10_dx_order_code sql table exists
+   $check_table = sqlQuery("SHOW TABLES LIKE 'icd10_pcs_order_code'");
+   if ( !(empty($check_table)) ) {
+    $sql_bind_array = array();
+    $query = "SELECT icd10_pcs_order_code.pcs_code as code, icd10_pcs_order_code.long_desc as code_text, " .
+             "codes.id, codes.code_type, codes.modifier, codes.units, codes.fee, " .
+             "codes.superbill, codes.related_code, codes.taxrates, codes.cyp_factor, codes.active, codes.reportable, " .
+             "'" . add_escape_custom($form_code_type) . "' as code_type_name " .
+             "FROM `icd10_pcs_order_code` " .
+             "LEFT OUTER JOIN `codes` " .
+             "ON icd10_pcs_order_code.pcs_code = codes.code AND codes.code_type = ? ";
+    array_push($sql_bind_array,$code_types[$form_code_type]['id']);
+    if ($return_only_one) {
+     $query .= "WHERE icd10_pcs_order_code.pcs_code = ? AND icd10_pcs_order_code.valid_for_coding = '1' $active_query ";
+     array_push($sql_bind_array,$search_term);
+    }
+    else {
+     $query .= "WHERE (icd10_pcs_order_code.long_desc LIKE ? OR icd10_pcs_order_code.pcs_code LIKE ?) AND icd10_pcs_order_code.valid_for_coding = '1' $active_query ";
+     array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
+    }
+    $query .= "ORDER BY `pcs_code`+0, `pcs_code` $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
