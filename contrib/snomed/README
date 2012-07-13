@@ -1,13 +1,2 @@
-<div class="dialog"><p>
-Steps to install the Snomed database:
-<ol>
-<li>The first step is to open an account with the Unified Medical Language System web site <b><a href="https://utslogin.nlm.nih.gov/cas/login">here</a></b></li>
-<li>Then the raw data feed release can be obtained from <b><a href="http://www.nlm.nih.gov/research/umls/licensedcontent/snomedctfiles.html">this NIH location</a></b>
-<li>Place the downloaded Snomed database zip file into the contrib/Snomed directory. 
-</li>
-<li>Return to this page and you will be able to 
-   complete the RxNorm installation process by clicking on the SNOMED section header
-</li>
-</ol>
-<h5 class="error_msg">NOTE: Only the Biannual International Release is currently supported</h5>
-</p>
+Directory to place SNOMED Database files.
+In OpenEMR, go to Administration -> Other -> 'External Data Loads' for instructions.

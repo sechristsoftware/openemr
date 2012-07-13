@@ -1,24 +1,29 @@
 <?php
-/*******************************************************************/
-// Copyright (C) 2012 Patient Healthcare Analytics, Inc.
-//
-// Authors: rewritten and chopped up for handling jquery modular
-//	interface
-//         (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
-//
-//	pre-jquery versions where authored and maintained by
-// 	  Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
-//         Rohit Kumar <pandit.rohit@netsity.com>
-//         Brady Miller <brady@sparmy.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-/*******************************************************************/
-//
-// This file implements the database load processing when loading external
-// database files into openEMR
+/**
+ * This file implements the database load processing when loading external
+ * database files into openEMR
+ *
+ * Copyright (C) 2012 Patient Healthcare Analytics, Inc.
+ * Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
+ * @author  Rohit Kumar <pandit.rohit@netsity.com>
+ * @author  Brady Miller <brady@sparmy.com>
+ * @link    http://www.open-emr.org
+ */
+
 
 //SANITIZE ALL ESCAPES
 $sanitize_all_escapes=true;
@@ -38,7 +43,7 @@ ini_set('memory_limit', '150M');
 
 // Control access
 if (!acl_check('admin', 'super')) {
-    echo htmlspecialchars( xl('Not Authorized'), ENT_NOQUOTES);
+    echo xlt('Not Authorized');
     exit;
 }
 
@@ -60,9 +65,9 @@ array_shift($files_array); // get rid of ".."
 // for all others just handle the zip file
 //
 if (is_numeric(strpos($db, "ICD"))) {
-    $qry_str = "SELECT B.`load_filename` FROM `supported_external_dataloads` A, `supported_external_dataloads` B WHERE A.`load_type` = '" . $db . "' and A.`load_checksum` = '" . $file_checksum . "' and A.`load_release_date` = B.`load_release_date` and A.`load_type` = B.`load_type`";
-    $result = mysql_query($qry_str);
-    while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+    $qry_str = "SELECT B.`load_filename` FROM `supported_external_dataloads` A, `supported_external_dataloads` B WHERE A.`load_type` = ? and A.`load_checksum` = ? and A.`load_release_date` = B.`load_release_date` and A.`load_type` = B.`load_type`";
+    $result = sqlStatement($qry_str, array($db,$file_checksum) );
+    while ($row = sqlFetchArray($result)) {
         $file = $mainPATH."/".$row['load_filename'];
         if (is_file($file)) {
 	    handle_zip_file($db, $file);
@@ -112,11 +117,11 @@ if (!update_tracker_table($db, $file_revision_date, $version, $file_checksum)) {
 // done, so clean up the temp directory
 if ($newInstall === "1") {
     ?>
-    <div>Successfully installed the <?php echo $db; ?> database</div>
+    <div><?php echo xlt("Successfully installed the following database") . ": " . text($db); ?></div>
     <?php
 } else { 
     ?>
-    <div>Successfully upgraded the <?php echo $db; ?> database</div>
+    <div><?php echo xlt("Successfully upgraded the following database") . ": " . text($db); ?></div>
     <?php
 }
 temp_dir_cleanup($db);

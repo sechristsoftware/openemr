@@ -1,22 +1,29 @@
 <?php
-/*******************************************************************/
-// Copyright (C) 2012 Patient Healthcare Analytics, Inc.
-//
-// Authors:
-//         (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
-//
-// This "jqueryified" code version was based on the original code from
-// interface/code_systems/standard_tables_manage.php written by 
-//
-// Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
-//
-//         Rohit Kumar <pandit.rohit@netsity.com>
-//         Brady Miller <brady@sparmy.com>
-//
-/*******************************************************************/
-//
-// This file implements the main jquery interface for loading external
-// database files into openEMR
+/**
+ * This file implements the main jquery interface for loading external
+ * database files into openEMR
+ *
+ * Copyright (C) 2012 Patient Healthcare Analytics, Inc.
+ * Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
+ * @author  Rohit Kumar <pandit.rohit@netsity.com>
+ * @author  Brady Miller <brady@sparmy.com>
+ * @link    http://www.open-emr.org
+ */
+
 
 //SANITIZE ALL ESCAPES
 $sanitize_all_escapes=true;
@@ -35,7 +42,7 @@ ini_set('memory_limit', '150M');
 
 // Control access
 if (!acl_check('admin', 'super')) {
-    echo htmlspecialchars( xl('Not Authorized'), ENT_NOQUOTES);
+    echo xlt('Not Authorized');
     exit;
 }
 
@@ -64,6 +71,7 @@ var accOpts = {
 	var stg_dets_id = '#' + $(ui.newContent).attr('id') + "_stage_details";
 	var inst_load_id = '#' + $(ui.newContent).attr('id') + "_inst_loading";
 	var stg_load_id = '#' + $(ui.newContent).attr('id') + "_stg_loading";
+	top.restoreSession()
   	$(inst_load_id).show();
   	$(stg_load_id).show();
         $.ajax({
@@ -85,14 +93,14 @@ var accOpts = {
       		    function() {
 		        var dlg = "#" + $(ui.newContent).attr('id') + "_dialog";
 			$(dlg).dialog('open');
-			$(dlg).load('../../contrib/' + $(ui.newContent).attr('id').toLowerCase() + '/README');
+			$(dlg).load($(ui.newContent).attr('id').toLowerCase() + '_howto.php');
       		    },
       		    function() {
       		    }
     		);
     		$("#" + $(ui.newContent).attr('id') + "_unsupportedmsg").hover(
       		    function() {
-          		$(this).append('<div class="tooltip"><p>openEMR does not recognize the incoming file in the contrib directory. This is most likely because you need to configure the release in the supported_external_dataloads table in the MySQL database.</p></div>');
+          		$(this).append('<div class="tooltip"><p><?php echo xla("OpenEMR does not recognize the incoming file in the contrib directory. This is most likely because you need to configure the release in the supported_external_dataloads table in the MySQL database."); ?></p></div>');
       		    },
       		    function() {
           		$("div.tooltip").remove();
@@ -100,7 +108,7 @@ var accOpts = {
     		);
     		$("#" + $(ui.newContent).attr('id') + "_dirmsg").hover(
       		    function() {
-          		$(this).append('<div class="tooltip"><p>Please create the contrib/' + $(ui.newContent).attr('id').toLowerCase() + ' directory before proceeding.</p></div>');
+          		$(this).append('<div class="tooltip"><p><?php echo xla("Please create the following directory before proceeding"); ?>' + ': contrib/' + $(ui.newContent).attr('id').toLowerCase() + '</p></div>');
       		    },
       		    function() {
           		$("div.tooltip").remove();
@@ -108,7 +116,7 @@ var accOpts = {
     		);
     		$("#" + $(ui.newContent).attr('id') + "_msg").hover(
       		    function() {
-          		$(this).append('<div class="tooltip"><p>Please place your install files in the contrib/' + $(ui.newContent).attr('id').toLowerCase() + ' directory.</p></div>');
+          		$(this).append('<div class="tooltip"><p><?php echo xla("Please place your install files in following directory"); ?>' + ': contrib/' + $(ui.newContent).attr('id').toLowerCase() + '</p></div>');
       		    },
       		    function() {
           		$("div.tooltip").remove();
@@ -246,14 +254,12 @@ div.tooltip p {
 </style>
 </head>
 <body class="body_top">
-<h4>openEMR External Database Import Utility</h4>
+<h4><?php echo xlt("External Database Import Utility"); ?></h4>
 <div id="accordion">
-	<h3><a href="#">Overview</a></h3>
+	<h3><a href="#"><?php echo xlt("Overview"); ?></a></h3>
 	<div id="overivew" class="stg">
-	  <div class="overview">This page allows you to review each of the supported external dataloads that you can install and
-		upgrade. Each section below can be expanded by clicking on the section header to review the status
-		of the particular database of interest.
-		<div class="error_msg">NOTE: Importing external data can take more than an hour depending on your hardware configuration. For example, one of the RxNorm data tables contain in excess of 6 million rows.</div>
+	  <div class="overview"><?php echo xlt("This page allows you to review each of the supported external dataloads that you can install and upgrade. Each section below can be expanded by clicking on the section header to review the status of the particular database of interest."); ?>
+		<div class="error_msg"><?php echo xlt("NOTE: Importing external data can take more than an hour depending on your hardware configuration. For example, one of the RxNorm data tables contain in excess of 6 million rows."); ?></div>
 	  </div>
 	</div>
 <?php
@@ -263,24 +269,24 @@ div.tooltip p {
 $db_list = array("DSMIV", "ICD9", "ICD10", "RXNORM", "SNOMED");
 foreach ($db_list as $db) {
     ?>
-    <h3><a href="#"><?php echo $db; ?></a></h3>
-    <div id="<?php echo $db; ?>" class="hdr">
-        <div class="status" id="<?php echo $db; ?>_status"></div>
+    <h3><a href="#"><?php echo attr($db); ?></a></h3>
+    <div id="<?php echo attr($db); ?>" class="hdr">
+        <div class="status" id="<?php echo attr($db); ?>_status"></div>
         <div class="left_wrpr">
             <div class="inst_dets">
-                <div class="inst_hdr">Installed Release</div>
+                <div class="inst_hdr"><?php echo xlt("Installed Release"); ?></div>
                 <hr>
-   		<div id="<?php echo $db; ?>_install_details">
-			<div id='<?php echo $db; ?>_inst_loading' style='margin:10px;display:none;'><img src='../pic/ajax-loader.gif'/></div>
+   		<div id="<?php echo attr($db); ?>_install_details">
+			<div id='<?php echo attr($db); ?>_inst_loading' style='margin:10px;display:none;'><img src='../pic/ajax-loader.gif'/></div>
 		</div> 
             </div>
         </div>
         <div class="wrpr">
 	    <div class="stg_dets"> 
-	        <div class="stg_hdr" id="<?php echo $db; ?>_stg_hdr">Staged Releases</div>
+	        <div class="stg_hdr" id="<?php echo attr($db); ?>_stg_hdr"><?php echo xlt("Staged Releases"); ?></div>
 	        <hr>
-		<div id="<?php echo $db; ?>_stage_details"></div>
-		<div id='<?php echo $db; ?>_stg_loading' style='margin:10px;display:none;'><img src='../pic/ajax-loader.gif'/></div>
+		<div id="<?php echo attr($db); ?>_stage_details"></div>
+		<div id='<?php echo attr($db); ?>_stg_loading' style='margin:10px;display:none;'><img src='../pic/ajax-loader.gif'/></div>
 	    </div>
           </div>
     </div>

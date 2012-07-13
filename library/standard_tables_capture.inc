@@ -1,20 +1,28 @@
 <?php
-/*******************************************************************/
-// Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
-//
-// Authors:
-//         Rohit Kumar <pandit.rohit@netsity.com>
-//         Brady Miller <brady@sparmy.com>
-//         Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-/*******************************************************************/
-// This library contains functions for importing the RxNorm and SNOMED
-// and ICD databases.
-/*******************************************************************/
+/**
+ * This library contains functions that implement the database load processing
+ * of external database files into openEMR
+ *
+ * Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Rohit Kumar <pandit.rohit@netsity.com>
+ * @author  (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
+ * @author  Brady Miller <brady@sparmy.com>
+ * @link    http://www.open-emr.org
+ */
+
 
 // Function to copy a package to temp
 // $type (RXNORM, SNOMED etc.)
@@ -360,8 +368,8 @@ function icd_import($type) {
                     $next_rev = $row['rev'] + 1;
 		    $run_sql = "UPDATE " . $incoming[$this_key]['#TABLENAME#'] . " SET active = 0"; 
                     sqlQuery($run_sql);
-		    $run_sql = "UPDATE " . $incoming[$this_key]['#TABLENAME#'] . " SET active = 1, revision = $next_rev WHERE revision = 0";
-                    sqlQuery($run_sql);
+		    $run_sql = "UPDATE " . $incoming[$this_key]['#TABLENAME#'] . " SET active = 1, revision = ? WHERE revision = 0";
+                    sqlQuery($run_sql, array($next_rev) );
 		    break;
 		}
 	    }

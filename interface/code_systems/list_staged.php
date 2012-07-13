@@ -1,35 +1,39 @@
 <?php
-/*******************************************************************/
-// Copyright (C) 2012 Patient Healthcare Analytics, Inc.
-// Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
-//
-// Authors: rewritten and chopped up for handling jquery modular
-//	interface
-//         (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
-//
-//	pre-jquery versions where authored and maintained by
-//         Rohit Kumar <pandit.rohit@netsity.com>
-//         Brady Miller <brady@sparmy.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-/*******************************************************************/
-//
-// This file implements the listing of the staged database files
-// downloaded from an external source (e.g. CMS, NIH, etc.)
-// The logic will also render the appropriate action button which 
-// can be one of the following:
-//	INSTALL - this is rendered when the external database has
-//		not been installed in this openEMR instance
-//	UPGRADE - this is rendered when the external database has
-//		been installed and the staged files are more recent
-//		than the instance installed
-//
-// When the staged files are the same as the instance installed then
-// an appropriate message is rendered
-//
+/**
+ * This file implements the listing of the staged database files
+ * downloaded from an external source (e.g. CMS, NIH, etc.)
+ *
+ * The logic will also render the appropriate action button which
+ * can be one of the following:
+ *      INSTALL - this is rendered when the external database has
+ *                not been installed in this openEMR instance
+ *      UPGRADE - this is rendered when the external database has
+ *                been installed and the staged files are more recent
+ *                than the instance installed
+ * When the staged files are the same as the instance installed then
+ * an appropriate message is rendered
+ *
+ * Copyright (C) 2012 Patient Healthcare Analytics, Inc.
+ * Copyright (C) 2011 Phyaura, LLC <info@phyaura.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  (Mac) Kevin McAloon <mcaloon@patienthealthcareanalytics.com>
+ * @author  Rohit Kumar <pandit.rohit@netsity.com>
+ * @author  Brady Miller <brady@sparmy.com>
+ * @link    http://www.open-emr.org
+ */
+
 
 //SANITIZE ALL ESCAPES
 $sanitize_all_escapes=true;
@@ -48,7 +52,7 @@ ini_set('memory_limit', '150M');
 
 // Control access
 if (!acl_check('admin', 'super')) {
-    echo htmlspecialchars( xl('Not Authorized'), ENT_NOQUOTES);
+    echo xlt('Not Authorized');
     exit;
 }
 
@@ -72,7 +76,7 @@ $current_revision = '';
 $current_version = '';
 $current_name = '';
 $current_checksum = '';
-$sqlReturn = sqlQuery("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`, `revision_version`, `name`, `file_checksum` FROM `standardized_tables_track` WHERE upper(`name`) = '" . $db . "' ORDER BY `revision_version`, `revision_date` DESC");
+$sqlReturn = sqlQuery("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`, `revision_version`, `name`, `file_checksum` FROM `standardized_tables_track` WHERE upper(`name`) = ? ORDER BY `revision_version`, `revision_date` DESC", array($db) );
 if (!empty($sqlReturn)) {
     $installed_flag = 1;
     $current_name = $sqlReturn['name'];
@@ -143,14 +147,14 @@ if (is_dir($mainPATH)) {
             }
             else if (is_numeric(strpos($db, "ICD"))) {
 	        
-    	        $qry_str = "SELECT `load_checksum`,`load_source`,`load_release_date` FROM `supported_external_dataloads` WHERE `load_type` = '" . $db . "' and `load_filename` = '" . basename($file) . "'";
+    	        $qry_str = "SELECT `load_checksum`,`load_source`,`load_release_date` FROM `supported_external_dataloads` WHERE `load_type` = ? and `load_filename` = ?";
 
 		// this query determines whether you can load the data into openEMR. you must have the correct 
 		// filename and checksum for each file that are part of the same release. 
 		// 
 		// IMPORTANT: Releases that contain mutliple zip file (e.g. ICD10) are grouped together based 
 		// on the load_release_date attribute value specified in the supported_external_dataloads table
-    	        $sqlReturn = sqlQuery($qry_str);
+    	        $sqlReturn = sqlQuery($qry_str, array($db, basename($file)) );
     
 		$file_checksum = md5(file_get_contents($file));
 	        if ($file_checksum ==  $sqlReturn['load_checksum']) {
@@ -162,24 +166,24 @@ if (is_dir($mainPATH)) {
 	    }
 	    if ($supported_file === 1) {
 		?>
-                <div class="stg"><?php echo basename($file); ?></div>
+                <div class="stg"><?php echo text(basename($file)); ?></div>
 		<?php
 	    } else {
                 ?>
-    		<div class="error_msg">UNSUPPORTED database load file: <BR><?php echo basename($file) ?><span class="msg" id="<?php echo $db; ?>_unsupportedmsg">!</span></div>
+    		<div class="error_msg"><?php echo xlt("UNSUPPORTED database load file"); ?>: <BR><?php echo text(basename($file)) ?><span class="msg" id="<?php echo attr($db); ?>_unsupportedmsg">!</span></div>
 		<?php
 	    }
         }
     }
 } else {
     ?>
-    <div class="error_msg">The installation directory needs to be created.<span class="msg" id="<?php echo $db; ?>_dirmsg">!</span></div>
+    <div class="error_msg"><?php echo xlt("The installation directory needs to be created."); ?><span class="msg" id="<?php echo attr($db); ?>_dirmsg">!</span></div>
     <?php
 }
 if (count($files_array) === 0) {
    ?>
-   <div class="error_msg">No files staged for installation<span class="msg" id="<?php echo $db; ?>_msg">!</span></div>
-   <div class="stg msg">Follow these instructions for installing or upgrading the <?php echo $db; ?> database.<span class="msg" id="<?php echo $db; ?>_instrmsg">?</span></div>
+   <div class="error_msg"><?php echo xlt("No files staged for installation"); ?><span class="msg" id="<?php echo attr($db); ?>_msg">!</span></div>
+   <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
    <?php
 }
 if (count($revisions) > 0) {
@@ -198,23 +202,23 @@ if ($supported_file === 1) {
     if ($installed_flag === 1) {
         if ($current_revision === $file_revision_date) {
 	    ?>
-	    <div class="error_msg">The installed version and the staged files are the same.</div>
-            <div class="stg msg">Follow these instructions for installing or upgrading the <?php echo $db; ?> database.<span class="msg" id="<?php echo $db; ?>_instrmsg">?</span></div>
+	    <div class="error_msg"><?php echo xlt("The installed version and the staged files are the same."); ?></div>
+            <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
 	    <?php
         } else {
 	    ?>
-	    <div class="stg"><?php echo basename($file_revision_path); ?> is a more recent version of the <?php echo $db; ?> database.</div>
+	    <div class="stg"><?php echo text(basename($file_revision_path)); ?> <?php echo xlt("is a more recent version of the following database") . ": " . text($db); ?></div>
 	    <?php
-	    $action="UPGRADE";
+	    $action=xl("UPGRADE");
         }
     } else {
         if (count($files_array) > 0) {
-	    $action="INSTALL";
+	    $action=xl("INSTALL");
         }
     }
     if (strlen($action) > 0) {
     ?>
-	  <input id="<?php echo $db; ?>_install_button" version="<?php echo $version; ?>" file_revision_date="<?php echo $file_revision_date; ?>" file_checksum="<?php echo $file_checksum; ?>" type="button" value="<?php echo $action; ?>"/>
+	  <input id="<?php echo attr($db); ?>_install_button" version="<?php echo attr($version); ?>" file_revision_date="<?php echo attr($file_revision_date); ?>" file_checksum="<?php echo attr($file_checksum); ?>" type="button" value="<?php echo attr($action); ?>"/>
 	  </div> 
     <?php
     }
