@@ -1956,6 +1956,7 @@ CREATE TABLE `icd9_dx_code` (
   `long_desc`           varchar(300),
   `active` tinyint default 0,
   `revision` int default 0,
+  KEY `dx_code` (`dx_code`),
   KEY `formatted_dx_code` (`formatted_dx_code`),
   KEY `active` (`active`)
 ) ENGINE=MyISAM;
@@ -1975,6 +1976,7 @@ CREATE TABLE `icd9_sg_code` (
   `long_desc`           varchar(300),
   `active` tinyint default 0,
   `revision` int default 0,
+  KEY `sg_code` (`sg_code`),
   KEY `formatted_sg_code` (`formatted_sg_code`),
   KEY `active` (`active`)
 ) ENGINE=MyISAM;
