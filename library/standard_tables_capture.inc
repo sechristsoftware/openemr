@@ -315,15 +315,7 @@ function icd_import($type) {
     $db_load = "LOAD DATA LOCAL INFILE '#INFILE#' INTO TABLE #TABLENAME# FIELDS TERMINATED BY '\0' (@var) SET revision = 0, ";
     $col_template = "#FLD# = trim(Substring(@var, #POS#, #LEN#))";
 
-    // load scripts
-    if ($type == 'ICD9') {
-        $db_update = file_get_contents($db_dir.'/update_ICD9.sql', true);
-    } 
-    else { // ICD 10
-        $db_update = file_get_contents($db_dir.'/update_ICD10.sql', true);
-    }
-    // load all the data
-
+    // load all data and set active revision
     if( is_dir($dir) && $handle = opendir($dir)) {
         while (false !== ($filename = readdir($handle))) {
 	    // bypass unwanted entries
@@ -380,14 +372,19 @@ function icd_import($type) {
         echo htmlspecialchars( xl('ERROR: No ICD import directory.'), ENT_NOQUOTES)."<br>";
 	return;
     }
+
     // now update the tables where necessary
-    if (strlen($db_update) > 0) {
-    	$cmd_array=explode(";",$db_update);
-    	foreach($cmd_array as $val){
-            if(trim($val)!=''){
-                sqlStatement($val);
-            }
-    	}
+    if ($type == 'ICD9') {
+        sqlStatement("update `icd9_dx_code` SET formatted_dx_code = dx_code");
+        sqlStatement("update `icd9_dx_code` SET formatted_dx_code = concat(concat(left(dx_code, 3), '.'), substr(dx_code, 4)) WHERE dx_code RLIKE '^[V0-9]{1}.*' AND LENGTH(dx_code) > 3");
+        sqlStatement("update `icd9_dx_code` SET formatted_dx_code = concat(concat(left(dx_code, 4), '.'), substr(dx_code, 5)) WHERE dx_code RLIKE '^[E]{1}.*' AND LENGTH(dx_code) > 4");
+        sqlStatement("update `icd9_sg_code` SET formatted_sg_code = concat(concat(left(sg_code, 2), '.'), substr(sg_code, 3))");
+        sqlStatement("update `icd9_dx_code` A, `icd9_dx_long_code` B set A.long_desc = B.long_desc where A.dx_code = B.dx_code and A.active = 1 and A.long_desc is NULL");
+        sqlStatement("update `icd9_sg_code` A, `icd9_sg_long_code` B set A.long_desc = B.long_desc where A.sg_code = B.sg_code and A.active = 1 and A.long_desc is NULL");
+    }
+    else { // ICD 10
+        sqlStatement("update `icd10_dx_order_code` SET formatted_dx_code = dx_code");
+        sqlStatement("update `icd10_dx_order_code` SET formatted_dx_code = concat(concat(left(dx_code, 3), '.'), substr(dx_code, 4)) WHERE LENGTH(dx_code) > 3");
     }
 
     return true;

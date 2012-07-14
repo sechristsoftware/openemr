@@ -58,30 +58,13 @@ $files_array = scandir($mainPATH);
 array_shift($files_array); // get rid of "."
 array_shift($files_array); // get rid of ".."
 
-//
-// now, for the ICD data loads, get all the files that comprise the release based on the 
-// release date from the most recent checksum determined in the list_staged.php logic
-// 
-// for all others just handle the zip file
-//
-if (is_numeric(strpos($db, "ICD"))) {
-    $qry_str = "SELECT B.`load_filename` FROM `supported_external_dataloads` A, `supported_external_dataloads` B WHERE A.`load_type` = ? and A.`load_checksum` = ? and A.`load_release_date` = B.`load_release_date` and A.`load_type` = B.`load_type`";
-    $result = sqlStatement($qry_str, array($db,$file_checksum) );
-    while ($row = sqlFetchArray($result)) {
-        $file = $mainPATH."/".$row['load_filename'];
-        if (is_file($file)) {
-	    handle_zip_file($db, $file);
-        }
+foreach ($files_array as $file) {
+    $this_file = $mainPATH."/".$file;
+    if (strpos($file, ".zip") === false) {
+        continue;
     }
-} else {
-    foreach ($files_array as $file) {
-        $this_file = $mainPATH."/".$file;
-	if (strpos($file, ".zip") === false) {
-	    continue;
-	}
-        if (is_file($this_file)) {
-	    handle_zip_file($db, $this_file);
-        }
+    if (is_file($this_file)) {
+        handle_zip_file($db, $this_file);
     }
 }
 

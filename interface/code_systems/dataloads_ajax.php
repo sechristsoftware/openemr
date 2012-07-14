@@ -59,7 +59,9 @@ $activeAccordionSection = isset($_GET['aas']) ? $_GET['aas'] : '0';
 <script type="text/javascript" src="../../library/js/jquery-ui-1.8.21.custom.min.js"></script>
 <script>
 
-var db_list = [ "DSMIV", "ICD9", "ICD10", "RXNORM", "SNOMED"];
+// placemaker for when support DSMIV
+// var db_list = [ "DSMIV", "ICD9", "ICD10", "RXNORM", "SNOMED"];
+var db_list = [ "ICD9", "ICD10", "RXNORM", "SNOMED"];
 var accOpts = {
     header: "h3", 
     autoHeight: false,
@@ -266,7 +268,9 @@ div.tooltip p {
 //
 // setup the divs for each supported external dataload
 //
-$db_list = array("DSMIV", "ICD9", "ICD10", "RXNORM", "SNOMED");
+// placemaker for when support DSMIV
+//$db_list = array("DSMIV", "ICD9", "ICD10", "RXNORM", "SNOMED");
+$db_list = array("ICD9", "ICD10", "RXNORM", "SNOMED");
 foreach ($db_list as $db) {
     ?>
     <h3><a href="#"><?php echo attr($db); ?></a></h3>

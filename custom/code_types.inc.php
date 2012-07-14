@@ -518,7 +518,7 @@ function lookup_code_descriptions($codes) {
         if ( !(empty($check_table)) ) {
           if ( !(empty($code)) ) {
             // Will grab from previous inactive revisions if unable to find in current revision
-            $sql = "SELECT `long_desc` FROM `icd10_dx_order_code` " .
+            $sql = "SELECT `long_desc` FROM `icd10_pcs_order_code` " .
                    "WHERE `pcs_code` = ? ORDER BY `revision` DESC LIMIT 1";
             $crow = sqlQuery($sql, array($code) );
             if (!empty($crow['long_desc'])) {

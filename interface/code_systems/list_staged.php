@@ -76,7 +76,8 @@ $current_revision = '';
 $current_version = '';
 $current_name = '';
 $current_checksum = '';
-$sqlReturn = sqlQuery("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`, `revision_version`, `name`, `file_checksum` FROM `standardized_tables_track` WHERE upper(`name`) = ? ORDER BY `revision_version`, `revision_date` DESC", array($db) );
+// For now, only order by the revision_date. When have different formats of a code type (such as WHO vs CMS for ICD10 or different languages for SNOMED, then will incorporate this field)
+$sqlReturn = sqlQuery("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`, `revision_version`, `name`, `file_checksum` FROM `standardized_tables_track` WHERE upper(`name`) = ? ORDER BY `revision_date` DESC", array($db) );
 if (!empty($sqlReturn)) {
     $installed_flag = 1;
     $current_name = $sqlReturn['name'];
@@ -114,31 +115,37 @@ if (is_dir($mainPATH)) {
             if ($db == 'RXNORM') {
                 if (preg_match("/RxNorm_full_([0-9]{8}).zip/",$file,$matches)) {
     
-		    // make the version the same as the date in the file name for RxNorm feeds
+		    // Hard code the version RxNorm feed to be Standard
+                    //  (if add different RxNorm types/versions/lanuages, then can use this)
 		    //
-                    $version = substr($matches[1],4)."-".substr($matches[1],0,2)."-".substr($matches[1],2,-4);
-                    $temp_date = array('date'=>$version, 'version'=>$version, 'path'=>$mainPATH."/".$matches[0]);
-                    $revisions = array_merge($revisions,$temp_date);
+                    $version = "Standard";
+                    $date_release = substr($matches[1],4)."-".substr($matches[1],0,2)."-".substr($matches[1],2,-4);
+                    $temp_date = array('date'=>$date_release, 'version'=>$version, 'path'=>$mainPATH."/".$matches[0]);
+                    array_push($revisions,$temp_date);
 	    	    $supported_file = 1;
                 }
             }
             else if ($db == 'SNOMED') {
                 if (preg_match("/SnomedCT_INT_([0-9]{8}).zip/",$file,$matches)) {
     
-		    // make the version the same as the date in the file name for Snomed feeds
-		    //
-                    $version = substr($matches[1],0,4)."-".substr($matches[1],4,-2)."-".substr($matches[1],6);
-                    $temp_date = array('date'=>$version, 'version'=>$version, 'path'=>$mainPATH."/".$matches[0]);
-                    $revisions = array_merge($revisions,$temp_date);
+                    // Hard code the version SNOMED feed to be International:English
+                    //  (if add different SNOMED types/versions/languages, then can use this)
+                    //
+                    $version = "International:English";
+                    $date_release = substr($matches[1],0,4)."-".substr($matches[1],4,-2)."-".substr($matches[1],6);
+                    $temp_date = array('date'=>$date_release, 'version'=>$version, 'path'=>$mainPATH."/".$matches[0]);
+                    array_push($revisions,$temp_date);
 	    	    $supported_file = 1;
                 }
                 else if (preg_match("/SnomedCT_Release_INT_([0-9]{8}).zip/",$file,$matches)) {
     
-		    // make the version the same as the date in the file name for Snomed feeds
-		    //
-                    $version = substr($matches[1],0,4)."-".substr($matches[1],4,-2)."-".substr($matches[1],6);
-                    $temp_date = array('date'=>$version, 'version'=>$version, 'path'=>$mainPATH."/".$matches[0]);
-                    $revisions = array_merge($revisions,$temp_date);
+		    // Hard code the version SNOMED feed to be International:English
+                    //  (if add different SNOMED types/versions/languages, then can use this)
+                    //
+                    $version = "International:English";
+                    $date_release = substr($matches[1],0,4)."-".substr($matches[1],4,-2)."-".substr($matches[1],6);
+                    $temp_date = array('date'=>$date_release, 'version'=>$version, 'path'=>$mainPATH."/".$matches[0]);
+                    array_push($revisions,$temp_date);
 	    	    $supported_file = 1;
                 }
                 else {
@@ -147,20 +154,25 @@ if (is_dir($mainPATH)) {
             }
             else if (is_numeric(strpos($db, "ICD"))) {
 	        
-    	        $qry_str = "SELECT `load_checksum`,`load_source`,`load_release_date` FROM `supported_external_dataloads` WHERE `load_type` = ? and `load_filename` = ?";
+    	        $qry_str = "SELECT `load_checksum`,`load_source`,`load_release_date` FROM `supported_external_dataloads` WHERE `load_type` = ? and `load_filename` = ? and `load_checksum` = ? ORDER BY `load_release_date` DESC";
 
 		// this query determines whether you can load the data into openEMR. you must have the correct 
 		// filename and checksum for each file that are part of the same release. 
 		// 
 		// IMPORTANT: Releases that contain mutliple zip file (e.g. ICD10) are grouped together based 
 		// on the load_release_date attribute value specified in the supported_external_dataloads table
-    	        $sqlReturn = sqlQuery($qry_str, array($db, basename($file)) );
-    
-		$file_checksum = md5(file_get_contents($file));
-	        if ($file_checksum ==  $sqlReturn['load_checksum']) {
+                //
+                // Just in case same filename is released on different release dates, best to actually include the md5sum in the query itself.
+                // (and if a hit, then it is a pass)
+                // (even if two duplicate files that are in different releases, will still work since chooses most recent)
+                $file_checksum = md5(file_get_contents($file));
+    	        $sqlReturn = sqlQuery($qry_str, array($db, basename($file), $file_checksum) );
+
+	        if (!empty($sqlReturn)) {
                     $version = $sqlReturn['load_source'];
-                    $temp_date = array('date'=>$sqlReturn['load_release_date'], 'version'=>$version, 'path'=>$file, 'checksum'=>$file_checksum);
-                    $revisions = array_merge($revisions,$temp_date);
+                    $date_release = $sqlReturn['load_release_date'];
+                    $temp_date = array('date'=>$date_release, 'version'=>$version, 'path'=>$file, 'checksum'=>$file_checksum);
+                    array_push($revisions,$temp_date);
 	    	    $supported_file = 1;
                 }
 	    }
@@ -186,25 +198,87 @@ if (count($files_array) === 0) {
    <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
    <?php
 }
-if (count($revisions) > 0) {
-    //sort dates and store the most recent dated file
-    krsort($revisions);
-    reset($revisions);
-    $file_revision_path = $revisions['path'];
-    reset($revisions);
-    $file_revision_date = $revisions['date'];
-    $file_checksum = $revisions['checksum'];
-}
+
+
 // only render messages and action buttons when supported files exists
 // otherwise we have an error message already displayed to the user
 if ($supported_file === 1) {
+
+  $success_flag=1;
+
+  // Ensure all release dates and revisions are the same for multiple file imports
+  // and collect the date and revision. Also collect a checksum and path.
+  $file_revision_date = '';
+  $file_revision = '';
+  $file_checksum = '';
+  $file_revision_path = '';
+  foreach ($revisions as $value) {
+    // date check
+    $temp_file_revision_date = $value['date'];
+    if (empty($file_revision_date)) {
+      $file_revision_date = $temp_file_revision_date;
+    }
+    else {
+      if ($file_revision_date != $temp_file_revision_date) {
+        ?>
+        <div class="error_msg"><?php echo xlt("The staged files release dates are not all from the same release."); ?></div>
+        <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
+        <?php
+        $success_flag=0;
+      }
+    }
+    // revision check
+    $temp_file_revision = $value['version'];
+    if (empty($file_revision)) {
+      $file_revision = $temp_file_revision;
+    }
+    else {
+      if ($file_revision != $temp_file_revision) {
+        ?>
+        <div class="error_msg"><?php echo xlt("The staged files revisions are not all from the same release."); ?></div>
+        <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
+        <?php
+        $success_flag=0;
+      }
+    }
+    // collect checksum (if a multiple file import, then can use any one)
+    $file_checksum = $value['checksum'];
+    // collect path (if a multiple file import, then can use any one)
+    $file_revision_path = $value['path'];
+  }
+
+  // Determine and enforce only a certain number of files to be staged
+  if ($success_flag === 1) {
+    $number_files = 1;
+    $sql_query_ret = sqlStatement("SELECT * FROM `supported_external_dataloads` WHERE `load_type` = ? AND `load_source` = ? AND `load_release_date` = ?", array($db,$file_revision,$file_revision_date) );
+    $number_files_temp = sqlNumRows($sql_query_ret);
+    if ($number_files_temp > 1) {
+      // To ensure number_files is set to 1 for imports that are not tracked in the supported_external_dataloads table
+      $number_files = $number_files_temp;
+    }
+    if ( count($revisions) != $number_files ) {
+      ?>
+      <div class="error_msg"><?php echo xlt("The number of staged files is incorrect. Only place the files that you wish to install/upgrade to."); ?></div>
+      <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
+      <?php
+      $success_flag=0;
+    }
+  }
+
+  // If new version is being offered, then provide install/upgrade options
+  if ($success_flag === 1) {
     $action = "";
     if ($installed_flag === 1) {
-        if ($current_revision === $file_revision_date) {
+        if (strtotime($current_revision) == strtotime($file_revision_date)) {
 	    ?>
 	    <div class="error_msg"><?php echo xlt("The installed version and the staged files are the same."); ?></div>
             <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
 	    <?php
+        } else if (strtotime($current_revision) > strtotime($file_revision_date)) {
+            ?>
+            <div class="error_msg"><?php echo xlt("The installed version is a more recent version than the staged files."); ?></div>
+            <div class="stg msg"><?php echo xlt("Follow these instructions for installing or upgrading the following database") . ": " . text($db); ?><span class="msg" id="<?php echo attr($db); ?>_instrmsg">?</span></div>
+            <?php
         } else {
 	    ?>
 	    <div class="stg"><?php echo text(basename($file_revision_path)); ?> <?php echo xlt("is a more recent version of the following database") . ": " . text($db); ?></div>
@@ -218,9 +292,10 @@ if ($supported_file === 1) {
     }
     if (strlen($action) > 0) {
     ?>
-	  <input id="<?php echo attr($db); ?>_install_button" version="<?php echo attr($version); ?>" file_revision_date="<?php echo attr($file_revision_date); ?>" file_checksum="<?php echo attr($file_checksum); ?>" type="button" value="<?php echo attr($action); ?>"/>
+	  <input id="<?php echo attr($db); ?>_install_button" version="<?php echo attr($file_revision); ?>" file_revision_date="<?php echo attr($file_revision_date); ?>" file_checksum="<?php echo attr($file_checksum); ?>" type="button" value="<?php echo attr($action); ?>"/>
 	  </div> 
     <?php
     }
+  }
 } 
 ?>

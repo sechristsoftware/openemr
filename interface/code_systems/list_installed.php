@@ -44,7 +44,8 @@ if (!acl_check('admin', 'super')) {
 
 $db = isset($_GET['db']) ? $_GET['db'] : '0';
 
-$sqlReturn = sqlQuery("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`, `revision_version`, `name` FROM `standardized_tables_track` WHERE upper(`name`) = ? ORDER BY `revision_version`, `revision_date` DESC", array($db) );
+// For now, only order by the revision_date. When have different formats of a code type (such as WHO vs CMS for ICD10 or different languages for SNOMED, then will incorporate this field)
+$sqlReturn = sqlQuery("SELECT DATE_FORMAT(`revision_date`,'%Y-%m-%d') as `revision_date`, `revision_version`, `name` FROM `standardized_tables_track` WHERE upper(`name`) = ? ORDER BY `revision_date` DESC", array($db) );
 if (empty($sqlReturn)) {
 ?>
     <div class="stg"><?php echo xlt("Not installed"); ?></div>
