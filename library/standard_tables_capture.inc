@@ -237,7 +237,6 @@ function snomed_import() {
 function icd_import($type) {
 
     // set up paths
-    $db_dir = $GLOBALS['fileroot'] . "/sql/library";
     $dir_icd = $GLOBALS['temporary_files_dir']."/".$type."/";
     $dir=str_replace('\\','/',$dir_icd);
     $db_load = '';
@@ -325,7 +324,7 @@ function icd_import($type) {
 
 	    // reset the sql load command and susbtitute the filename
 	    $run_sql = $db_load;
-	    $run_sql = str_replace("#INFILE#", $dir_icd . $filename, $run_sql);
+	    $run_sql = str_replace("#INFILE#", $dir . $filename, $run_sql);
 	    $keys = array_keys($incoming);
     	    while ($this_key = array_pop($keys)) {
 		if (stripos($filename, $this_key) !== false) {
