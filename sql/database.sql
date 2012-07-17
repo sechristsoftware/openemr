@@ -2019,7 +2019,7 @@ CREATE TABLE `icd9_sg_long_code` (
 
 DROP TABLE IF EXISTS `icd10_dx_order_code`;
 CREATE TABLE `icd10_dx_order_code` (
-  `dx_id`               int,
+  `dx_id`               SERIAL,
   `dx_code`             varchar(7),
   `formatted_dx_code`   varchar(10),
   `valid_for_coding`    char,
@@ -2027,7 +2027,6 @@ CREATE TABLE `icd10_dx_order_code` (
   `long_desc`           varchar(300),
   `active` tinyint default 0,
   `revision` int default 0,
-  PRIMARY KEY  (`dx_id`),
   KEY `formatted_dx_code` (`formatted_dx_code`),
   KEY `active` (`active`)
 ) ENGINE=MyISAM;
@@ -2040,14 +2039,13 @@ CREATE TABLE `icd10_dx_order_code` (
 
 DROP TABLE IF EXISTS `icd10_pcs_order_code`;
 CREATE TABLE `icd10_pcs_order_code` (
-  `pcs_id`              int,
+  `pcs_id`              SERIAL,
   `pcs_code`            varchar(7),
   `valid_for_coding`    char,
   `short_desc`          varchar(60),
   `long_desc`           varchar(300),
   `active` tinyint default 0,
   `revision` int default 0,
-  PRIMARY KEY  (`pcs_id`),
   KEY `pcs_code` (`pcs_code`),
   KEY `active` (`active`)
 ) ENGINE=MyISAM;

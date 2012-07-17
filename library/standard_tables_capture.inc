@@ -261,18 +261,16 @@ function icd_import($type) {
 		'#FLD2#' => "long_desc", '#POS2#' => 7, '#LEN2#' => 300);
     } else {
 
-        $incoming['icd10pcs_order_'] = array('#TABLENAME#' => "icd10_pcs_order_code",
-		'#FLD1#' => "pcs_id", '#POS1#' => 1, '#LEN1#' => 5, 
-		'#FLD2#' => "pcs_code", '#POS2#' => 7, '#LEN2#' => 7,
-		'#FLD3#' => "valid_for_coding", '#POS3#' => 15, '#LEN3#' => 1,
-		'#FLD4#' => "short_desc", '#POS4#' => 17, '#LEN4#' => 60,
-		'#FLD5#' => "long_desc", '#POS5#' => 78, '#LEN5#' => 300);
+        $incoming['icd10pcs_order_'] = array('#TABLENAME#' => "icd10_pcs_order_code", 
+		'#FLD1#' => "pcs_code", '#POS1#' => 7, '#LEN1#' => 7,
+		'#FLD2#' => "valid_for_coding", '#POS2#' => 15, '#LEN2#' => 1,
+		'#FLD3#' => "short_desc", '#POS3#' => 17, '#LEN3#' => 60,
+		'#FLD4#' => "long_desc", '#POS4#' => 78, '#LEN4#' => 300);
         $incoming['icd10cm_order_'] = array('#TABLENAME#' => "icd10_dx_order_code",
-		'#FLD1#' => "dx_id", '#POS1#' => 1, '#LEN1#' => 5, 
-		'#FLD2#' => "dx_code", '#POS2#' =>7, '#LEN2#' => 7,
-		'#FLD3#' => "valid_for_coding", '#POS3#' => 15, '#LEN3#' => 1,
-		'#FLD4#' => "short_desc", '#POS4#' => 17, '#LEN4#' => 60,
-		'#FLD5#' => "long_desc", '#POS5#' => 78, '#LEN5#' => 300);
+		'#FLD1#' => "dx_code", '#POS1#' =>7, '#LEN1#' => 7,
+		'#FLD2#' => "valid_for_coding", '#POS2#' => 15, '#LEN2#' => 1,
+		'#FLD3#' => "short_desc", '#POS3#' => 17, '#LEN3#' => 60,
+		'#FLD4#' => "long_desc", '#POS4#' => 78, '#LEN4#' => 300);
         $incoming['reimb_map_pr_'] = array('#TABLENAME#' => "icd10_reimbr_pcs_9_10",
 		'#FLD1#' => "code", '#POS1#' => 1, '#LEN1#' => 7, 
 		'#FLD2#' => "code_cnt", '#POS2#' => 9, '#LEN2#' => 1,
