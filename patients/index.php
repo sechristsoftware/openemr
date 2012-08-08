@@ -267,7 +267,7 @@
             <?php if (!(empty($hiddenLanguageField))) echo $hiddenLanguageField; ?>
 	</form>
     
-        <div class="copyright"><?php echo htmlspecialchars( xl('Powered by'), ENT_NOQUOTES);?> OpenEMR</div>
+        <div class="copyright"><?php echo htmlspecialchars( xl('Powered by'), ENT_NOQUOTES);?> OpenEMR (<?php echo text($_SESSION['site_id']); ?>)</div>
       </div>
     <?php } ?>
 
