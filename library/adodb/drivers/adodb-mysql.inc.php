@@ -221,7 +221,13 @@ class ADODB_mysql extends ADOConnection {
 		}
 		
 		if ($rs) {
-			$this->genID = mysql_insert_id($this->_connectionID);
+                        # Modified by OpenEMR to fix a bug where call to GenID was updating
+                        # sequences table but always returning a zero with the OpenEMR audit
+                        # engine both on and off. Note this bug only appears to occur in recent
+                        # php versions on windows, and fix is below modification (kept
+                        # the original code commented out).
+                        $this->genID = $this->_insertid($this->_connectionID);
+			#$this->genID = mysql_insert_id($this->_connectionID);
 			$rs->Close();
 		} else
 			$this->genID = 0;
