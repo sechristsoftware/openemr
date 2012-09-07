@@ -806,14 +806,40 @@ function gen_x12_837($pid, $encounter, &$log, $encounter_claim=false) {
     if ($claim->payerSequence($ins) < $claim->payerSequence()) {
 
       // Generate claim-level adjustments.
+//      $aarr = $claim->payerAdjustments($ins);
+//      foreach ($aarr as $a) {
+//        ++$edicount;
+//        $out .= "CAS" . // Previous payer's claim-level adjustments. Page 301/323.
+//          "*" . $a[1] .
+//          "*" . $a[2] .
+//          "*" . $a[3] .
+//          "~\n";
+//      }
+
+      /***** CAS segments should be one per adjustment group, CO, OA, PI, PR
+       *   $aarr = $claim->payerAdjustments($ins);
+       *   this is: $aadj[] = array($date, $gcode, $rcode, sprintf('%.2f', $chg));
+       *   CAS*$gcode* then triplets of $rcode*$chg*$qty ($qty ommitted from $aadj)
+       * --Concept: recast the $aarr array
+       */
       $aarr = $claim->payerAdjustments($ins);
+      $castp = array();
       foreach ($aarr as $a) {
-        ++$edicount;
-        $out .= "CAS" . // Previous payer's claim-level adjustments. Page 301/323.
-          "*" . $a[1] .
-          "*" . $a[2] .
-          "*" . $a[3] .
-          "~\n";
+        $ky = $a[1];
+        if (array_key_exists($ky, $castp)) {
+          $castp[$ky] = array_merge($castp[$ky], array('', $a[2], $a[3]));
+        } else {
+          $castp[$ky] = array($a[2],$a[3]);
+        }
+      }
+
+      foreach ($castp as $g => $a) {
+        $ct = count($a);
+        $out .= "CAS*$g";
+        for($i=0; $i<$ct; $i++) {
+          $out .= "*".$a[$i];
+        }
+        $out .= "~\n";
       }
 
       $payerpaid = $claim->payerTotals($ins);

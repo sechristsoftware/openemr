@@ -33,7 +33,9 @@ $bat_hhmm     = date('Hi' , $bat_time);
 $bat_yymmdd   = date('ymd', $bat_time);
 $bat_yyyymmdd = date('Ymd', $bat_time);
 // Minutes since 1/1/1970 00:00:00 GMT will be our interchange control number:
-$bat_icn = sprintf('%09.0f', $bat_time/60);
+// -- not good enough; batch can be generated in less than 1 minute, div by 6 not 60
+//$bat_icn = sprintf('%09.0f', $bat_time/60);
+$bat_icn = sprintf('%09.0f', $bat_time/6);
 $bat_filename = date("Y-m-d-Hi", $bat_time) . "-batch.";
 $bat_filename .= isset($_POST['bn_process_hcfa']) ? 'pdf' : 'txt';
 
