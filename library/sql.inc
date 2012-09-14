@@ -281,15 +281,13 @@ function sqlStatement($statement, $binds=NULL )
 */
 function sqlStatementNoLog($statement, $binds=NULL )
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   if (is_array($binds)) {
     // Use adodb ExecuteNoLog with binding and return a recordset.
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
     if ($recordset === FALSE) {
-      if (checkSqlErrorForCase()) {
-        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-        return sqlStatementNoLog($statement,$binds);
+      $mode = checkSqlErrorForCase();
+      if ($mode) {
+        return sqlStatementNoLog(convertSqlCase($statement, $mode), $binds);
       }
       else {
         HelpfulDie("query failed: $statement", getSqlLastError());
@@ -301,9 +299,9 @@ function sqlStatementNoLog($statement, $binds=NULL )
     // Use mysql_query and return a resource.
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      if (checkSqlErrorForCase("native_mysql")) {
-        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-        return sqlStatementNoLog($statement,$binds);
+      $mode = checkSqlErrorForCase("native_mysql");
+      if ($mode) {
+        return sqlStatementNoLog(convertSqlCase($statement, $mode), $binds);
       }
       else {
         HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
@@ -362,16 +360,14 @@ function sqlFetchArray($r)
 */
 function sqlInsert($statement, $binds=array())
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   //Run a adodb execute
   // Note the auditSQLEvent function is embedded in the
   //   Execute function.
   $recordset = $GLOBALS['adodb']['db']->Execute($statement, $binds);
   if ($recordset === FALSE) {
-    if (checkSqlErrorForCase()) {
-      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-      return sqlInsert($statement,$binds);
+    $mode = checkSqlErrorForCase();
+    if ($mode) {
+      return sqlInsert(convertSqlCase($statement, $mode), $binds);
     }
     else {
       HelpfulDie("query failed: $statement", getSqlLastError());
@@ -396,8 +392,6 @@ function sqlInsert($statement, $binds=array())
 */
 function sqlQuery($statement, $binds=NULL)
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds );
   }
@@ -405,9 +399,9 @@ function sqlQuery($statement, $binds=NULL)
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement );
   }
   if ($recordset === FALSE) {
-    if (checkSqlErrorForCase()) {
-      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement); 
-      return sqlQuery($statement,$binds);
+    $mode = checkSqlErrorForCase();
+    if ($mode) {
+      return sqlQuery(convertSqlCase($statement, $mode), $binds);
     }
     else {
       HelpfulDie("query failed: $statement", getSqlLastError());
@@ -438,8 +432,6 @@ function sqlQuery($statement, $binds=NULL)
 */
 function sqlQueryNoLog($statement, $binds=NULL)
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
   }
@@ -447,9 +439,9 @@ function sqlQueryNoLog($statement, $binds=NULL)
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement );
   }
   if ($recordset === FALSE) {
-    if (checkSqlErrorForCase()) {
-      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-      return sqlQueryNoLog($statement,$binds);
+    $mode = checkSqlErrorForCase();
+    if ($mode) {
+      return sqlQueryNoLog(convertSqlCase($statement, $mode), $binds);
     }
     else {
       HelpfulDie("query failed: $statement", getSqlLastError());
@@ -481,8 +473,6 @@ function sqlQueryNoLog($statement, $binds=NULL)
 */
 function sqlQueryNoLogIgnoreError($statement, $binds=NULL)
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
   }
@@ -490,9 +480,9 @@ function sqlQueryNoLogIgnoreError($statement, $binds=NULL)
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement );
   }
   if ($recordset === FALSE) {
-    if (checkSqlErrorForCase()) {
-      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-      return sqlQueryNoLogIgnoreError($statement,$binds);
+    $mode = checkSqlErrorForCase();
+    if ($mode) {
+      return sqlQueryNoLogIgnoreError(convertSqlCase($statement, $mode), $binds);
     }
     else {
       // ignore the error and return FALSE
@@ -518,13 +508,11 @@ function sqlQueryNoLogIgnoreError($statement, $binds=NULL)
 */
 function sqlInsertClean_audit($statement)
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   $ret = $GLOBALS['adodb']['db']->ExecuteNoLog($statement);
   if ($ret === FALSE) {
-    if (checkSqlErrorForCase()) {
-      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-      return sqlInsertClean_audit($statement);
+    $mode = checkSqlErrorForCase();
+    if ($mode) {
+      return sqlInsertClean_audit(convertSqlCase($statement, $mode));
     }
     else {
       HelpfulDie("query failed: $statement", getSqlLastError());
@@ -579,19 +567,48 @@ function getSqlLastError($mode="adodb") {
 function checkSqlErrorForCase($mode="adodb") {
   global $TABLE_NAME_CASE_PRIMARY, $TABLE_NAME_CASE_SECONDARY;
   
-  foreach ($TABLE_NAME_CASE_PRIMARY as $value) {
+  foreach ($TABLE_NAME_CASE_PRIMARY as $key => $value) {
     if (preg_match("/^Table.+".$value.".+doesn't exist$/",getSqlLastError($mode))) {
-      return "PRIMARY";
+      //Ensure the Secondary database exist or will enter infinite recursion
+      $check_table = sqlQueryCheckSqlErrorForCase("SHOW TABLES LIKE '$TABLE_NAME_CASE_SECONDARY[$key]'");
+      if ($check_table) {
+        return "PRIMARY";
+      }
     }
   }
 
-  foreach ($TABLE_NAME_CASE_SECONDARY as $value) {
+  foreach ($TABLE_NAME_CASE_SECONDARY as $key => $value) {
     if (preg_match("/^Table.+".$value.".+doesn't exist$/",getSqlLastError($mode))) {
-      return "SECONDARY";
+      //Ensure the primary database exist or will enter infinite recursion
+      $check_table = sqlQueryCheckSqlErrorForCase("SHOW TABLES LIKE '$TABLE_NAME_CASE_PRIMARY[$key]'");
+      if ($check_table) {
+        return "SECONDARY";
+      }
     }
   }
 
   return FALSE;
+}
+
+/**
+* Highly Specialized sql query in OpenEMR only to be called by the
+*  checkSqlErrorForCase function to avoid infinite recursion.
+*
+* @param  string  $statement  query
+* @return array
+*/
+function sqlQueryCheckSqlErrorForCase($statement)
+{
+  $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement );
+  if ($recordset === FALSE) {
+    return FALSE;
+  }
+  if ($recordset->EOF)
+   return FALSE;
+  $rez = $recordset->FetchRow();
+  if ($rez == FALSE)
+    return FALSE;
+  return $rez;
 }
 
 /**
@@ -704,14 +721,12 @@ function generate_id () {
 */
 function sqlQ($statement, $binds=NULL )
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds );
     if ($recordset === FALSE) {
-      if (checkSqlErrorForCase()) {
-        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-        return sqlQ($statement,$binds);
+      $mode = checkSqlErrorForCase();
+      if ($mode) {
+        return sqlQ(convertSqlCase($statement, $mode), $binds);
       }
       else {
         HelpfulDie("query failed: $statement", getSqlLastError());
@@ -722,9 +737,9 @@ function sqlQ($statement, $binds=NULL )
   else {
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      if (checkSqlErrorForCase("native_mysql")) {
-        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-        return sqlQ($statement,$binds);
+      $mode = checkSqlErrorForCase("native_mysql");
+      if ($mode) {
+        return sqlQ(convertSqlCase($statement, $mode), $binds);
       }
       else {
         HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
