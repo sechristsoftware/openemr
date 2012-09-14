@@ -238,7 +238,7 @@ function sqlStatement($statement, $binds=NULL )
     // Use mysql_query and return a resource.
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      if (checkSqlErrorForCase()) {
+      if (checkSqlErrorForCase("native_mysql")) {
         $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
         return sqlStatement($statement,$binds);
       }
@@ -295,7 +295,7 @@ function sqlStatementNoLog($statement, $binds=NULL )
     // Use mysql_query and return a resource.
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      if (checkSqlErrorForCase()) {
+      if (checkSqlErrorForCase("native_mysql")) {
         $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
         return sqlStatementNoLog($statement,$binds);
       }
@@ -691,7 +691,7 @@ function sqlQ($statement, $binds=NULL )
   else {
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      if (checkSqlErrorForCase()) {
+      if (checkSqlErrorForCase("native_mysql")) {
         $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
         return sqlQ($statement,$binds);
       }
