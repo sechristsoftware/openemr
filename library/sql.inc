@@ -25,6 +25,35 @@ require_once(dirname(__FILE__) . "/adodb/adodb.inc.php");
 require_once(dirname(__FILE__) . "/adodb/drivers/adodb-mysql.inc.php");
 require_once(dirname(__FILE__) . "/log.inc");
 
+// Below arrays are for allowing both upper and lower case of several table
+// names. The Primary is what is should be. However, because of differences
+// in casing standards in windows/linux, some databases will be using the
+// Secondary name, which can be fixed on the fly if an error is thrown
+// in mysql. Note the PRIMARY_FORMAT is to allow use with the preg_replace
+// function.
+// This feature works by checking the error message if a sql command fails
+// using the checkSqlErrorForCase() function. If it is true, then it will
+// convert the statement to use the SECONDARY table titles and try the
+// query again.
+$TABLE_NAME_CASE_PRIMARY = array(
+  'form_CAMOS',
+  'form_CAMOS_category',
+  'form_CAMOS_item',
+  'form_CAMOS_subcategory'
+);
+$TABLE_NAME_CASE_PRIMARY_FORMAT = array(
+  '/form_CAMOS/',
+  '/form_CAMOS_category/',
+  '/form_CAMOS_item/',
+  '/form_CAMOS_subcategory/'
+);
+$TABLE_NAME_CASE_SECONDARY = array(
+  'form_camos',
+  'form_camos_category',
+  'form_camos_item',
+  'form_camos_subcategory'
+);
+
 /**
 * ADODB_mysql class wrapper to ensure proper auditing in OpenEMR.
 *
@@ -173,7 +202,8 @@ if (!$GLOBALS['dbh']) {
 * Function that will allow use of the adodb binding
 * feature to prevent sql-injection. Will continue to
 * be compatible with previous function calls that do
-* not use binding.
+* not use binding. It also has flexible
+* casing for some table names.
 * If use adodb binding, then will return a recordset object.
 * If do not use binding, then will return a resource object.
 * The sqlFetchArray() function should be used to
@@ -186,13 +216,21 @@ if (!$GLOBALS['dbh']) {
 */
 function sqlStatement($statement, $binds=NULL )
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   if (is_array($binds)) {
     // Use adodb Execute with binding and return a recordset.
     //   Note that the auditSQLEvent function is embedded
     //    in the Execute command.
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds );
     if ($recordset === FALSE) {
-      HelpfulDie("query failed: $statement", getSqlLastError());
+      if (checkSqlErrorForCase()) {
+        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+        return sqlStatement($statement,$binds);
+      }
+      else {
+        HelpfulDie("query failed: $statement", getSqlLastError());
+      }
     }
     return $recordset;
   }
@@ -200,8 +238,14 @@ function sqlStatement($statement, $binds=NULL )
     // Use mysql_query and return a resource.
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      auditSQLEvent($statement, FALSE, $binds);
-      HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
+      if (checkSqlErrorForCase()) {
+        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+        return sqlStatement($statement,$binds);
+      }
+      else {
+        auditSQLEvent($statement, FALSE, $binds);
+        HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
+      }
     }
     auditSQLEvent($statement, TRUE, $binds);
     return $resource;
@@ -217,7 +261,8 @@ function sqlStatement($statement, $binds=NULL )
 * not use binding. It is equivalent to the 
 * sqlStatement() function, EXCEPT it skips the
 * audit engine. This function should only be used
-* in very special situations.
+* in very special situations. It also has flexible
+* casing for some table names.
 * If use adodb binding, then will return a recordset object.
 * If do not use binding, then will return a resource object.
 * The sqlFetchArray() function should be used to
@@ -230,11 +275,19 @@ function sqlStatement($statement, $binds=NULL )
 */
 function sqlStatementNoLog($statement, $binds=NULL )
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   if (is_array($binds)) {
     // Use adodb ExecuteNoLog with binding and return a recordset.
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
     if ($recordset === FALSE) {
-      HelpfulDie("query failed: $statement", getSqlLastError());
+      if (checkSqlErrorForCase()) {
+        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+        return sqlStatementNoLog($statement,$binds);
+      }
+      else {
+        HelpfulDie("query failed: $statement", getSqlLastError());
+      }
     }
     return $recordset;
   }
@@ -242,7 +295,13 @@ function sqlStatementNoLog($statement, $binds=NULL )
     // Use mysql_query and return a resource.
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
+      if (checkSqlErrorForCase()) {
+        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+        return sqlStatementNoLog($statement,$binds);
+      }
+      else {
+        HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
+      }
     }
     return $resource;
   }
@@ -288,7 +347,8 @@ function sqlFetchArray($r)
 * Function that will allow use of the adodb binding
 * feature to prevent sql-injection. This function
 * is specialized for insert function and will return
-* the last id generated from the insert.
+* the last id generated from the insert. It also has flexible
+* casing for some table names.
 *
 * @param  string   $statement  query
 * @param  array    $binds      binded variables array (optional)
@@ -296,12 +356,20 @@ function sqlFetchArray($r)
 */
 function sqlInsert($statement, $binds=array())
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   //Run a adodb execute
   // Note the auditSQLEvent function is embedded in the
   //   Execute function.
   $recordset = $GLOBALS['adodb']['db']->Execute($statement, $binds);
   if ($recordset === FALSE) {
-    HelpfulDie("insert failed: $statement", getSqlLastError());
+    if (checkSqlErrorForCase()) {
+      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+      return sqlInsert($statement,$binds);
+    }
+    else {
+      HelpfulDie("query failed: $statement", getSqlLastError());
+    }
   }
   // Return the correct last id generated using function
   //   that is safe with the audit engine.
@@ -313,7 +381,8 @@ function sqlInsert($statement, $binds=array())
 * the first row of query results as an associative array.
 *
 * Function that will allow use of the adodb binding
-* feature to prevent sql-injection.
+* feature to prevent sql-injection. It also has flexible
+* casing for some table names.
 *
 * @param  string  $statement  query
 * @param  array   $binds      binded variables array (optional)
@@ -321,6 +390,8 @@ function sqlInsert($statement, $binds=array())
 */
 function sqlQuery($statement, $binds=NULL)
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds );
   }
@@ -328,7 +399,13 @@ function sqlQuery($statement, $binds=NULL)
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement );
   }
   if ($recordset === FALSE) {
-    HelpfulDie("query failed: $statement", getSqlLastError());
+    if (checkSqlErrorForCase()) {
+      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement); 
+      return sqlQuery($statement,$binds);
+    }
+    else {
+      HelpfulDie("query failed: $statement", getSqlLastError());
+    }
   }
   if ($recordset->EOF)
    return FALSE;
@@ -346,7 +423,8 @@ function sqlQuery($statement, $binds=NULL)
 * feature to prevent sql-injection. It is equivalent to the
 * sqlQuery() function, EXCEPT it skips the
 * audit engine. This function should only be used
-* in very special situations.
+* in very special situations.  It also has flexible
+* casing for some table names.
 *
 * @param  string  $statement  query
 * @param  array   $binds      binded variables array (optional)
@@ -354,6 +432,8 @@ function sqlQuery($statement, $binds=NULL)
 */
 function sqlQueryNoLog($statement, $binds=NULL)
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
   }
@@ -361,7 +441,13 @@ function sqlQueryNoLog($statement, $binds=NULL)
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement );
   }
   if ($recordset === FALSE) {
-    HelpfulDie("query failed: $statement", getSqlLastError());
+    if (checkSqlErrorForCase()) {
+      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+      return sqlQueryNoLog($statement,$binds);
+    }
+    else {
+      HelpfulDie("query failed: $statement", getSqlLastError());
+    }
   }
   if ($recordset->EOF)
    return FALSE;
@@ -380,7 +466,8 @@ function sqlQueryNoLog($statement, $binds=NULL)
 * feature to prevent sql-injection. It is equivalent to the
 * sqlQuery() function, EXCEPT it skips the
 * audit engine and ignores erros. This function should only be used
-* in very special situations.
+* in very special situations.  It also has flexible
+* casing for some table names.
 *
 * @param  string  $statement  query
 * @param  array   $binds      binded variables array (optional)
@@ -388,6 +475,8 @@ function sqlQueryNoLog($statement, $binds=NULL)
 */
 function sqlQueryNoLogIgnoreError($statement, $binds=NULL)
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   if (is_array($binds)) {
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement, $binds );
   }
@@ -395,8 +484,14 @@ function sqlQueryNoLogIgnoreError($statement, $binds=NULL)
     $recordset = $GLOBALS['adodb']['db']->ExecuteNoLog( $statement );
   }
   if ($recordset === FALSE) {
-    // ignore the error and return FALSE
-    return FALSE;
+    if (checkSqlErrorForCase()) {
+      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+      return sqlQueryNoLogIgnoreError($statement,$binds);
+    }
+    else {
+      // ignore the error and return FALSE
+      return FALSE;
+    }
   }
   if ($recordset->EOF)
    return FALSE;
@@ -410,15 +505,24 @@ function sqlQueryNoLogIgnoreError($statement, $binds=NULL)
 * Specialized sql query in OpenEMR that skips auditing.
 *
 * This function should only be used in very special situations.
+* It also has flexible
+* casing for some table names.
 *
 * @param  string  $statement  query
 */
 function sqlInsertClean_audit($statement)
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
 
   $ret = $GLOBALS['adodb']['db']->ExecuteNoLog($statement);
   if ($ret === FALSE) {
-    HelpfulDie("insert failed: $statement", getSqlLastError());
+    if (checkSqlErrorForCase()) {
+      $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+      return sqlInsertClean_audit($statement);
+    }
+    else {
+      HelpfulDie("query failed: $statement", getSqlLastError());
+    }
   }
 }
 
@@ -456,6 +560,27 @@ function getSqlLastError($mode="adodb") {
       return mysql_error($GLOBALS['dbh']);
     }
   }
+}
+
+/**
+* Process sql error and return true if get
+* a table doesn't exist from pertinent tables
+* with known case issues.
+*
+* @param   string  $mode either adodb(default) or native_mysql
+* @return  boolean  return true if should be recased and re-queried or return true
+*/
+function checkSqlErrorForCase($mode="adodb") {
+  global $TABLE_NAME_CASE_PRIMARY;
+  
+  $attempt_recase=FALSE;
+  foreach ($TABLE_NAME_CASE_PRIMARY as $value) {
+    if (preg_match("/^Table.+".$value.".+doesn't exist$/",getSqlLastError($mode))) {
+      $attempt_recase=TRUE;
+    }
+  }
+
+  return $attempt_recase;
 }
 
 /**
@@ -533,7 +658,8 @@ function generate_id () {
 * Function that will allow use of the adodb binding
 * feature to prevent sql-injection. Will continue to
 * be compatible with previous function calls that do
-* not use binding.
+* not use binding. It also has flexible
+* casing for some table names.
 * If use adodb binding, then will return a recordset object.
 * If do not use binding, then will return a resource object.
 * The sqlFetchArray() function should be used to
@@ -547,14 +673,32 @@ function generate_id () {
 */
 function sqlQ($statement, $binds=NULL )
 {
+  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
+
   if (is_array($binds)) {
-    $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds ) or
-      HelpfulDie("query failed: $statement", getSqlLastError());
+    $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds );
+    if ($recordset === FALSE) {
+      if (checkSqlErrorForCase()) {
+        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+        return sqlQ($statement,$binds);
+      }
+      else {
+        HelpfulDie("query failed: $statement", getSqlLastError());
+      }
+    }
     return $recordset;
   }
   else {
-    $resource = mysql_query($statement, $GLOBALS['dbh']) or
-      HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
+    $resource = mysql_query($statement, $GLOBALS['dbh']);
+    if ($resource === FALSE) {
+      if (checkSqlErrorForCase()) {
+        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+        return sqlQ($statement,$binds);
+      }
+      else {
+        HelpfulDie("query failed: $statement", getSqlLastError("native_mysql"));
+      }
+    }
     return $resource;
   }
 }
