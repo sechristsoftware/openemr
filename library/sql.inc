@@ -34,7 +34,8 @@ require_once(dirname(__FILE__) . "/log.inc");
 // This feature works by checking the error message if a sql command fails
 // using the checkSqlErrorForCase() function. If it is true, then it will
 // convert the statement to use the SECONDARY table titles and try the
-// query again.
+// query again. (note it will also screen the errors for SECONDARY strings
+// and then try the PRIMARY strings in this case)
 $TABLE_NAME_CASE_PRIMARY = array(
   'form_CAMOS',
   'form_CAMOS_category',
@@ -53,6 +54,13 @@ $TABLE_NAME_CASE_SECONDARY = array(
   'form_camos_item',
   'form_camos_subcategory'
 );
+$TABLE_NAME_CASE_SECONDARY_FORMAT = array(
+  '/form_camos/',
+  '/form_camos_category/',
+  '/form_camos_item/',
+  '/form_camos_subcategory/'
+);
+
 
 /**
 * ADODB_mysql class wrapper to ensure proper auditing in OpenEMR.
@@ -216,17 +224,15 @@ if (!$GLOBALS['dbh']) {
 */
 function sqlStatement($statement, $binds=NULL )
 {
-  global $TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY;
-
   if (is_array($binds)) {
     // Use adodb Execute with binding and return a recordset.
     //   Note that the auditSQLEvent function is embedded
     //    in the Execute command.
     $recordset = $GLOBALS['adodb']['db']->Execute( $statement, $binds );
     if ($recordset === FALSE) {
-      if (checkSqlErrorForCase()) {
-        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-        return sqlStatement($statement,$binds);
+      $mode = checkSqlErrorForCase();
+      if ($mode) {
+        return sqlStatement(convertSqlCase($statement, $mode), $binds);
       }
       else {
         HelpfulDie("query failed: $statement", getSqlLastError());
@@ -238,9 +244,9 @@ function sqlStatement($statement, $binds=NULL )
     // Use mysql_query and return a resource.
     $resource = mysql_query($statement, $GLOBALS['dbh']);
     if ($resource === FALSE) {
-      if (checkSqlErrorForCase("native_mysql")) {
-        $statement = preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
-        return sqlStatement($statement,$binds);
+      $mode = checkSqlErrorForCase("native_mysql");
+      if ($mode) {
+        return sqlStatement(convertSqlCase($statement, $mode), $binds);
       }
       else {
         auditSQLEvent($statement, FALSE, $binds);
@@ -567,20 +573,45 @@ function getSqlLastError($mode="adodb") {
 * a table doesn't exist from pertinent tables
 * with known case issues.
 *
-* @param   string  $mode either adodb(default) or native_mysql
-* @return  boolean  return true if should be recased and re-queried or return true
+* @param   string         $mode either adodb(default) or native_mysql
+* @return  string/boolean       return PRIMARY/SECONDARY if should be recased and re-queried or return true
 */
 function checkSqlErrorForCase($mode="adodb") {
-  global $TABLE_NAME_CASE_PRIMARY;
+  global $TABLE_NAME_CASE_PRIMARY, $TABLE_NAME_CASE_SECONDARY;
   
-  $attempt_recase=FALSE;
   foreach ($TABLE_NAME_CASE_PRIMARY as $value) {
     if (preg_match("/^Table.+".$value.".+doesn't exist$/",getSqlLastError($mode))) {
-      $attempt_recase=TRUE;
+      return "PRIMARY";
     }
   }
 
-  return $attempt_recase;
+  foreach ($TABLE_NAME_CASE_SECONDARY as $value) {
+    if (preg_match("/^Table.+".$value.".+doesn't exist$/",getSqlLastError($mode))) {
+      return "SECONDARY";
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+* Convert casing of pertinent tables in a sql queary
+*
+* @param   string $statement  sql query statement
+* @param   string $mode       either PRIMARY or SECONDARY
+* @return  string             return the converted sql query statement
+*/
+function convertSqlCase($statement, $mode) {
+  global $TABLE_NAME_CASE_PRIMARY, $TABLE_NAME_CASE_PRIMARY_FORMAT, $TABLE_NAME_CASE_SECONDARY, $TABLE_NAME_CASE_SECONDARY_FORMAT;
+
+  if ($mode == "PRIMARY") {
+    //Convert from the primary to secondary
+    return  preg_replace($TABLE_NAME_CASE_PRIMARY_FORMAT,$TABLE_NAME_CASE_SECONDARY,$statement);
+  }
+  else { //$mode == "SECONDARY"
+    //Convert from the secondary to primary
+    return  preg_replace($TABLE_NAME_CASE_SECONDARY_FORMAT,$TABLE_NAME_CASE_PRIMARY,$statement);
+  }
 }
 
 /**
