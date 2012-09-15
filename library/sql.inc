@@ -585,6 +585,9 @@ function getSqlLastError($mode="adodb") {
 function checkSqlErrorForCase($statement,$mode="adodb") {
   global $TABLE_NAME_CASE_PRIMARY, $TABLE_NAME_CASE_SECONDARY;
 
+  $primary=FALSE; //flag
+  $secondary=FALSE; //flag
+
   foreach ($TABLE_NAME_CASE_PRIMARY as $key => $value) {
     if (preg_match("/^Table '.+".$value."' doesn't exist$/",getSqlLastError($mode))) {
       //Ensure the Secondary table exist to avoid infinite recursion
@@ -601,7 +604,7 @@ function checkSqlErrorForCase($statement,$mode="adodb") {
             //sort of a duplicate of previous check, but in another way
             $check_table_sec = sqlQueryCheckSqlErrorForCase("SHOW TABLES LIKE '$TABLE_NAME_CASE_SECONDARY[$key_sec]'");
             if ($check_table_sec) {
-              return "PRIMARY";
+              $primary=TRUE;
             }
             else {
               return FALSE;
@@ -629,7 +632,7 @@ function checkSqlErrorForCase($statement,$mode="adodb") {
             //sort of a duplicate of previous check, but in another way
             $check_table_sec = sqlQueryCheckSqlErrorForCase("SHOW TABLES LIKE '$TABLE_NAME_CASE_PRIMARY[$key_sec]'");
             if ($check_table_sec) {
-              return "SECONDARY";
+              $secondary=TRUE;
             }
             else {
               return FALSE;
@@ -637,10 +640,14 @@ function checkSqlErrorForCase($statement,$mode="adodb") {
           }
         }
       }
-      break;
+      break; //break out of the foreach after get one hit
     }
   }
 
+  // return correct boolean/string
+  if ($primary && $secondary) return FALSE;
+  if ($primary) return "PRIMARY";
+  if ($secondary) return "SECONDARY";
   return FALSE;
 }
 
