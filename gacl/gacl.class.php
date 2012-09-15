@@ -321,11 +321,12 @@ class gacl {
 	* @param string The value of the ARO group (optional)
 	* @param string The value of the AXO group (optional)
 	* @param boolean Debug the operation if true (optional)
+        * @param boolean Option to return all applicable ACL's rather than just one. (optional) (Added by OpenEMR)
 	* @return array Returns as much information as possible about the ACL so other functions can trim it down and omit unwanted data.
 	*/
-	function acl_query($aco_section_value, $aco_value, $aro_section_value, $aro_value, $axo_section_value=NULL, $axo_value=NULL, $root_aro_group=NULL, $root_axo_group=NULL, $debug=NULL) {
+	function acl_query($aco_section_value, $aco_value, $aro_section_value, $aro_value, $axo_section_value=NULL, $axo_value=NULL, $root_aro_group=NULL, $root_axo_group=NULL, $debug=NULL, $return_all=FALSE) {
 				
-		$cache_id = 'acl_query_'.$aco_section_value.'-'.$aco_value.'-'.$aro_section_value.'-'.$aro_value.'-'.$axo_section_value.'-'.$axo_value.'-'.$root_aro_group.'-'.$root_axo_group.'-'.$debug;
+		$cache_id = 'acl_query_'.$aco_section_value.'-'.$aco_value.'-'.$aro_section_value.'-'.$aro_value.'-'.$axo_section_value.'-'.$axo_value.'-'.$root_aro_group.'-'.$root_axo_group.'-'.$debug.'-'.$return_all;
 
 		$retarr = $this->get_cache($cache_id);
 
@@ -474,35 +475,61 @@ class gacl {
 					ORDER BY	'. implode (',', $order_by) . '
 					';
 
-			// we are only interested in the first row
-			$rs = $this->db->SelectLimit($query, 1);
+			// we are only interested in the first row unless $return_all is set
+                        if ($return_all) {
+                                $rs = $this->db->Execute($query);
+                        }
+                        else {
+			        $rs = $this->db->SelectLimit($query, 1);
+                        }
 
 			if (!is_object($rs)) {
 				$this->debug_db('acl_query');
 				return FALSE;
 			}
 
-			$row =& $rs->FetchRow();
+                        if ($return_all) {
+                                while ($arr =& $rs->fetchRow()) {
+                                        $row[] = $arr;
+                                }
+                        }
+                        else {
+			        $row =& $rs->FetchRow();
+                        }
+
 
 			/*
 			 * Return ACL ID. This is the key to "hooking" extras like pricing assigned to ACLs etc... Very useful.
 			 */
 			if (is_array($row)) {
-				// Permission granted?
-				// This below oneliner is very confusing.
-				//$allow = (isset($row[1]) AND $row[1] == 1);
 
-				//Prefer this.
-				if ( isset($row[1]) AND $row[1] == 1 ) {
-					$allow = TRUE;
-				} else {
-					$allow = FALSE;
-				}
-
-				$retarr = array('acl_id' => &$row[0], 'return_value' => &$row[2], 'allow' => $allow);
+                                if ($return_all) {
+                                        foreach ($row as $single_row) {
+                                                if ( isset($single_row[1]) AND $single_row[1] == 1 ) {
+                                                        $allow = TRUE;
+                                                } else {
+                                                        $allow = FALSE;
+                                                }
+                                                $retarr[] = array('acl_id' => &$single_row[0], 'return_value' => &$single_row[2], 'allow' => $allow);
+                                        }
+                                }
+                                else {
+				        if ( isset($row[1]) AND $row[1] == 1 ) {
+					        $allow = TRUE;
+				        } else {
+					        $allow = FALSE;
+				        }
+				        $retarr = array('acl_id' => &$row[0], 'return_value' => &$row[2], 'allow' => $allow);
+                                }
 			} else {
-				// Permission denied.
-				$retarr = array('acl_id' => NULL, 'return_value' => NULL, 'allow' => FALSE);
+                                if ($return_all) {
+			                // Permission denied.
+			                $retarr[] = array('acl_id' => NULL, 'return_value' => NULL, 'allow' => FALSE);
+                                }
+                                else {
+                                        // Permission denied.
+                                        $retarr = array('acl_id' => NULL, 'return_value' => NULL, 'allow' => FALSE);
+                                }
 			}
 
 			/*
