@@ -42,25 +42,41 @@ $TABLE_NAME_CASE_PRIMARY = array(
   'form_CAMOS',
   'form_CAMOS_category',
   'form_CAMOS_item',
-  'form_CAMOS_subcategory'
+  'form_CAMOS_subcategory',
+  'RXNCONSO',
+  'RXNREL',
+  'RXNSAT',
+  'RXNSTY'
 );
 $TABLE_NAME_CASE_PRIMARY_FORMAT = array(
   '/form_CAMOS/',
   '/form_CAMOS_category/',
   '/form_CAMOS_item/',
-  '/form_CAMOS_subcategory/'
+  '/form_CAMOS_subcategory/',
+  '/RXNCONSO/',
+  '/RXNREL/',
+  '/RXNSAT/',
+  '/RXNSTY/'
 );
 $TABLE_NAME_CASE_SECONDARY = array(
   'form_camos',
   'form_camos_category',
   'form_camos_item',
-  'form_camos_subcategory'
+  'form_camos_subcategory',
+  'rxnconso',
+  'rxnrel',
+  'rxnsat',
+  'rxnsty'
 );
 $TABLE_NAME_CASE_SECONDARY_FORMAT = array(
   '/form_camos/',
   '/form_camos_category/',
   '/form_camos_item/',
-  '/form_camos_subcategory/'
+  '/form_camos_subcategory/',
+  '/rxnconso/',
+  '/rxnrel/',
+  '/rxnsat/',
+  '/rxnsty/'
 );
 
 
