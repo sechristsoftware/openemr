@@ -34,13 +34,14 @@ $(document).ready(function(){
 <body class="body_top">
 
 <?php
- $thisauth = acl_check('patients', 'med');
- if ($thisauth) {
+ if (acl_check('patients','med')) {
   $tmp = getPatientData($pid, "squad");
-  if ($tmp['squad'] && ! acl_check('squads', $tmp['squad']))
-   $thisauth = 0;
- }
- if (!$thisauth) {
+  if ($tmp['squad'] && ! acl_check('squads', $tmp['squad'])) {
+   echo "<p>(".htmlspecialchars(xl('History not authorized'),ENT_NOQUOTES).")</p>\n";
+   echo "</body>\n</html>\n";
+   exit();
+  }
+ else {  
   echo "<p>(".htmlspecialchars(xl('History not authorized'),ENT_NOQUOTES).")</p>\n";
   echo "</body>\n</html>\n";
   exit();
@@ -53,7 +54,7 @@ $(document).ready(function(){
  }
 ?>
 
-<?php if ($thisauth == 'write' || $thisauth == 'addonly') { ?>
+<?php if ( acl_check('patients','med','','write') || acl_check('patients','med','','addonly') ) { ?>
 <div>
     <span class="title"><?php echo htmlspecialchars(xl('Patient History / Lifestyle'),ENT_NOQUOTES); ?></span>
 </div>
