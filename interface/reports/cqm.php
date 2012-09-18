@@ -396,7 +396,41 @@ $pat_prov_rel = (empty($_POST['form_pat_prov_rel'])) ? "primary" : trim($_POST['
     // For others, use the unmodified target date array and send an empty options array
     $array_date = $target_date;
   }
-  $dataSheet = test_rules_clinic($provider,$rule_filter,$array_date,"report",'',$plan_filter,$organize_method,$options,$pat_prov_rel);
+
+  // Collect total number of pertinent patients (to calculate batching parameters)
+  $totalNumPatients = buildPatientArray('',$provider,$pat_prov_rel,NULL,NULL,TRUE); 
+
+  // Cycle through the batches and collect/combine results
+  $patientsPerBatch = 100; //hard-coded (can optimize this at some point)
+  $totalNumberBatches = floor($totalNumPatients/$patientsPerBatch) + 1;
+  for ($i=0;$i<$totalNumberBatches;$i++) {
+    $dataSheet_batch = test_rules_clinic($provider,$rule_filter,$array_date,"report",'',$plan_filter,$organize_method,$options,$pat_prov_rel,($i+1),$patientsPerBatch);
+    if ($i == 0) {
+      // For first cycle, simply copy it to dataSheet
+      $dataSheet = $dataSheet_batch;
+    }
+    else {
+      // Integrate batch results into main dataSheet
+
+      //debug
+      //error_log("CDR: ".date("Y-m-d H:i:s")." ".print_r($dataSheet,TRUE),0);
+
+      foreach ($dataSheet_batch as $key => $row) {
+        if (!$row['is_sub']) {
+          //skip this stuff for the sub entries (and use previous main entry in percentage calculation)
+          $total_patients = $dataSheet[$key]['total_patients'] + $row['total_patients'];
+          $dataSheet[$key]['total_patients'] = $total_patients;
+          $excluded = $dataSheet[$key]['excluded'] + $row['excluded'];
+          $dataSheet[$key]['excluded'] = $excluded;
+          $pass_filter = $dataSheet[$key]['pass_filter'] + $row['pass_filter'];
+          $dataSheet[$key]['pass_filter'] = $pass_filter;
+        }
+        $pass_target = $dataSheet[$key]['pass_target'] + $row['pass_target'];
+        $dataSheet[$key]['pass_target'] = $pass_target;
+        $dataSheet[$key]['percentage'] = calculate_percentage($pass_filter,$excluded,$pass_target);
+      }
+    }
+  }
 
   $firstProviderFlag = TRUE;
   $firstPlanFlag = TRUE;
