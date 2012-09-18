@@ -590,6 +590,8 @@ function checkSqlErrorForCase($statement,$mode="adodb") {
 
   foreach ($TABLE_NAME_CASE_PRIMARY as $key => $value) {
     if (preg_match("/^Table '.+".$value."' doesn't exist$/",getSqlLastError($mode))) {
+      //TODO - Check to ensure the value is in the statement
+
       //Ensure the Secondary table exist to avoid infinite recursion
       $check_table = sqlQueryCheckSqlErrorForCase("SHOW TABLES LIKE '$TABLE_NAME_CASE_SECONDARY[$key]'");
       if ($check_table) {
@@ -618,6 +620,8 @@ function checkSqlErrorForCase($statement,$mode="adodb") {
 
   foreach ($TABLE_NAME_CASE_SECONDARY as $key => $value) {
     if (preg_match("/^Table '.+".$value."' doesn't exist$/",getSqlLastError($mode))) {
+      //TODO - Check to ensure the value is in the statement
+
       //Ensure the primary table exist to avoid infinite recursion
       $check_table = sqlQueryCheckSqlErrorForCase("SHOW TABLES LIKE '$TABLE_NAME_CASE_PRIMARY[$key]'");
       if ($check_table) {
