@@ -170,6 +170,73 @@ function active_alert_summary($patient_id,$mode,$dateTarget='',$organize_mode='d
 }
 
 /**
+ * Process clinic rules via a batching method to improve performance and decrease memory overhead.
+ *
+ * Test the clinic rules of entire clinic and create a report or patient reminders (can also test
+ * on one patient or patients of one provider). The structure of the returned results is dependent on the
+ * $organize_mode and $mode parameters.
+ * <pre>The results are dependent on the $organize_mode parameter settings
+ *   'default' organize_mode:
+ *     Returns a two-dimensional array of results organized by rules (dependent on the following $mode settings):
+ *       'reminders-due' mode - returns an array of reminders (action array elements plus a 'pid' and 'due_status')
+ *       'reminders-all' mode - returns an array of reminders (action array elements plus a 'pid' and 'due_status')
+ *       'report' mode        - returns an array of rows for the Clinical Quality Measures (CQM) report
+ *   'plans' organize_mode:
+ *     Returns similar to default, but organizes by the active plans
+ * </pre>
+ *
+ * @param  integer      $provider      id of a selected provider. If blank, then will test entire clinic. If 'collate_outer' or 'collate_inner', then will test each provider in entire clinic; outer will nest plans  inside collated providers, while inner will nest the providers inside the plans (note inner and outer are only different if organize_mode is set to plans).
+ * @param  string       $type          rule filter (active_alert,passive_alert,cqm,amc,patient_reminder). If blank then will test all rules.
+ * @param  string/array $dateTarget    target date (format Y-m-d H:i:s). If blank then will test with current date as target. If an array, then is holding two dates ('dateBegin' and 'dateTarget').
+ * @param  string       $mode          choose either 'report' or 'reminders-all' or 'reminders-due' (required)
+ * @param  string       $plan          test for specific plan only
+ * @param  string       $organize_mode Way to organize the results (default, plans). See above for organization structure of the results.
+ * @param  array        $options       can hold various option (for now, used to hold the manual number of labs for the AMC report)
+ * @param  string       $pat_prov_rel  How to choose patients that are related to a chosen provider. 'primary' selects patients that the provider is set as primary provider. 'encounter' selectes patients that the provider has seen. This parameter is only applicable if the $provider parameter is set to a provider or collation setting.
+ * @param  integer      $batchSize     number of patients to batch (default is 100; plan to optimize this default setting in the future)
+ * @return array                       See above for organization structure of the results.
+ */
+function test_rules_clinic_batch_method($provider='',$type='',$dateTarget='',$mode='',$plan='',$organize_mode='default',$options=array(),$pat_prov_rel='primary',$batchSize=100) {
+
+  // Collect total number of pertinent patients (to calculate batching parameters)
+  $totalNumPatients = buildPatientArray('',$provider,$pat_prov_rel,NULL,NULL,TRUE);
+
+  // Cycle through the batches and collect/combine results
+  $totalNumberBatches = floor($totalNumPatients/$batchSize) + 1;
+  for ($i=0;$i<$totalNumberBatches;$i++) {
+    $dataSheet_batch = test_rules_clinic($provider,$type,$dateTarget,$mode,'',$plan,$organize_mode,$options,$pat_prov_rel,(($batchSize*$i)+1),$batchSize);
+    if ($i == 0) {
+      // For first cycle, simply copy it to dataSheet
+      $dataSheet = $dataSheet_batch;
+    }
+    else {
+      // Integrate batch results into main dataSheet
+
+      //debug
+      //error_log("CDR: ".print_r($dataSheet,TRUE),0);
+      //error_log("CDR: ".($batchSize*$i)." records",0);
+
+      foreach ($dataSheet_batch as $key => $row) {
+        if (!$row['is_sub']) {
+          //skip this stuff for the sub entries (and use previous main entry in percentage calculation)
+          $total_patients = $dataSheet[$key]['total_patients'] + $row['total_patients'];
+          $dataSheet[$key]['total_patients'] = $total_patients;
+          $excluded = $dataSheet[$key]['excluded'] + $row['excluded'];
+          $dataSheet[$key]['excluded'] = $excluded;
+          $pass_filter = $dataSheet[$key]['pass_filter'] + $row['pass_filter'];
+          $dataSheet[$key]['pass_filter'] = $pass_filter;
+        }
+        $pass_target = $dataSheet[$key]['pass_target'] + $row['pass_target'];
+        $dataSheet[$key]['pass_target'] = $pass_target;
+        $dataSheet[$key]['percentage'] = calculate_percentage($pass_filter,$excluded,$pass_target);
+      }
+    }
+  }
+
+  return $dataSheet;
+}
+
+/**
  * Process clinic rules.
  *
  * Test the clinic rules of entire clinic and create a report or patient reminders (can also test
@@ -194,9 +261,11 @@ function active_alert_summary($patient_id,$mode,$dateTarget='',$organize_mode='d
  * @param  string       $organize_mode Way to organize the results (default, plans). See above for organization structure of the results.
  * @param  array        $options       can hold various option (for now, used to hold the manual number of labs for the AMC report)
  * @param  string       $pat_prov_rel  How to choose patients that are related to a chosen provider. 'primary' selects patients that the provider is set as primary provider. 'encounter' selectes patients that the provider has seen. This parameter is only applicable if the $provider parameter is set to a provider or collation setting.
+ * @param  integer      $start         applicable patient to start at (when batching process)
+ * @param  integer      $batchSize     number of patients to batch (when batching process)
  * @return array                       See above for organization structure of the results.
  */
-function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patient_id='',$plan='',$organize_mode='default',$options=array(),$pat_prov_rel='primary') {
+function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patient_id='',$plan='',$organize_mode='default',$options=array(),$pat_prov_rel='primary',$start=NULL,$batchSize=NULL) {
 
   // If dateTarget is an array, then organize them.
   if (is_array($dateTarget)) {
@@ -218,7 +287,7 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
     $ures = sqlStatement($query);
     // Second, run through each provider recursively
     while ($urow = sqlFetchArray($ures)) {
-      $newResults = test_rules_clinic($urow['id'],$type,$dateTarget,$mode,$patient_id,$plan,$organize_mode,$options,$pat_prov_rel);
+      $newResults = test_rules_clinic($urow['id'],$type,$dateTarget,$mode,$patient_id,$plan,$organize_mode,$options,$pat_prov_rel,$start,$batchSize);
       if (!empty($newResults)) {
         $provider_item['is_provider'] = TRUE;
         $provider_item['prov_lname'] = $urow['lname'];
@@ -248,7 +317,7 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
         // Second, run through each provider recursively
         $provider_results = array();
         while ($urow = sqlFetchArray($ures)) {
-          $newResults = test_rules_clinic($urow['id'],$type,$dateTarget,$mode,$patient_id,$plan_item['id'],'default',$options,$pat_prov_rel);
+          $newResults = test_rules_clinic($urow['id'],$type,$dateTarget,$mode,$patient_id,$plan_item['id'],'default',$options,$pat_prov_rel,$start,$batchSize);
           if (!empty($newResults)) {
             $provider_item['is_provider'] = TRUE;
             $provider_item['prov_lname'] = $urow['lname'];
@@ -267,7 +336,7 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
       }
       else {
         // (not collate_inner, so do not nest providers within each plan)
-        $newResults = test_rules_clinic($provider,$type,$dateTarget,$mode,$patient_id,$plan_item['id'],'default',$options,$pat_prov_rel);
+        $newResults = test_rules_clinic($provider,$type,$dateTarget,$mode,$patient_id,$plan_item['id'],'default',$options,$pat_prov_rel,$start,$batchSize);
         if (!empty($newResults)) {
           $plan_item['is_plan'] = TRUE;
           array_push($results,$plan_item);
@@ -279,35 +348,10 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
     return $results;
   }
 
-  // Collect all patient ids
+  // Collect applicable patient pids
   $patientData = array();
-  if (!empty($patient_id)) {
-    // only look at the selected patient
-    $patientData[0]['pid'] = $patient_id;
-  }
-  else {
-    if (empty($provider)) {
-      // Look at entire practice
-      $rez = sqlStatement("SELECT `pid` FROM `patient_data`");
-    }
-    else {
-      // Look at an individual physician
-      if( $pat_prov_rel == 'encounter' ){
-        // Choose patients that are related to specific physician by an encounter
-        $rez = sqlStatement("SELECT DISTINCT pid FROM `form_encounter` ".
-                            " WHERE provider_id=? OR supervisor_id=?", array($provider,$provider));
-      }
-      else {  //$pat_prov_rel == 'primary'
-        // Choose patients that are assigned to the specific physician (primary physician in patient demographics)
-        $rez = sqlStatement("SELECT `pid` FROM `patient_data` " .
-                            "WHERE providerID=?", array($provider) );
-      }
-    }
-    // convert the sql query results into an array
-    for($iter=0; $row=sqlFetchArray($rez); $iter++) {
-     $patientData[$iter]=$row;
-    }
-  }
+  $patientData = buildPatientArray($patient_id,$provider,$pat_prov_rel,$start,$batchSize);
+
   // Go through each patient(s)
   //
   //  If in report mode, then tabulate for each rule:
@@ -588,6 +632,92 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
 
   // Return the data
   return $results;
+}
+
+/**
+ * Process patient array that is to be tested.
+ *
+ * @param  integer       $provider      id of a selected provider. If blank, then will test entire clinic.
+ * @param  integer       $patient_id    pid of patient. If blank then will check all patients.
+ * @param  string        $pat_prov_rel  How to choose patients that are related to a chosen provider. 'primary' selects patients that the provider is set as primary provider. 'encounter' selectes patients that the provider has seen. This parameter is only applicable if the $provider parameter is set to a provider or collation setting.
+ * @param  integer       $start         applicable patient to start at (when batching process)
+ * @param  integer       $batchSize     number of patients to batch (when batching process)
+ * @param  boolean       $onlyCount     If true, then will just return the total number of applicable records (ignores batching parameters)
+ * @return array/integer                Array of patient pid values or number total pertinent patients (if $onlyCount is TRUE)
+ */
+function buildPatientArray($patient_id='',$provider='',$pat_prov_rel='primary',$start=NULL,$batchSize=NULL,$onlyCount=FALSE) {
+
+  if (!empty($patient_id)) {
+    // only look at the selected patient
+    if ($onlyCount) {
+      $patientNumber = 1;
+    }
+    else {
+      $patientData[0]['pid'] = $patient_id;
+    }
+  }
+  else {
+    if (empty($provider)) {
+      // Look at entire practice
+      if ($start == NULL || $batchSize == NULL || $onlyCount) {
+        $rez = sqlStatement("SELECT `pid` FROM `patient_data` ORDER BY `pid`");
+        if ($onlyCount) {
+          $patientNumber = sqlNumRows($rez);
+        }
+      }
+      else {
+        // batching
+        $rez = sqlStatement("SELECT `pid` FROM `patient_data` ORDER BY `pid` LIMIT ?,?", array(($start-1),$batchSize));
+      }
+    }
+    else {
+      // Look at an individual physician
+      if( $pat_prov_rel == 'encounter' ){
+        // Choose patients that are related to specific physician by an encounter
+        if ($start == NULL || $batchSize == NULL || $onlyCount) {
+          $rez = sqlStatement("SELECT DISTINCT `pid` FROM `form_encounter` ".
+                              " WHERE `provider_id`=? OR `supervisor_id`=? ORDER BY `pid`", array($provider,$provider));
+          if ($onlyCount) {
+            $patientNumber = sqlNumRows($rez);
+          }
+        }
+        else {
+          //batching
+          $rez = sqlStatement("SELECT DISTINCT `pid` FROM `form_encounter` ".
+                              " WHERE `provider_id`=? OR `supervisor_id`=?  ORDER BY `pid` LIMIT ?,?", array($provider,$provider,($start-1),$batchSize));
+        }
+      }
+      else {  //$pat_prov_rel == 'primary'
+        // Choose patients that are assigned to the specific physician (primary physician in patient demographics)
+        if ($start == NULL || $batchSize == NULL || $onlyCount) {
+          $rez = sqlStatement("SELECT `pid` FROM `patient_data` " .
+                              "WHERE `providerID`=? ORDER BY `pid`", array($provider) );
+          if ($onlyCount) {
+            $patientNumber = sqlNumRows($rez);
+          }
+        }
+        else {
+          $rez = sqlStatement("SELECT `pid` FROM `patient_data` " .
+                              "WHERE `providerID`=? ORDER BY `pid` LIMIT ?,?", array($provider,($start-1),$batchSize) );
+        }
+      }
+    }
+    // convert the sql query results into an array if returning the array
+    if(!$onlyCount) {
+      for($iter=0; $row=sqlFetchArray($rez); $iter++) {
+       $patientData[$iter]=$row;
+      }
+    }
+  }
+
+  if ($onlyCount) {
+    // return the number of applicable patients
+    return $patientNumber;
+  }
+  else {
+    // return array of patient pids
+    return $patientData;
+  }
 }
 
 /**

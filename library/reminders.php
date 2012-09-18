@@ -74,6 +74,78 @@ function patient_reminder_widget($patient_id,$dateTarget='') {
 }
 
 /**
+ * Function to update reminders via a batching method to improve performance and decrease memory overhead.
+ *
+ * Function that updates reminders and returns an array with a specific data structure.
+ * <pre>The data structure of the return array includes the following elements
+ *  'total_active_actions'         - Number of active actions.
+ *  'total_pre_active_reminders'   - Number of active reminders before processing.
+ *  'total_pre_unsent_reminders'   - Number of unsent reminders before processing.
+ *  'total_post_active_reminders'  - Number of active reminders after processing.
+ *  'total_post_unsent_reminders'  - Number of unsent reminders after processing.
+ *  'number_new_reminders'         - Number of new reminders
+ *  'number_updated_reminders'     - Number of updated reminders (due_status change)
+ *  'number_inactivated_reminders' - Number of inactivated reminders.
+ *  'number_unchanged_reminders'   - Number of unchanged reminders.
+ * </pre>
+ *
+ * @param  string   $dateTarget  target date (format Y-m-d H:i:s). If blank then will test with current date as target.
+ * @param  integer  $batchSize   number of patients to batch (default is 100; plan to optimize this default setting in the future)
+ * @return array                 see above for data structure of returned array
+ */
+function update_reminders_batch_method($dateTarget='', $batchSize=25) {
+
+  // Collect total number of pertinent patients (to calculate batching parameters)
+  $totalNumPatients = buildPatientArray('','','',NULL,NULL,TRUE);
+
+  // Cycle through the batches and collect/combine results
+  $totalNumberBatches = floor($totalNumPatients/$batchSize) + 1;
+  for ($i=0;$i<$totalNumberBatches;$i++) {
+    $update_rem_log_batch = update_reminders($dateTarget,'',(($batchSize*$i)+1),$batchSize);
+    if ($i == 0) {
+      // For first cycle, simply copy it to update_rem_log
+      $update_rem_log = $update_rem_log_batch;
+    }
+    else {
+      // Integrate batch results into main update_rem_log
+
+      // Debug statements
+      //error_log("CDR: ".print_r($update_rem_log,TRUE),0);
+      //error_log("CDR: ".($batchSize*$i). " records",0);
+
+      $total_active_actions = $update_rem_log['total_active_actions'] + $update_rem_log_batch['total_active_actions'];
+      $update_rem_log['total_active_actions'] = $total_active_actions;
+
+      $total_pre_active_reminders = $update_rem_log['total_pre_active_reminders'] + $update_rem_log_batch['total_pre_active_reminders'];
+      $update_rem_log['total_pre_active_reminders'] = $total_pre_active_reminders;
+
+      $total_pre_unsent_reminders = $update_rem_log['total_pre_unsent_reminders'] + $update_rem_log_batch['total_pre_unsent_reminders'];
+      $update_rem_log['total_pre_unsent_reminders'] = $total_pre_unsent_reminders;
+
+      $number_new_reminders = $update_rem_log['number_new_reminders'] + $update_rem_log_batch['number_new_reminders'];
+      $update_rem_log['number_new_reminders'] = $number_new_reminders;
+
+      $number_updated_reminders = $update_rem_log['number_updated_reminders'] + $update_rem_log_batch['number_updated_reminders'];
+      $update_rem_log['number_updated_reminders'] = $number_updated_reminders;
+
+      $number_unchanged_reminders = $update_rem_log['number_unchanged_reminders'] + $update_rem_log_batch['number_unchanged_reminders'];
+      $update_rem_log['number_unchanged_reminders'] = $number_unchanged_reminders;
+
+      $number_inactivated_reminders = $update_rem_log['number_inactivated_reminders'] + $update_rem_log_batch['number_inactivated_reminders'];
+      $update_rem_log['number_inactivated_reminders'] = $number_inactivated_reminders;
+
+      $total_post_active_reminders = $update_rem_log['total_post_active_reminders'] + $update_rem_log_batch['total_post_active_reminders'];
+      $update_rem_log['total_post_active_reminders'] = $total_post_active_reminders;
+
+      $total_post_unsent_reminders = $update_rem_log['total_post_unsent_reminders'] + $update_rem_log_batch['total_post_unsent_reminders'];
+      $update_rem_log['total_post_unsent_reminders'] = $total_post_unsent_reminders;
+    }
+  }
+
+  return $update_rem_log;
+}
+
+/**
  * Function to update reminders.
  *
  * Function that updates reminders and returns an array with a specific data structure.
@@ -91,9 +163,11 @@ function patient_reminder_widget($patient_id,$dateTarget='') {
  *
  * @param  string   $dateTarget  target date (format Y-m-d H:i:s). If blank then will test with current date as target.
  * @param  integer  $patient_id  pid of patient. If blank then will check all patients.
+ * @param  integer  $start       applicable patient to start at (when batching process)
+ * @param  integer  $batchSize   number of patients to batch (when batching process)
  * @return array                 see above for data structure of returned array
  */
-function update_reminders($dateTarget='', $patient_id='') {
+function update_reminders($dateTarget='', $patient_id='', $start=NULL, $batchSize=NULL) {
 
   $logging = array();
 
@@ -109,12 +183,12 @@ function update_reminders($dateTarget='', $patient_id='') {
   if (!(empty($patient_id))) {
     // only one patient id, so run the function
     $collectedReminders = test_rules_clinic('','patient_reminder',$dateTarget,'reminders-due',$patient_id);
+    $patientData = '';
   }
   else {
     // as described above, need to pass in each patient_id
     // Collect all patient ids
-    $patientData = array();
-    $rez = sqlStatement("SELECT `pid` FROM `patient_data`");
+    $patientData = buildPatientArray('','','',$start,$batchSize);
     for($iter=0; $row=sqlFetchArray($rez); $iter++) {
       $patientData[$iter]=$row;
     }
@@ -123,13 +197,12 @@ function update_reminders($dateTarget='', $patient_id='') {
       $collectedReminders = array_merge($collectedReminders,$tempCollectReminders);
     }
   }
-
   $logging['total_active_actions'] = count($collectedReminders);
 
   // For logging purposes only:
   //  Collect number active of active and unsent reminders
-  $logging['total_pre_active_reminders'] = count(fetch_reminders($patient_id));
-  $logging['total_pre_unsent_reminders'] = count(fetch_reminders($patient_id, 'unsent'));
+  $logging['total_pre_active_reminders'] = count(fetch_reminders($patientData));
+  $logging['total_pre_unsent_reminders'] = count(fetch_reminders($patientData, 'unsent'));
 
   // Migrate reminders into the patient_reminders table
   $logging['number_new_reminders'] = 0;
@@ -172,7 +245,7 @@ function update_reminders($dateTarget='', $patient_id='') {
 
   // Inactivate reminders that no longer exist
   // Go through each active reminder and ensure it is in the current list
-  $sqlReminders = fetch_reminders($patient_id);
+  $sqlReminders = fetch_reminders($patientData);
   $logging['number_inactivated_reminders'] = 0;
   foreach ( $sqlReminders as $row ) {
     $inactivateFlag = true;
@@ -197,11 +270,10 @@ function update_reminders($dateTarget='', $patient_id='') {
 
   // For logging purposes only:
   //  Collect number of active and unsent reminders
-  $logging['total_post_active_reminders'] = count(fetch_reminders($patient_id));
-  $logging['total_post_unsent_reminders'] = count(fetch_reminders($patient_id, 'unsent'));
+  $logging['total_post_active_reminders'] = count(fetch_reminders($patientData));
+  $logging['total_post_unsent_reminders'] = count(fetch_reminders($patientData, 'unsent'));
 
   return $logging;
-
 }
 
 /**
@@ -313,17 +385,36 @@ function send_reminders() {
 /**
  * Function to fetch reminders.
  *
- * @param  integer  $patient_id  pid of patient. If blank then will check all patients.
- * @param  string   $type        Can choose unsent ('unsent') vs all active (BLANK) reminders
- * @param  string   $due_status  due status of reminders (soon_due,due,past_due). If blank, then will return all.
- * @param  string   $select      Select component of select statement. If blank, then will return all columns.
+ * @param  integer/array  $patient_id  pid of patient. If blank then will check all patients. If array, then with array of patients to check.
+ * @param  string         $type        Can choose unsent ('unsent') vs all active (BLANK) reminders
+ * @param  string         $due_status  due status of reminders (soon_due,due,past_due). If blank, then will return all.
+ * @param  string         $select      Select component of select statement. If blank, then will return all columns.
  * @return array                 Returns an array of reminders.
  */
 function fetch_reminders($patient_id='',$type='',$due_status='',$select='*') {
 
   $arraySqlBind = array();
 
-  if (!empty($patient_id)) {
+  if (empty($patient_id)) {
+    // Not an array or integer, so will check all patients
+  }
+  else if (is_array($patient_id)) {
+    // Is an array, so will place all pid's into the query from the array
+    $where = "`pid` IN ( ";
+    $first_flag = TRUE;
+    foreach ($patient_id as $patient) {
+      if ($first_flag) {
+        $where .= $patient['pid'];
+        $first_flag = FALSE;
+      }
+      else {
+        $where .= ",".$patient['pid'];
+      }
+    }
+    $where .= ") AND ";
+  }
+  else {
+    // Is an integer, so will just check the specified pid
     $where = "`pid`=? AND ";
     array_push($arraySqlBind,$patient_id);
   }
