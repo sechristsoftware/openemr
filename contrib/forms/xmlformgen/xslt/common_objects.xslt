@@ -156,11 +156,7 @@ if ( acl_check(']]></xsl:text>
 <xsl:value-of select="@table" />
 <xsl:text disable-output-escaping="yes"><![CDATA[',']]></xsl:text>
 <xsl:value-of select="./text()" />
-<xsl:text disable-output-escaping="yes"><![CDATA[','','write') || acl_check(']]></xsl:text>
-<xsl:value-of select="@table" />
-<xsl:text disable-output-escaping="yes"><![CDATA[',']]></xsl:text>
-<xsl:value-of select="./text()" />
-<xsl:text disable-output-escaping="yes"><![CDATA[','','addonly') ) {
+<xsl:text disable-output-escaping="yes"><![CDATA[','',array('write','addonly') )) {
  $thisauth_write_addonly=TRUE;
 }
 ]]></xsl:text>

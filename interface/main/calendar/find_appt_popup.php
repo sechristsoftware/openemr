@@ -10,7 +10,7 @@
  include_once("$srcdir/patient.inc");
 
  // check access controls
- if ( (!acl_check('patients','appt','','write')) && (!acl_check('patients','appt','','wsome')) )
+ if (!acl_check('patients','appt','',array('write','wsome') ))
   die(xl('Access not allowed'));
 
  // If the caller is updating an existing event, then get its ID so

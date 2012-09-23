@@ -97,9 +97,12 @@
   }
 
   // acl_check should return FALSE if access is denied and will return TRUE
-  // if access is allowed. The following return_value can be evaluated
-  // for by placing in the $return_value parameter.
+  // if access is allowed. The following return_value(s) can be evaluated
+  // for by placing in the $return_value parameter; it can be placed
+  // as a single value or can send as an array of values (so $return_value
+  // can be a string or an array).
   //
+  // * view    - the user may view but not add or modify entries
   // * write   - the user may add or modify the ACO
   // * wsome   - the user has limited add/modify access to the ACO
   // * addonly - the user may view and add but not modify entries
@@ -119,27 +122,54 @@
       $deny=FALSE; //flag
       foreach ($acl_results as $acl_result) {
         if (empty($acl_result['acl_id'])) return FALSE; //deny access, since this happens if no pertinent ACL's are returned
-        if (empty($return_value)) {
-          // deal with case if not looking for specific return value
-          if ($acl_result['allow']) {
-            $access=TRUE;
-          }
-          else {
-            $deny=TRUE;
+        if (is_array($return_value)) {
+          foreach ($return_value as $single_return_value) {
+            if (empty($single_return_value)) {
+              // deal with case if not looking for specific return value
+              if ($acl_result['allow']) {
+                $access=TRUE;
+              }
+              else {
+                $deny=TRUE;
+              }
+            }
+            else { //!empty($single_return_value)
+              // deal with case if looking for specific return value
+              if ($acl_result['return_value'] == $single_return_value) {
+                if ($acl_result['allow']) {
+                  $access=TRUE;
+                }
+                else{
+                  $deny=TRUE;
+                }
+              }
+            }
           }
         }
-        else { //!empty($return_value)
-          // deal with case if looking for specific return value
-          if ($acl_result['return_value'] == $return_value) {
+        else { // $return_value is not an array (either empty or with one value)
+          if (empty($return_value)) {
+            // deal with case if not looking for specific return value
             if ($acl_result['allow']) {
               $access=TRUE;
             }
-            else{
+            else {
               $deny=TRUE;
+            }
+          }
+          else { //!empty($return_value)
+            // deal with case if looking for specific return value
+            if ($acl_result['return_value'] == $return_value) {
+              if ($acl_result['allow']) {
+                $access=TRUE;
+              }
+              else{
+                $deny=TRUE;
+              }
             }
           }
         }
       }
+
       // Now decide whether user has access
       // (Note a denial takes precedence)
       if ($deny) return FALSE;

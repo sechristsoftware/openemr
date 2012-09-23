@@ -13,7 +13,7 @@ if ($pid) {
   if ($tmp['squad'] && ! acl_check('squads', $tmp['squad']))
     die(xl('You are not authorized to access this squad.'));
 } else {
-  if ( !acl_check('patients','demo','','write') && !acl_check('patients','demo','','addonly') )
+  if (!acl_check('patients','demo','',array('write','addonly') ))
     die(xl('Adding demographics is not authorized.'));
 }
 

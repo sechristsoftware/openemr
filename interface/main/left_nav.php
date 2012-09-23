@@ -157,7 +157,7 @@
  $disallowed['bil'] = !(acl_check('acct', 'rep') || acl_check('acct', 'eob') ||
   acl_check('acct', 'bill'));
 
- $disallowed['new'] = !( acl_check('patients','demo','','write') || acl_check('patients','demo','','addonly') );
+ $disallowed['new'] = !(acl_check('patients','demo','',array('write','addonly') ));
 
  $disallowed['fax'] = !($GLOBALS['enable_hylafax'] || $GLOBALS['enable_scanner']);
 

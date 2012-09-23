@@ -30,7 +30,7 @@ require_once("$srcdir/erx_javascript.inc.php");
   if ($result['squad'] && ! acl_check('squads', $result['squad']))
    die(xl('You are not authorized to access this squad.'));
  } else {
-  if (!acl_check('patients', 'demo', '', 'write') && !acl_check('patients', 'demo', '', 'addonly'))
+  if (!acl_check('patients', 'demo', '', array('write','addonly') ))
    die(xl('Adding demographics is not authorized.'));
  }
 

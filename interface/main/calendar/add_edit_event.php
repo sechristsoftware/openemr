@@ -33,7 +33,7 @@
  require_once("$srcdir/acl.inc");
 
  //Check access control
- if ( !(acl_check('patients','appt','','write')) && !(acl_check('patients','appt','','wsome')) )
+ if (!acl_check('patients','appt','',array('write','wsome') ))
    die(xl('Access not allowed'));
 
  // Things that might be passed by our opener.
