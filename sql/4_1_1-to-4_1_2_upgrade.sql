@@ -57,3 +57,7 @@
 --  #EndIf
 --    all blocks are terminated with a #EndIf statement.
 
+#IfMissingColumn version v_acl
+ALTER TABLE `version` ADD COLUMN `v_acl` int(11) NOT NULL DEFAULT 0;
+#EndIf
+
