@@ -28,15 +28,6 @@ session_write_close();
 
 //Remove time limit, since script can take many minutes
 set_time_limit(0);
-
-// Set the "nice" level of the process for this script when
-// is in full clinic mode. When the "nice" level
-// is increased, this cpu intensive script will have less affect on the performance
-// of other server activities, albeit it may negatively impact the performance
-// of this script (note this is only applicable for linux).
-if (empty($patient_id) && !empty($GLOBALS['pat_rem_clin_nice']) ) {
-  proc_nice($GLOBALS['pat_rem_clin_nice']);
-}
 ?>
 
 <html>
@@ -64,14 +55,26 @@ var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
 <?php
 $patient_id = ($_GET['patient_id']) ? $_GET['patient_id'] : "";
 $mode = ($_GET['mode']) ? $_GET['mode'] : "simple";
+$refresh = ($_GET['refresh'] == "true") ? TRUE : FALSE;
 $sortby = $_GET['sortby'];
 $sortorder = $_GET['sortorder'];
 $begin = $_GET['begin'];
 
+// Set the "nice" level of the process for this script when
+// is in full clinic mode. When the "nice" level
+// is increased, this cpu intensive script will have less affect on the performance
+// of other server activities, albeit it may negatively impact the performance
+// of this script (note this is only applicable for linux).
+if (empty($patient_id) && $mode=="admin" && !empty($GLOBALS['pat_rem_clin_nice']) ) {
+  proc_nice($GLOBALS['pat_rem_clin_nice']);
+}
+
 // Update the reminders and show debugging data
 if (empty($patient_id)) {
-  //Update all patients
-  $update_rem_log = update_reminders_batch_method();
+  if ($mode=="admin" && $refresh) {
+    //Update all patients
+    $update_rem_log = update_reminders_batch_method();
+  }
 }
 else {
   //Only update one patient
@@ -223,13 +226,21 @@ else {
             <td>
               <div style='margin-left:15px'>
                 <?php if ($mode == "admin") { ?>
-                 <a href='#' class='css_button' onclick='return ReminderBatch()'>
-                   <span><?php echo htmlspecialchars( xl('Send Reminders Batch'), ENT_NOQUOTES); ?></span>
+                 <a href='patient_reminders.php?patient_id=<?php echo $patient_id; ?>&mode=<?php echo $mode; ?>&refresh=true' class='css_button' onclick='top.restoreSession(); $("#processing").show()'>
+                   <span><?php echo htmlspecialchars( xl('Process Reminders'), ENT_NOQUOTES); ?></span>
                  </a>
-                <?php } ?>
+                 <div id='processing' style='margin:10px;display:none;'><img src='../../pic/ajax-loader.gif'/></div>
+                 <a href='#' class='css_button' onclick='return ReminderBatch("send")'>
+                   <span><?php echo htmlspecialchars( xl('Send Reminders (Batch)'), ENT_NOQUOTES); ?></span>
+                 </a>
+                 <a href='#' class='css_button' onclick='return ReminderBatch("process_send")'>
+                   <span><?php echo htmlspecialchars( xl('Process and Send Reminders (Batch)'), ENT_NOQUOTES); ?></span>
+                 </a>
+                <?php } else { ?>
                 <a href='patient_reminders.php?patient_id=<?php echo $patient_id; ?>&mode=<?php echo $mode; ?>' class='css_button' onclick='top.restoreSession()'>
                   <span><?php echo htmlspecialchars( xl('Refresh'), ENT_NOQUOTES); ?></span>
                 </a>
+                <?php } ?>
               </div>
             </td>
             <td align=right class='text'><?php echo $prevlink." ".$end." of ".$total." ".$nextlink; ?></td>
@@ -361,9 +372,14 @@ $(document).ready(function(){
 });
 
 // Show a template popup of patient reminders batch sending tool.
-function ReminderBatch() {
+function ReminderBatch(processType) {
   top.restoreSession();
-  dlgopen('../../batchcom/batch_reminders.php', '_blank', 600, 500);
+  if (processType == "process_send") {
+    dlgopen('../../batchcom/batch_reminders.php?mode=process_send', '_blank', 600, 500);
+  }
+  else { // setting == "send"
+    dlgopen('../../batchcom/batch_reminders.php?mode=send', '_blank', 600, 500);
+  }
   return false;
 }
 </script>

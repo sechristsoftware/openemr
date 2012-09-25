@@ -24,6 +24,17 @@ session_write_close();
 
 //Remove time limit, since script can take many minutes
 set_time_limit(0);
+
+// Collect mode paramter
+$mode = ($_GET['mode']) ? $_GET['mode'] : "process_send";
+
+// Set the "nice" level of the process for this script when. When the "nice" level
+// is increased, this cpu intensive script will have less affect on the performance
+// of other server activities, albeit it may negatively impact the performance
+// of this script (note this is only applicable for linux).
+if ($mode=="process_send" && !empty($GLOBALS['pat_rem_clin_nice']) ) {
+  proc_nice($GLOBALS['pat_rem_clin_nice']);
+}
 ?>
 
 <html>
@@ -46,7 +57,8 @@ set_time_limit(0);
 <table>
  <tr>
   <td class='text' align='left' colspan="3"><br>
-  
+
+   <?php if ($mode == "process_send") { ?>
     <?php $update_rem_log = update_reminders_batch_method(); ?>
 
     <span class="text"><?php echo htmlspecialchars(xl('The patient reminders have been updated'), ENT_NOQUOTES) . ":"?></span><br>
@@ -59,6 +71,7 @@ set_time_limit(0);
       <span class="text"><?php echo htmlspecialchars(xl('Total updated reminders'), ENT_NOQUOTES) . ": " . $update_rem_log['number_updated_reminders'];?></span><br>
       <span class="text"><?php echo htmlspecialchars(xl('Total inactivated reminders'), ENT_NOQUOTES) . ": " . $update_rem_log['number_inactivated_reminders'];?></span><br>
       <span class="text"><?php echo htmlspecialchars(xl('Total unchanged reminders'), ENT_NOQUOTES) . ": " . $update_rem_log['number_unchanged_reminders'];?></span><br>
+   <?php } // end of ($mode == "process_send") if ?>
 
     <?php $send_rem_log = send_reminders(); ?>
 
