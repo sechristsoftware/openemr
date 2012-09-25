@@ -28,6 +28,15 @@ session_write_close();
 
 //Remove time limit, since script can take many minutes
 set_time_limit(0);
+
+// Set the "nice" level of the process for this script when
+// is in full clinic mode. When the "nice" level
+// is increased, this cpu intensive script will have less affect on the performance
+// of other server activities, albeit it may negatively impact the performance
+// of this script (note this is only applicable for linux).
+if (empty($patient_id) && !empty($GLOBALS['pat_rem_clin_nice']) ) {
+  proc_nice($GLOBALS['pat_rem_clin_nice']);
+}
 ?>
 
 <html>
