@@ -82,10 +82,10 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
          <td align="center">
             <form id="process_new" action="edi_history_main.php" method="post">
                 <fieldset>
-                <legend><?php echo xlt("Process new files for CSV records:"); ?></legend>
+                <legend><?php echo xlt("Process new files for CSV records"); ?>:</legend>
                 <input type="checkbox" name="htmlout" checked /> <?php echo xlt("HTML Output?"); ?> 
                 <input type="checkbox" name="erronly" checked /> <?php echo xlt("Show Errors Only?"); ?> &nbsp;&nbsp;<br />
-                <input type="hidden" name="NewFiles" value="<?php echo xla("ProcessNew"); ?>">
+                <input type="hidden" name="NewFiles" value="ProcessNew">
                 <label for="New-Files">Process New Files:</label>
                 <input id="processfiles"  name="Process" type="button" value="<?php echo xla("Process"); ?>" />
                 </fieldset>
@@ -108,7 +108,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 		
 		<form id="formcsvtables" name="view_csv" action="edi_history_main.php" target="_blank" method="post">
 			<fieldset style='float:left'>
-				<legend><?php echo xlt("View CSV tables:"); ?></legend>
+				<legend><?php echo xlt("View CSV tables"); ?>:</legend>
 				<table cols='4'>
 					<tr>
 						<td colspan='4'>
@@ -117,13 +117,13 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 					</tr>
 					<tr>
 						<td align='center'>
-							<?php echo xlt("Select CSV table:"); ?>
+							<?php echo xlt("Select CSV table"); ?>:
 						</td>
 						<td align='center'>
 							<?php echo xlt("Pct (%) of rows"); ?>
 						</td>
 						<td align='left'>
-							<?php echo xlt("Start Date:"); ?> &nbsp; <?php echo xlt("End Date:"); ?>
+							<?php echo xlt("Start Date"); ?>: &nbsp; <?php echo xlt("End Date"); ?>:
 						</td>
 						<td align='center'>
 							<?php echo xlt("Submit"); ?>
@@ -137,12 +137,12 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 							
 						<td align='center'>
 							<select id="csvpct" name="csvpctrows">
-								<option value="<?php echo xla("5"); ?>" selected="selected">5%</option>
-								<option value="<?php echo xla("10"); ?>">10%</option>
-								<option value="<?php echo xla("25"); ?>">25%</option>
-								<option value="<?php echo xla("50"); ?>">50%</option>
-								<option value="<?php echo xla("75"); ?>">75%</option>
-								<option value="<?php echo xla("100"); ?>">100%</option>	
+								<option value="5" selected="selected">5%</option>
+								<option value="10">10%</option>
+								<option value="25">25%</option>
+								<option value="50">50%</option>
+								<option value="75">75%</option>
+								<option value="100">100%</option>	
 							</select>
 						</td>
                         <!-- datekeyup(e, defcc, withtime)  dateblur(e, defcc, withtime) -->
@@ -225,8 +225,8 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 		<td>
 	 		<form name="view_835" action="edi_history_main.php" target="_blank" enctype="multipart/form-data" method="post">
 			<fieldset style='float:left'>
-				<legend><?php echo xlt("View an x12-835 ERA file:"); ?></legend>
-				<label for="era_file"><?php echo xlt("Filename:"); ?></label>
+				<legend><?php echo xlt("View an x12-835 ERA file"); ?>:</legend>
+				<label for="era_file"><?php echo xlt("Filename"); ?>:</label>
 				<input id="era_file" type="file" size=20 name="fileUplEra"  />
 				<input type="submit" name="fileERA" value="<?php echo xla("Submit"); ?>" />	
 			</fieldset>
@@ -235,14 +235,14 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 		<td>
 		<form name="view_ra" action="edi_history_main.php" target="_blank" method="post">
 		<fieldset style='float:left'>
-		  <legend><?php echo xlt("RA for Patient, Encounter, or Trace:"); ?></legend>
-			<label for="pid835"><?php echo xlt("Patient ID:"); ?></label>
+		  <legend><?php echo xlt("RA for Patient, Encounter, or Trace"); ?>:</legend>
+			<label for="pid835"><?php echo xlt("Patient ID"); ?>:</label>
 			<input type="text" size=10 name="pid835" value="" />	
 			<input type="submit" name="subpid835" value="<?php echo xla("Submit"); ?>" /> <br />
-			<label for="enctr835"><?php echo xlt("Encounter:"); ?></label>
+			<label for="enctr835"><?php echo xlt("Encounter"); ?>:</label>
 			<input type="text" size=10 name="enctr835" value="" />
 			<input type="submit" name="subenctr835" value="<?php echo xla("Submit"); ?>" /> <br />
-			<label for="trace835"><?php echo xlt("Check No:"); ?></label>
+			<label for="trace835"><?php echo xlt("Check No"); ?>:</label>
 			<input type="text" size=10 name="trace835" value="" />
 			<input type="submit" name="subtrace835" value="<?php echo xla("Submit"); ?>" />
 		</fieldset>
@@ -258,8 +258,8 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 			  <td align='center'>
 				<form name="view_claim" action="edi_history_main.php" target="_blank" method="post">
 					<fieldset>
-						<legend><?php echo xlt("View Batch Claim x12 text:"); ?></legend>
-						<label for="enctr"><?php echo xlt("Enter Encounter:"); ?></label>
+						<legend><?php echo xlt("View Batch Claim x12 text"); ?>:</legend>
+						<label for="enctr"><?php echo xlt("Enter Encounter"); ?>:</label>
 						<input type="text" name="enctrbatch" size=10 value="" /> 
 						<input type="submit" name="Batch-enctr" value="<?php echo xla("Submit"); ?>" />
 					</fieldset>
@@ -269,7 +269,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 				<form name="view_ansi" action="edi_history_main.php" target="_blank" method="post">
 				<fieldset>
 					<legend><?php echo xlt("View ERA x12 text"); ?></legend>
-					<label for="enctrERA"><?php echo xlt("Enter Encounter:"); ?></label>
+					<label for="enctrERA"><?php echo xlt("Enter Encounter"); ?>:</label>
 					<input type="text" name="enctrEra" size=10 value="" />
 					<input type="submit" name="eraText" value="<?php echo xla("Submit"); ?>" />
 				</fieldset>
@@ -280,8 +280,8 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 			  <td align='center' colspan='2'>
 				<form name="view_x12" action="edi_history_main.php" target="_blank" enctype="multipart/form-data" method="post">
 				<fieldset>
-					<legend><?php echo xlt("View local x12 file:"); ?></legend>
-					<label for="x12file"><?php echo xlt("Choose File:"); ?></label>
+					<legend><?php echo xlt("View local x12 file"); ?>:</legend>
+					<label for="x12file"><?php echo xlt("Choose File"); ?>:</label>
 					<input id="x12file" type="file" name="fileUplx12" />
 					<input type="submit" name="fileX12" value="<?php echo xla("Submit"); ?>" />	
 				</fieldset>
@@ -297,13 +297,13 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
     <div id="edinotes">
 		<table cols='2'>
 			<tr>
-				<td colspan='2'>View the <a href="<?php echo $web_root?>/Documentation/Readme_edihistory.html" target="_blank"><?php echo xlt("README"); ?></a> file</td>
+				<td colspan='2'><a href="<?php echo $web_root?>/Documentation/Readme_edihistory.html" target="_blank"><?php echo xlt("View the README file"); ?></a></td>
 			</tr>
 			<tr>
 				<td>
 					<form name="viewlog" action="edi_history_main.php" enctype="multipart/form-data" method="post">
 					<fieldset><legend><?php echo xlt("Inspect the log"); ?></legend>
-					<label for="logfile"><?php echo xlt("View Log:"); ?></label>
+					<label for="logfile"><?php echo xlt("View Log"); ?>:</label>
 			        <input id="logfile" type="button" value="<?php echo xla("Open"); ?>" />
 					<input id="logClear" type="button" value="<?php echo xla("Close"); ?>" />
 					<input id="logArchive" type="button" value="<?php echo xla("Archive"); ?>" />
@@ -430,7 +430,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
             var far = this.files;
             var fct = far.length;
             for(var i = 0; i < fct; i++) {
-                if (i == fmax) $('#pfresult').append("<p><?php echo xlt("max file count reached - reload names below"); ?></p>");
+                if (i == fmax) $('#pfresult').append("<p><?php echo xla("max file count reached - reload names below"); ?></p>");
                 $('#pfresult').append('file: ' + far[i].name +'<br />');
             }            
         });      
