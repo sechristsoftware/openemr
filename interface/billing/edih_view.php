@@ -39,7 +39,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 
 <head>
-	<title><?php xlt("edi history"); ?></title>
+	<title><?php echo xlt("edi history"); ?></title>
 	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
     
     <link rel="stylesheet" href="<?php echo $web_root?>/library/dynarch_calendar.css" type="text/css" />
@@ -59,11 +59,11 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 <!-- Begin tabs section -->
 <div id="tabs">
   <ul class="Clear">
-   <li><a href="#newfiles" id="btn-newfiles"><?php xlt("New Files"); ?></a></li>
-   <li><a href="#csvdatatables" id="btn-csvdatatables"><?php xlt("CSV Tables"); ?></a></li>
-   <li><a href="#erafiles" id="btn-erafiles"><?php xlt("ERA Files"); ?></a></li>
-   <li><a href="#x12text" id="btn-x12text"><?php xlt("x12 Text"); ?></a></li>
-   <li><a href="#edinotes" id="btn-edinotes"><?php xlt("Notes"); ?></a></li>
+   <li><a href="#newfiles" id="btn-newfiles"><?php echo xlt("New Files"); ?></a></li>
+   <li><a href="#csvdatatables" id="btn-csvdatatables"><?php echo xlt("CSV Tables"); ?></a></li>
+   <li><a href="#erafiles" id="btn-erafiles"><?php echo xlt("ERA Files"); ?></a></li>
+   <li><a href="#x12text" id="btn-x12text"><?php echo xlt("x12 Text"); ?></a></li>
+   <li><a href="#edinotes" id="btn-edinotes"><?php echo xlt("Notes"); ?></a></li>
   </ul> 	
 
 
@@ -73,21 +73,21 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
          <td align="center">       
             <form id='upload_new' action="edi_history_main.php" method="POST" enctype="multipart/form-data">
                 <fieldset>
-                <legend><?php xlt("Select one or more files to upload"); ?></legend> 
+                <legend><?php echo xlt("Select one or more files to upload"); ?></legend> 
                 <input id="upload_file" type="file" name="fileUplMulti[]" multiple /> 
-                <input type="submit" name="uplsubmt" value="<?php xla("Submit"); ?>" />
+                <input type="submit" name="uplsubmt" value="<?php echo xla("Submit"); ?>" />
                 </fieldset>
             </form>
          </td>
          <td align="center">
             <form id="process_new" action="edi_history_main.php" method="post">
                 <fieldset>
-                <legend><?php xlt("Process new files for CSV records:"); ?></legend>
-                <input type="checkbox" name="htmlout" checked /> <?php xlt("HTML Output?"); ?> 
-                <input type="checkbox" name="erronly" checked /> <?php xlt("Show Errors Only?"); ?> &nbsp;&nbsp;<br />
-                <input type="hidden" name="NewFiles" value="<?php xla("ProcessNew"); ?>">
+                <legend><?php echo xlt("Process new files for CSV records:"); ?></legend>
+                <input type="checkbox" name="htmlout" checked /> <?php echo xlt("HTML Output?"); ?> 
+                <input type="checkbox" name="erronly" checked /> <?php echo xlt("Show Errors Only?"); ?> &nbsp;&nbsp;<br />
+                <input type="hidden" name="NewFiles" value="<?php echo xla("ProcessNew"); ?>">
                 <label for="New-Files">Process New Files:</label>
-                <input id="processfiles"  name="Process" type="button" value="<?php xla("Process"); ?>" />
+                <input id="processfiles"  name="Process" type="button" value="<?php echo xla("Process"); ?>" />
                 </fieldset>
             </form>
          </td>
@@ -96,8 +96,8 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
     
         <div id='srvvals'></div>
         <div id='pfresult'></div>
-        <div id='clmstat' title="<?php xla("Status of Claim"); ?>"></div>
-        <div id='batchclm' title="<?php xla("Segments Batch Claim"); ?>"></div>
+        <div id='clmstat' title="<?php echo xla("Status of Claim"); ?>"></div>
+        <div id='batchclm' title="<?php echo xla("Segments Batch Claim"); ?>"></div>
 
     </div> 
     
@@ -108,25 +108,25 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 		
 		<form id="formcsvtables" name="view_csv" action="edi_history_main.php" target="_blank" method="post">
 			<fieldset style='float:left'>
-				<legend><?php xlt("View CSV tables:"); ?></legend>
+				<legend><?php echo xlt("View CSV tables:"); ?></legend>
 				<table cols='4'>
 					<tr>
 						<td colspan='4'>
-							<?php xlt("Select a percentage of the rows or or select dates"); ?>
+							<?php echo xlt("Select a percentage of the rows or or select dates"); ?>
 						</td>
 					</tr>
 					<tr>
 						<td align='center'>
-							<?php xlt("Select CSV table:"); ?>
+							<?php echo xlt("Select CSV table:"); ?>
 						</td>
 						<td align='center'>
-							<?php xlt("Pct (%) of rows"); ?>
+							<?php echo xlt("Pct (%) of rows"); ?>
 						</td>
 						<td align='left'>
-							<?php xlt("Start Date:"); ?> &nbsp; <?php xlt("End Date:"); ?>
+							<?php echo xlt("Start Date:"); ?> &nbsp; <?php echo xlt("End Date:"); ?>
 						</td>
 						<td align='center'>
-							<?php xlt("Submit"); ?>
+							<?php echo xlt("Submit"); ?>
 						</td>
 					</tr>
 					<tr height='1.5em'>
@@ -137,12 +137,12 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 							
 						<td align='center'>
 							<select id="csvpct" name="csvpctrows">
-								<option value="<?php xla("5"); ?>" selected="selected">5%</option>
-								<option value="<?php xla("10"); ?>">10%</option>
-								<option value="<?php xla("25"); ?>">25%</option>
-								<option value="<?php xla("50"); ?>">50%</option>
-								<option value="<?php xla("75"); ?>">75%</option>
-								<option value="<?php xla("100"); ?>">100%</option>	
+								<option value="<?php echo xla("5"); ?>" selected="selected">5%</option>
+								<option value="<?php echo xla("10"); ?>">10%</option>
+								<option value="<?php echo xla("25"); ?>">25%</option>
+								<option value="<?php echo xla("50"); ?>">50%</option>
+								<option value="<?php echo xla("75"); ?>">75%</option>
+								<option value="<?php echo xla("100"); ?>">100%</option>	
 							</select>
 						</td>
                         <!-- datekeyup(e, defcc, withtime)  dateblur(e, defcc, withtime) -->
@@ -168,7 +168,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
                         -->
 						<td align='center'>
 							<input type="hidden" name="csvshowtable" value="gettable">
-							<input id="showtable" type="button" value="<?php xla("Submit"); ?>" />
+							<input id="showtable" type="button" value="<?php echo xla("Submit"); ?>" />
 						</td>
                         
 					</tr>
@@ -181,19 +181,19 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 			
         <form id="formcsvhist" name="csv_ch" action="edi_history_main.php" target="_blank" method="get">
            <fieldset style='float:left'>
-			  <legend><?php xlt("Per Encounter"); ?></legend>
+			  <legend><?php echo xlt("Per Encounter"); ?></legend>
 			  <table cols='2'> 
 			        <tr>
 						<td colspan='2'>
-							<?php xlt("Enter Encounter Number"); ?>
+							<?php echo xlt("Enter Encounter Number"); ?>
 						</td>
 					</tr>
 					<tr>
 						<td>
-							<?php xlt("Encounter"); ?>
+							<?php echo xlt("Encounter"); ?>
 						</td>
 						<td>
-							<?php xlt("Submit"); ?>
+							<?php echo xlt("Submit"); ?>
 						</td>	
 					</tr>
 					<tr>
@@ -201,7 +201,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 							<input id="csvenctr" type="text" size=7 name="chenctr" value="" />
 						</td>
 						<td>
-							<input id="showhistory" type="button" value="<?php xla("Submit"); ?>" />
+							<input id="showhistory" type="button" value="<?php echo xla("Submit"); ?>" />
 						</td>
 					</tr>
 			  </table>
@@ -225,26 +225,26 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 		<td>
 	 		<form name="view_835" action="edi_history_main.php" target="_blank" enctype="multipart/form-data" method="post">
 			<fieldset style='float:left'>
-				<legend><?php xlt("View an x12-835 ERA file:"); ?></legend>
-				<label for="era_file"><?php xlt("Filename:"); ?></label>
+				<legend><?php echo xlt("View an x12-835 ERA file:"); ?></legend>
+				<label for="era_file"><?php echo xlt("Filename:"); ?></label>
 				<input id="era_file" type="file" size=20 name="fileUplEra"  />
-				<input type="submit" name="fileERA" value="<?php xla("Submit"); ?>" />	
+				<input type="submit" name="fileERA" value="<?php echo xla("Submit"); ?>" />	
 			</fieldset>
 			</form>	
 		</td>
 		<td>
 		<form name="view_ra" action="edi_history_main.php" target="_blank" method="post">
 		<fieldset style='float:left'>
-		  <legend><?php xlt("RA for Patient, Encounter, or Trace:"); ?></legend>
-			<label for="pid835"><?php xlt("Patient ID:"); ?></label>
+		  <legend><?php echo xlt("RA for Patient, Encounter, or Trace:"); ?></legend>
+			<label for="pid835"><?php echo xlt("Patient ID:"); ?></label>
 			<input type="text" size=10 name="pid835" value="" />	
-			<input type="submit" name="subpid835" value="<?php xla("Submit"); ?>" /> <br />
-			<label for="enctr835"><?php xlt("Encounter:"); ?></label>
+			<input type="submit" name="subpid835" value="<?php echo xla("Submit"); ?>" /> <br />
+			<label for="enctr835"><?php echo xlt("Encounter:"); ?></label>
 			<input type="text" size=10 name="enctr835" value="" />
-			<input type="submit" name="subenctr835" value="<?php xla("Submit"); ?>" /> <br />
-			<label for="trace835"><?php xlt("Check No:"); ?></label>
+			<input type="submit" name="subenctr835" value="<?php echo xla("Submit"); ?>" /> <br />
+			<label for="trace835"><?php echo xlt("Check No:"); ?></label>
 			<input type="text" size=10 name="trace835" value="" />
-			<input type="submit" name="subtrace835" value="<?php xla("Submit"); ?>" />
+			<input type="submit" name="subtrace835" value="<?php echo xla("Submit"); ?>" />
 		</fieldset>
 		</form> 
 		</td>
@@ -258,20 +258,20 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 			  <td align='center'>
 				<form name="view_claim" action="edi_history_main.php" target="_blank" method="post">
 					<fieldset>
-						<legend><?php xlt("View Batch Claim x12 text:"); ?></legend>
-						<label for="enctr"><?php xlt("Enter Encounter:"); ?></label>
+						<legend><?php echo xlt("View Batch Claim x12 text:"); ?></legend>
+						<label for="enctr"><?php echo xlt("Enter Encounter:"); ?></label>
 						<input type="text" name="enctrbatch" size=10 value="" /> 
-						<input type="submit" name="Batch-enctr" value="<?php xla("Submit"); ?>" />
+						<input type="submit" name="Batch-enctr" value="<?php echo xla("Submit"); ?>" />
 					</fieldset>
 				</form>
 			  </td>
 			  <td align='center'>
 				<form name="view_ansi" action="edi_history_main.php" target="_blank" method="post">
 				<fieldset>
-					<legend><?php xlt("View ERA x12 text"); ?></legend>
-					<label for="enctrERA"><?php xlt("Enter Encounter:"); ?></label>
+					<legend><?php echo xlt("View ERA x12 text"); ?></legend>
+					<label for="enctrERA"><?php echo xlt("Enter Encounter:"); ?></label>
 					<input type="text" name="enctrEra" size=10 value="" />
-					<input type="submit" name="eraText" value="<?php xla("Submit"); ?>" />
+					<input type="submit" name="eraText" value="<?php echo xla("Submit"); ?>" />
 				</fieldset>
 				</form>
 			  </td>
@@ -280,10 +280,10 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 			  <td align='center' colspan='2'>
 				<form name="view_x12" action="edi_history_main.php" target="_blank" enctype="multipart/form-data" method="post">
 				<fieldset>
-					<legend><?php xlt("View local x12 file:"); ?></legend>
-					<label for="x12file"><?php xlt("Choose File:"); ?></label>
+					<legend><?php echo xlt("View local x12 file:"); ?></legend>
+					<label for="x12file"><?php echo xlt("Choose File:"); ?></label>
 					<input id="x12file" type="file" name="fileUplx12" />
-					<input type="submit" name="fileX12" value="<?php xla("Submit"); ?>" />	
+					<input type="submit" name="fileX12" value="<?php echo xla("Submit"); ?>" />	
 				</fieldset>
 				</form>
 			</td> 
@@ -297,27 +297,27 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
     <div id="edinotes">
 		<table cols='2'>
 			<tr>
-				<td colspan='2'>View the <a href="<?php echo $web_root?>/Documentation/Readme_edihistory.html" target="_blank"><?php xlt("README"); ?></a> file</td>
+				<td colspan='2'>View the <a href="<?php echo $web_root?>/Documentation/Readme_edihistory.html" target="_blank"><?php echo xlt("README"); ?></a> file</td>
 			</tr>
 			<tr>
 				<td>
 					<form name="viewlog" action="edi_history_main.php" enctype="multipart/form-data" method="post">
-					<fieldset><legend><?php xlt("Inspect the log"); ?></legend>
-					<label for="logfile"><?php xlt("View Log:"); ?></label>
-			        <input id="logfile" type="button" value="<?php xla("Open"); ?>" />
-					<input id="logClear" type="button" value="<?php xla("Close"); ?>" />
-					<input id="logArchive" type="button" value="<?php xla("Archive"); ?>" />
+					<fieldset><legend><?php echo xlt("Inspect the log"); ?></legend>
+					<label for="logfile"><?php echo xlt("View Log:"); ?></label>
+			        <input id="logfile" type="button" value="<?php echo xla("Open"); ?>" />
+					<input id="logClear" type="button" value="<?php echo xla("Close"); ?>" />
+					<input id="logArchive" type="button" value="<?php echo xla("Archive"); ?>" />
 					</fieldset>
 					</form>
 				</td>
 				<td><form name="viewnotes" action="edi_history_main.php" enctype="multipart/form-data" method="post">
-					<fieldset><legend><?php xlt("Notes"); ?></legend>
-					<label for="getnotes"><?php xlt("Notes"); ?></label>
-					<input id="getnotes" type="button" value="<?php xla("Open"); ?>" />
-					<label for="savenotes"><?php xlt("Save"); ?></label>
-					<input id="savenotes" type="button" value="<?php xla("Save"); ?>" />
-					<label for="closenotes"><?php xlt("Close"); ?></label>
-					<input id="closenotes" type="button" value="<?php xla("Close"); ?>" />
+					<fieldset><legend><?php echo xlt("Notes"); ?></legend>
+					<label for="getnotes"><?php echo xlt("Notes"); ?></label>
+					<input id="getnotes" type="button" value="<?php echo xla("Open"); ?>" />
+					<label for="savenotes"><?php echo xlt("Save"); ?></label>
+					<input id="savenotes" type="button" value="<?php echo xla("Save"); ?>" />
+					<label for="closenotes"><?php echo xlt("Close"); ?></label>
+					<input id="closenotes" type="button" value="<?php echo xla("Close"); ?>" />
 					</fieldset>
 					</form>
 				</td>
@@ -372,7 +372,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
          * functions for ajax and popups
          */
         $('#srvvals').ajaxError(function() {
-            $(this).html( "<?php xla("Error retrieving values."); ?>" );
+            $(this).html( "<?php echo xla("Error retrieving values."); ?>" );
         }); 
                
         $(function() {
@@ -396,7 +396,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
                   var optct = data.length;
                   if (optct) {
                     var options = [];
-                    options.push("<option value='' selected='selected'><?php xla("Choose from list"); ?></option>");
+                    options.push("<option value='' selected='selected'><?php echo xla("Choose from list"); ?></option>");
                     for (var i=0; i<optct; i++) {
                       options.push("<option value=" + data[i].fname + ">" + data[i].desc + "</option>");
                     }
@@ -416,8 +416,8 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
                 dataType: "html",
                 success: [ 
                     function(data){ $("#pfresult").html(data); },
-                    bindlinks('#pfresult', 'click', '.clmstatus', 'click', '#clmstat', '<?php xla("Claim Status"); ?>'),
-                    bindlinks('#pfresult', 'click', '.btclm', 'click', '#batchclm', '<?php xla("Batch Claim"); ?>')
+                    bindlinks('#pfresult', 'click', '.clmstatus', 'click', '#clmstat', '<?php echo xla("Claim Status"); ?>'),
+                    bindlinks('#pfresult', 'click', '.btclm', 'click', '#batchclm', '<?php echo xla("Batch Claim"); ?>')
                 ]
             });
         });         
@@ -430,7 +430,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
             var far = this.files;
             var fct = far.length;
             for(var i = 0; i < fct; i++) {
-                if (i == fmax) $('#pfresult').append("<p><?php xlt("max file count reached - reload names below"); ?></p>");
+                if (i == fmax) $('#pfresult').append("<p><?php echo xlt("max file count reached - reload names below"); ?></p>");
                 $('#pfresult').append('file: ' + far[i].name +'<br />');
             }            
         });      
@@ -536,7 +536,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 	$('#showtable').click(function() {
 		// verify a csv file is selected
 		if ($('#csvselect').val() == '') {
-			$("#tblshow").html('<?php xla("No table selected! Select a table."); ?>');
+			$("#tblshow").html('<?php echo xla("No table selected! Select a table."); ?>');
 			return false;
 		}
 		$.ajax({
@@ -557,9 +557,9 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 						sScrollXInner: '100%'
 					});
 				},
-				bindlinks('#tblshow', 'click', '.clmstatus', 'click', '#tbclmstat', '<?php xla("Claim Status"); ?>'),
-				bindlinks('#tblshow', 'click', '.btclm', 'click', '#tbbatchclm', '<?php xla("Batch Claim"); ?>'),
-				bindlinks('#tblshow', 'click', '.codeval', 'click', '#tbcodetxt', '<?php xla("Code Text"); ?>')				
+				bindlinks('#tblshow', 'click', '.clmstatus', 'click', '#tbclmstat', '<?php echo xla("Claim Status"); ?>'),
+				bindlinks('#tblshow', 'click', '.btclm', 'click', '#tbbatchclm', '<?php echo xla("Batch Claim"); ?>'),
+				bindlinks('#tblshow', 'click', '.codeval', 'click', '#tbcodetxt', '<?php echo xla("Code Text"); ?>')				
 			]              
 		});
 	}); 
@@ -571,7 +571,7 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 		var encrecord = $('#tbcsvhist').dialog({
 					buttons: [{ text: "Close", click: function() { $(this).dialog("close"); } }], 
 					modal: false,
-					title: "<?php xla("Encounter Record"); ?>",
+					title: "<?php echo xla("Encounter Record"); ?>",
 					height: 416,
 					width: 'auto'
 				});
@@ -582,9 +582,9 @@ if (!acl_check('acct', 'eob')) die(xlt("Access Not Authorized"));
 			dataType: "html",
 			success: [
 				function(data){ $('#tbcsvhist').html($.trim(data)); },
-				bindlinks('#tbcsvhist', 'click', '.clmstatus', 'click', '#tbclmstat', '<?php xla("Claim Status"); ?>'),
-				bindlinks('#tbcsvhist', 'click', '.btclm', 'click', '#tbbatchclm', '<?php xla("Batch Claim"); ?>'),
-				bindlinks('#tbcsvhist', 'click', '.codeval', 'click', '#tbcodetxt', '<?php xla("Code Text"); ?>'),
+				bindlinks('#tbcsvhist', 'click', '.clmstatus', 'click', '#tbclmstat', '<?php echo xla("Claim Status"); ?>'),
+				bindlinks('#tbcsvhist', 'click', '.btclm', 'click', '#tbbatchclm', '<?php echo xla("Batch Claim"); ?>'),
+				bindlinks('#tbcsvhist', 'click', '.codeval', 'click', '#tbcodetxt', '<?php echo xla("Code Text"); ?>'),
 				encrecord.dialog('open')
 			]				
 		});
