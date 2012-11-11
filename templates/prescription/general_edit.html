@@ -3,11 +3,12 @@
 {php}html_header_show();{/php}
 
 <link rel="stylesheet" href="{$CSS_HEADER}" type="text/css">
-<link rel="stylesheet" href="{$WEBROOT}/interface/themes/jquery.autocomplete.css" type="text/css">
+<link rel="stylesheet" href="{$WEBROOT}/library/js/jquery-ui-1.9.1.full/css/smoothness/jquery-ui-1.9.1.custom.min.css" type="text/css">
+<link rel="stylesheet" href="{$WEBROOT}/library/js/jquery-ui-1.9.1.full/css/smoothness/jquery-ui-1.9.1.openemr.custom.min.css" type="text/css">
 {literal}
 <style type="text/css">
-    .text {
-        font-size: 9pt;
+    .ui-autocomplete-loading {
+        background: white url('<?php echo $WEBROOT."/interface/pic/ajax-loader.gif"; ?>') right center no-repeat;
     }
 </style>
 {/literal}
@@ -23,12 +24,10 @@
 </script>
 {literal}
 {/literal}
-<!---Gen Look up-->
 <script type="text/javascript" src="{$WEBROOT}/library/dialog.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.2.2.min.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.bgiframe.min.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.dimensions.pack.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.autocomplete.pack.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-ui-1.9.1.full/js/jquery-ui-1.9.1.custom.min.js"></script>
+
 {literal}
 <script language='JavaScript'>
 
@@ -105,7 +104,7 @@
 		{xl t='prescription has reached its limit of'} {$prescription->get_refills()} {xl t='refills'}.
 		{/if}
 		{/if}
-         <a class='css_button_small' href="controller.php?prescription&list&id={$prescription->patient->id}"><span>{xl t='Back'}</span></a>
+         <a class='css_button_small' href="controller.php?prescription&list&id={$prescription->patient->id}"><span>{xl t='Cancel'}</span></a>
 </td></tr>
 </table>
 
@@ -146,10 +145,24 @@
 <tr>
 	<td COLSPAN="1" class="text" ALIGN="right" VALIGN="MIDDLE" >{xl t='Drug'}</td>
 	<td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+          {if $RXNORM_FORM}
+            {if $prescription->rxnorm_sec_name}
+              <input type="input" size="20" name="rxnorm_sec_name" id="rxnorm_sec_name" value="{$prescription->rxnorm_sec_name}" disabled/>
+              <select name="rxnorm_main_name" id="rxnorm_main_name">{html_options options=$prescription->rxnorm_main_name_options selected=$prescription->rxnorm_main_name}</select>
+            {else}    
+              <input type="input" size="20" name="rxnorm_sec_name" id="rxnorm_sec_name" value=""/>
+              <select style="display:none" name="rxnorm_main_name" id="rxnorm_main_name"></select>
+            {/if}
+            <input type="hidden" name="rxnorm_sec_tt" value="{$prescription->rxnorm_sec_tt}" />
+            <input type="hidden" name="rxnorm_sec_rxcui" value="{$prescription->rxnorm_sec_rxcui}" />
+            <input type="hidden" name="rxnorm_main_tt" value="{$prescription->rxnorm_main_tt}" />
+            <input type="hidden" name="rxnorm_main_rxcui" value="{$prescription->rxnorm_main_rxcui}" />
+          {else}
             <input type="input" size="20" name="drug" id="drug" value="{$prescription->drug}"/>
             <a href="javascript:;" id="druglookup" class="small" name="B4" onclick="$('#hiddendiv').show(); document.getElementById('hiddendiv').innerHTML='&lt;iframe src=&quot;controller.php?prescription&amp;lookup&amp;drug=&quot; width=&quot;100%&quot;height=&quot;52&quot; scrolling=&quot;no&quot; frameborder=&quot;no&quot;&gt;&lt;/iframe&gt;'">
             ({xl t='click here to search'})</a>
             <div id=hiddendiv style="display:none">&nbsp;</div>
+          {/if}
 	</td>
 </tr>
 {if $DRUG_ARRAY_VALUES}
@@ -264,15 +277,114 @@ function cancelParlookup () {
 }
 
 $().ready(function() {
-    $("#drug").autocomplete('library/ajax/prescription_drugname_lookup.php',
-                            {
-                            width: 200,
-                            scrollHeight: 100,
-                            selectFirst: true
-                            });
-    $("#drug").focus();
-    $("#prescribe").submit(function() { return CheckForErrors(this) });
-    $("#druglookup").click(function() { DoDrugLookup(this) });
+
+  // drugs table lookup 
+  $(function(){
+    // Real-time drug lookup
+    //   Note the css style setting near top of script for
+    //    .ui-autocomplete-loading to show the in-progress graphic
+    //    .ui-widget to set the font size of menu item
+    $("#drug").autocomplete({
+      // Autocomplete settings
+      minLength: 3,
+      autoFocus: true,
+      // Collect result options
+      source: function( request, response ) {
+        $.ajax({
+          url: "library/ajax/prescription_drugname_lookup.php",
+          dataType: "json",
+          data: {
+            limit: 200,
+            term: request.term,
+            method: "drugs"
+          },
+          success: function( data ) {
+            response( $.map( data, function( item ) {
+              return {
+                //just using the drugs table, so just capture the name (original behavior)
+                label: item.name,
+                value: item.name
+              }
+            }));
+          }
+        });
+      },
+      // Process selected result
+      select: function(e, ui) {
+        // capture the name (original behavior)
+        $("#drug").val(ui.item.value);
+        return false;
+      }
+    });
+  });
+
+  // rxnorm lookup
+  $(function(){
+    // Real-time drug lookup
+    //   Note the css style setting near top of script for
+    //    .ui-autocomplete-loading to show the in-progress graphic
+    //    .ui-widget to set the font size of menu item
+    $("#rxnorm_sec_name").autocomplete({
+      // Autocomplete settings
+      minLength: 3,
+      autoFocus: true,
+      // Collect result options
+      source: function( request, response ) {
+        $.ajax({
+          url: "library/ajax/prescription_drugname_lookup.php",
+          dataType: "json",
+          data: {
+            limit: 200,
+            term: request.term,
+            method: "rxnorm"
+          },
+          success: function( data ) {
+            response( $.map( data, function( item ) {
+              return {
+                label: item.name,
+                value: item.drug_id + "::" + item.term_type + "::" + item.name
+              }
+            }));
+          }
+        });
+      },
+      // Process selected result
+      select: function(e, ui) {
+        sepValue = ui.item.value.split("::");
+        // save the variables to form
+        $("#rxnorm_sec_rxcui").val(sepValue[0]);
+        $("#rxnorm_sec_tt").val(sepValue[1]);
+        $("#rxnorm_sec_name").val(sepValue[2]);        
+
+        // disable the drug field
+        $("#rxnorm_sec_name").attr("disabled", "disabled");
+
+        // Proceed to select the full drug name/type/dosage
+        // (ajax call rxcui in sepValue[1], tty in sepValue[2], name in sepValue[3]
+        //  to collect drug info and to populate the selection entry)
+        $.ajax({
+          url: "library/ajax/rxnorm_drug_lookup.php",
+          dataType: "json",
+          data: {
+            rxcui: sepValue[0],
+            term_type: sepValue[1],
+            drug_name: sepValue[2]
+          },
+          success: function( data ) {
+            // Populate and show the selector with specific drug options
+
+            // Focus on the selector
+
+          }
+        });
+        return false;
+      }
+    });
+  });
+
+  $("#drug").focus();
+  $("#prescribe").submit(function() { return CheckForErrors(this) });
+  $("#druglookup").click(function() { DoDrugLookup(this) });
 });
 
 

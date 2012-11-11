@@ -3613,6 +3613,12 @@ CREATE TABLE `lists` (
   `erx_source` ENUM('0','1') DEFAULT '0' NOT NULL  COMMENT '0-OpenEMR 1-External',
   `erx_uploaded` ENUM('0','1') DEFAULT '0' NOT NULL  COMMENT '0-Pending NewCrop upload 1-Uploaded TO NewCrop',
   `modifydate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `rxnorm_sec_tt`  varchar(10) NOT NULL default '',
+  `rxnorm_sec_rxcui`  varchar(10) NOT NULL default '',
+  `rxnorm_sec_name`  varchar(255) NOT NULL default '',
+  `rxnorm_main_tt`  varchar(10) NOT NULL default '',
+  `rxnorm_main_rxcui`  varchar(10) NOT NULL default '',
+  `rxnorm_main_name`  varchar(255) NOT NULL default '',
   PRIMARY KEY  (`id`),
   KEY `pid` (`pid`),
   KEY `type` (`type`)
@@ -4331,6 +4337,12 @@ CREATE TABLE `prescriptions` (
   `erx_source` TINYINT(4) NOT NULL DEFAULT '0' COMMENT '0-OpenEMR 1-External',
   `erx_uploaded` TINYINT(4) NOT NULL DEFAULT '0' COMMENT '0-Pending NewCrop upload 1-Uploaded to NewCrop',
   `drug_info_erx` TEXT DEFAULT NULL,
+  `rxnorm_sec_tt`  varchar(10) NOT NULL default '',
+  `rxnorm_sec_rxcui`  varchar(10) NOT NULL default '',
+  `rxnorm_sec_name`  varchar(255) NOT NULL default '',
+  `rxnorm_main_tt`  varchar(10) NOT NULL default '',
+  `rxnorm_main_rxcui`  varchar(10) NOT NULL default '',
+  `rxnorm_main_name`  varchar(255) NOT NULL default '',
   PRIMARY KEY  (`id`),
   KEY `patient_id` (`patient_id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;
