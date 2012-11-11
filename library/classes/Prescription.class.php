@@ -150,6 +150,13 @@ class Prescription extends ORDataObject {
     var $drug_id;
     var $active;
 
+    var $rxnorm_sec_name;
+    var $rxnorm_sec_tt;
+    var $rxnorm_sec_rxcui;
+    var $rxnorm_main_name;
+    var $rxnorm_main_tt;
+    var $rxnorm_main_rxcui;
+
     /**
     * Constructor sets all Prescription attributes to their default value
     */
@@ -514,6 +521,48 @@ class Prescription extends ORDataObject {
         return $this->active;
     }
     
+    function set_rxnorm_sec_name($rxnorm_sec_name) {
+        $this->rxnorm_sec_name = $rxnorm_sec_name;
+    }
+    function get_rxnorm_sec_name() {
+        return $this->rxnorm_sec_name;
+    }
+
+    function set_rxnorm_sec_tt($rxnorm_sec_tt) {
+        $this->rxnorm_sec_tt = $rxnorm_sec_tt;
+    }
+    function get_rxnorm_sec_tt() {
+        return $this->rxnorm_sec_tt;
+    }
+
+    function set_rxnorm_sec_rxcui($rxnorm_sec_rxcui) {
+        $this->rxnorm_sec_rxcui = $rxnorm_sec_rxcui;
+    }
+    function get_rxnorm_sec_rxcui() {
+        return $this->rxnorm_sec_rxcui;
+    }
+
+    function set_rxnorm_main_name($rxnorm_main_name) {
+        $this->rxnorm_main_name = $rxnorm_main_name;
+    }
+    function get_rxnorm_main_name() {
+        return $this->rxnorm_main_name;
+    }
+
+    function set_rxnorm_main_tt($rxnorm_main_tt) {
+        $this->rxnorm_main_tt = $rxnorm_main_tt;
+    }
+    function get_rxnorm_main_tt() {
+        return $this->rxnorm_main_tt;
+    }
+
+    function set_rxnorm_main_rxcui($rxnorm_main_rxcui) {
+        $this->rxnorm_main_rxcui = $rxnorm_main_rxcui;
+    }
+    function get_rxnorm_main_rxcui() {
+        return $this->rxnorm_main_rxcui;
+    }
+
     function get_prescription_display() {
         $pconfig = $GLOBALS['oer_config']['prescriptions'];
         
