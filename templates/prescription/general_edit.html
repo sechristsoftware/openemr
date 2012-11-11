@@ -3,7 +3,7 @@
 {php}html_header_show();{/php}
 
 <link rel="stylesheet" href="{$CSS_HEADER}" type="text/css">
-<link rel="stylesheet" href="{$WEBROOT}/interface/themes/jquery.autocomplete.css" type="text/css">
+<link rel="stylesheet" href="{$WEBROOT}/library/css/jquery-ui-1.9.1-smoothness/jquery-ui-1.9.1.full.min.css" type="text/css">
 {literal}
 <style type="text/css">
     .text {
@@ -23,12 +23,10 @@
 </script>
 {literal}
 {/literal}
-<!---Gen Look up-->
 <script type="text/javascript" src="{$WEBROOT}/library/dialog.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.2.2.min.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.bgiframe.min.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.dimensions.pack.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.autocomplete.pack.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-ui-1.9.1.full.min.js"></script>
+
 {literal}
 <script language='JavaScript'>
 
@@ -264,12 +262,39 @@ function cancelParlookup () {
 }
 
 $().ready(function() {
-    $("#drug").autocomplete('library/ajax/prescription_drugname_lookup.php',
-                            {
-                            width: 200,
-                            scrollHeight: 100,
-                            selectFirst: true
-                            });
+    $(function(){
+        //real-time drug lookup
+        $("#drug").autocomplete({
+            // Collect result options
+            source: function( request, response ) {
+                $.ajax({
+                    url: "library/ajax/prescription_drugname_lookup.php",
+                    dataType: "json",
+                    data: {
+                        limit: 20,
+                        term: request.term
+                    },
+                    success: function( data ) {
+                        response( $.map( data, function( item ) {
+                            return {
+                                label: item.name,
+                                value: item.name
+                            }
+                        }));
+                    }
+                });
+            },
+            // Autocomplete settings
+            minLength: 3,
+            width: 200,
+            scrollHeight: 100,
+            selectFirst: true,
+            // Process selected result
+            select: function(e, ui) {
+                $("#drug").val(ui.item.value);
+            }
+        });
+    });
     $("#drug").focus();
     $("#prescribe").submit(function() { return CheckForErrors(this) });
     $("#druglookup").click(function() { DoDrugLookup(this) });
