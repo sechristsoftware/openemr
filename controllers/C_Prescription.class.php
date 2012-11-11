@@ -82,9 +82,19 @@ class C_Prescription extends Controller {
 
 		if ($p_obj != null && get_class($p_obj) == "prescription") {
 			$this->prescriptions[0] = $p_obj;
+                        // flag if using rxnorm form for the already existant prescription
+                        if ($this->prescriptions->rxnorm_sec_name) {
+                                $this->assign(RXNORM_FORM,TRUE);
+                        }
+                        else {
+                                $this->assign(RXNORM_FORM,FALSE);
+                        }
 		}
 		elseif (get_class($this->prescriptions[0]) != "prescription" ) {
 			$this->prescriptions[0] = new Prescription($id);
+
+                        // flag if using rxnorm form for the new prescription
+                        $this->assign(RXNORM_FORM,check_rxnorm_new_rx());
 		}
 
 		if (!empty($patient_id)) {
