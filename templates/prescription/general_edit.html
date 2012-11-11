@@ -3,11 +3,12 @@
 {php}html_header_show();{/php}
 
 <link rel="stylesheet" href="{$CSS_HEADER}" type="text/css">
-<link rel="stylesheet" href="{$WEBROOT}/interface/themes/jquery.autocomplete.css" type="text/css">
+<link rel="stylesheet" href="{$WEBROOT}/library/js/jquery-ui-1.9.1.full/css/smoothness/jquery-ui-1.9.1.custom.min.css" type="text/css">
+<link rel="stylesheet" href="{$WEBROOT}/library/js/jquery-ui-1.9.1.full/css/smoothness/jquery-ui-1.9.1.openemr.custom.min.css" type="text/css">
 {literal}
 <style type="text/css">
-    .text {
-        font-size: 9pt;
+    .ui-autocomplete-loading {
+        background: white url('<?php echo $WEBROOT."/interface/pic/ajax-loader.gif"; ?>') right center no-repeat;
     }
 </style>
 {/literal}
@@ -23,12 +24,10 @@
 </script>
 {literal}
 {/literal}
-<!---Gen Look up-->
 <script type="text/javascript" src="{$WEBROOT}/library/dialog.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.2.2.min.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.bgiframe.min.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.dimensions.pack.js"></script>
-<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.autocomplete.pack.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-ui-1.9.1.full/js/jquery-ui-1.9.1.custom.min.js"></script>
+
 {literal}
 <script language='JavaScript'>
 
@@ -264,15 +263,75 @@ function cancelParlookup () {
 }
 
 $().ready(function() {
-    $("#drug").autocomplete('library/ajax/prescription_drugname_lookup.php',
-                            {
-                            width: 200,
-                            scrollHeight: 100,
-                            selectFirst: true
-                            });
-    $("#drug").focus();
-    $("#prescribe").submit(function() { return CheckForErrors(this) });
-    $("#druglookup").click(function() { DoDrugLookup(this) });
+  $(function(){
+    // Real-time drug lookup
+    //   Note the css style setting near top of script for
+    //    .ui-autocomplete-loading to show the in-progress graphic
+    //    .ui-widget to set the font size of menu item
+    $("#drug").autocomplete({
+      // Autocomplete settings
+      minLength: 3,
+      autoFocus: true,
+      // Collect result options
+      source: function( request, response ) {
+        $.ajax({
+          url: "library/ajax/prescription_drugname_lookup.php",
+          dataType: "json",
+          data: {
+            limit: 200,
+            term: request.term
+          },
+          success: function( data ) {
+            response( $.map( data, function( item ) {
+              if (item.drug_database == "rxnorm") {
+                //return the drug_id, which will be used if selected to detail rx
+                return {
+                  label: item.name,
+                  value: "rxnorm::" + item.drug_id + "::" + item.term_type + "::" + item.name
+                }
+              }
+              else {
+                return {
+                  //just using the drugs table, so just capture the name (original behavior)
+                  label: item.name,
+                  value: item.name
+                }
+              }
+            }));
+          }
+        });
+      },
+      // Process selected result
+      select: function(e, ui) {
+        sepValue = ui.item.value.split("::");
+        if (sepValue[0] == "rxnorm") {
+          //collect the chosen rxnorm drug and process it
+          // (ajax call rxcui in sepValue[1], tty in sepValue[2], name in sepValue[3]
+          //  to collect drug info and to populate the rx form)
+          $.ajax({
+            url: "library/ajax/rxnorm_drug_lookup.php",
+            dataType: "json",
+            data: {
+              rxcui: sepValue[1],
+              term_type: sepValue[2],
+              drug_name: sepValue[3]
+            },
+            success: function( data ) {
+              $("#drug").val(sepValue[1]);
+            }
+          });
+        }
+        else {
+          //just using the drugs table, so just capture the name (original behavior)
+          $("#drug").val(ui.item.value);
+        }
+        return false;
+      }
+    });
+  });
+  $("#drug").focus();
+  $("#prescribe").submit(function() { return CheckForErrors(this) });
+  $("#druglookup").click(function() { DoDrugLookup(this) });
 });
 
 

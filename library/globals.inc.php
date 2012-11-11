@@ -1519,6 +1519,12 @@ $GLOBALS_METADATA = array(
   ),
   
   'Rx' => array(
+    'rx_enable_rxnorm' => array(
+      xl('Enable RxNorm'),
+      'bool',                           // data type
+      '1',
+      xl('Enable RxNorm')
+    ),
     'rx_enable_DEA' => array(
       xl('Rx Enable DEA #'),
       'bool',                           // data type
