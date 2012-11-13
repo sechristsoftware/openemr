@@ -34,13 +34,13 @@
 	</td>
 </tr>
 <tr>
-	<td VALIGN="MIDDLE" >{xl t='Phone'}</td>
+	<td VALIGN="MIDDLE" >{xl t='Phone'} {xl t='as:' } 000-000-0000</td>
 	<td VALIGN="MIDDLE" >
 		<input TYPE="TEXT" NAME="phone" SIZE="12" VALUE="{$pharmacy->get_phone()}" onKeyDown="PreventIt(event)" />
 	</td>
 </tr>
 <tr>
-	<td VALIGN="MIDDLE" >{xl t='Fax'}</td>
+	<td VALIGN="MIDDLE" >{xl t='Fax'} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{xl t='as' }: 000-000-0000</td>
 	<td VALIGN="MIDDLE" >
 		<input TYPE="TEXT" NAME="fax" SIZE="12" VALUE="{$pharmacy->get_fax()}" onKeyDown="PreventIt(event)" />
 	</td>

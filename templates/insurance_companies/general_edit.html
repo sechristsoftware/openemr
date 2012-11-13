@@ -24,9 +24,9 @@ function jsWaitForDelay(delay) {
 <!-- it is important that the hidden form_id field be listed first, when it is called it populates any old information attached with the id, this allows for partial edits
 		if it were called last, the settings from the form would be overwritten with the old information-->
 <input type="hidden" name="form_id" value="{$insurancecompany->id}" />
-<table style="font-size:9pt;" width="500px" CELLSPACING="0" CELLPADDING="3">
+<table style="font-size:9pt;" width="700px" CELLSPACING="0" CELLPADDING="3">
 <tr>
-	<td width="220px" VALIGN="MIDDLE" >{xl t='Name'}</td>
+	<td width="240px" VALIGN="MIDDLE" >{xl t='Name'}</td>
 	<td VALIGN="MIDDLE" >
 		<input type="text" size="40" name="name" value="{$insurancecompany->get_name()}" onKeyDown="PreventIt(event)" /> ({xl t='Required'})
 	</td>
@@ -57,7 +57,7 @@ function jsWaitForDelay(delay) {
 	</td>
 </tr>
 <tr>
-	<td VALIGN="MIDDLE" >{xl t='Phone'}</td>
+	<td VALIGN="MIDDLE" >{xl t='Phone'}&nbsp;{xl t='as' }: 000-000-0000</td>
 	<td VALIGN="MIDDLE" >
 		<input TYPE="TEXT" NAME="phone" SIZE="12" VALUE="{$insurancecompany->get_phone()}" onKeyDown="PreventIt(event)" />
 	</td>
@@ -66,9 +66,8 @@ function jsWaitForDelay(delay) {
 	<td VALIGN="MIDDLE" >{xl t='CMS ID'}</td>
 	<td VALIGN="MIDDLE" >
 		<input type="text" size="15" name="cms_id" value="{$insurancecompany->get_cms_id()}" onKeyDown="PreventIt(event)" />
-{php} if ($GLOBALS['support_encounter_claims']) { {/php}
-    &nbsp;&nbsp;{xl t='For Encounter Claims'}:
-		<input type="text" size="15" name="alt_cms_id" value="{$insurancecompany->get_alt_cms_id()}" onKeyDown="PreventIt(event)" />
+{php} if ($GLOBALS['support_encounter_claims']) { {/php} {xl t='For Encounter Claims'}:
+		<input type="text" size="13" name="alt_cms_id" value="{$insurancecompany->get_alt_cms_id()}" onKeyDown="PreventIt(event)" />
 {php} } {/php}
 	</td>
 </tr>
