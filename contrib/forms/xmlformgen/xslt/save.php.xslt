@@ -26,6 +26,10 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
  * it is called to save the contents of the form into the database
  */
 
+/* For security */
+$sanitize_all_escapes=true;
+$fake_register_globals=false;
+
 /* for $GLOBALS[], ?? */
 require_once('../../globals.php');
 /* for acl_check(), ?? */
@@ -82,7 +86,7 @@ foreach($field_names as $key=>$val)
         $field_names[$key]='';
         if (isset($_POST['form_'.$key]) && $_POST['form_'.$key] != 'none' ) /* if the form submitted some entries selected in that field */
         {
-            $lres=sqlStatement("select * from list_options where list_id = '".$lists[$key]."' ORDER BY seq, title");
+            $lres=sqlStatement("select * from list_options where list_id = ? ORDER BY seq, title", array($lists[$key]) );
             while ($lrow = sqlFetchArray($lres))
             {
                 if (is_array($_POST['form_'.$key]))
@@ -102,7 +106,7 @@ foreach($field_names as $key=>$val)
         $field_names[$key]='';
         if (isset($_POST['check_'.$key]) && $_POST['check_'.$key] != 'none' ) /* if the form submitted some entries selected in that field */
         {
-            $lres=sqlStatement("select * from list_options where list_id = '".$lists[$key]."' ORDER BY seq, title");
+            $lres=sqlStatement("select * from list_options where list_id = ? ORDER BY seq, title", array($lists[$key]) );
             while ($lrow = sqlFetchArray($lres))
             {
                 if (is_array($_POST['check_'.$key]))
@@ -122,7 +126,7 @@ foreach($field_names as $key=>$val)
         $field_names[$key]='';
         if (isset($_POST['form_'.$key]) && $_POST['form_'.$key] != 'none' ) /* if the form submitted some entries selected in that field */
         {
-            $lres=sqlStatement("select * from list_options where list_id = '".$lists[$key]."' ORDER BY seq, title");
+            $lres=sqlStatement("select * from list_options where list_id = ? ORDER BY seq, title", array($lists[$key]) );
             while ($lrow = sqlFetchArray($lres))
             {
                 if ($_POST['form_'.$key] == $lrow[option_id])
@@ -136,11 +140,6 @@ foreach($field_names as $key=>$val)
 }
 
 /* at this point, field_names[] contains an array of name->value pairs of the fields we expected from the form. */
-
-/* escape form data for entry to the database. */
-foreach ($field_names as $k => $var) {
-  $field_names[$k] = formDataCore($var);
-}
 
 if ($encounter == '') $encounter = date('Ymd');
 
@@ -164,22 +163,25 @@ if ($_GET['mode'] == 'new') {
 <xsl:if test="//table[@type='extended']">
 <xsl:text disable-output-escaping="yes"><![CDATA[    /* save the data into the form's table */
     /* construct our sql statement */
-    $sql= 'insert into '.$table_name." set date = NOW(), pid = '".$_SESSION['pid']."',";
+    $sql_bind_array = array();
+    $sql= "insert into " . add_escape_custom($table_name) . " set date = NOW(), pid = ?,";
+    array_push($sql_bind_array,$_SESSION['pid']);
     foreach ($field_names as $k => $var) {
-        $sql .= " $k = '$var',";
+        $sql .= " " . add_escape_custom($k) . " = ?,";
+        array_push($sql_bind_array,$var);
     }
 
     /* remove the last comma */
     $sql = substr($sql, 0, -1);
 
     /* insert into the table */
-    $newid=sqlInsert($sql);
+    $newid=sqlInsert($sql,$sql_bind_array);
 
     if ($id!='') /* if we're passed an ID, update the old form_id to point to a new one. */
     {
-      $sql= "update forms set date = NOW(), encounter='".$encounter."', form_name='".$form_name."', form_id='".$newid."', pid='".$pid."', user='".$_SESSION['authUser']."', groupname='".$_SESSION['authProvider']."', authorized='".$userauthorized."', formdir='".$form_folder."' where form_name='".$form_name."' and encounter='".$encounter."' and pid='".$pid."' and form_id='".$id."'";
-      echo $sql;
-      sqlStatement($sql);
+      $sql= "update forms set date = NOW(), encounter=?, form_name=?, form_id=?, pid=?, user=?, groupname=?, authorized=?, formdir=? where form_name=? and encounter=? and pid=? and form_id=?";
+      $sql_bind_array = array($encounter, $form_name, $newid, $pid, $_SESSION['authUser'], $_SESSION['authProvider'], $userauthorized, $form_folder, $form_name, $encounter, $pid, $id);
+      sqlStatement($sql,$sql_bind_array);
     }
     else
 ]]></xsl:text>
@@ -196,16 +198,19 @@ elseif ($_GET['mode'] == 'update') {
 
     /* save the data into the form's table */
     /* construct our sql statement */
-    $sql= 'insert into '.$table_name." set date = NOW(), pid = '".$_SESSION['pid']."',";
+    $sql_bind_array = array();
+    $sql= "insert into " . add_escape_custom($table_name) . " set date = NOW(), pid = ?,";
+    array_push($sql_bind_array,$_SESSION['pid']);
     foreach ($field_names as $k => $var) {
-        $sql .= " $k = '$var',";
+        $sql .= " " . add_escape_custom($k) . " = ?,";
+        array_push($sql_bind_array,$var);
     }
 
     /* remove the last comma */
     $sql = substr($sql, 0, -1);
 
     /* insert into the table */
-    $newid=sqlInsert($sql);
+    $newid=sqlInsert($sql,$sql_bind_array);
 
 if ($_GET['return'] == 'encounter') {
     /* link this form into the encounter. */
@@ -222,7 +227,6 @@ elseif ($_GET['mode'] == 'update') {
 
     /* update the data in the form's table */
     $success = formUpdate($table_name, $field_names, $_GET['id'], $userauthorized);
-    /* sqlInsert('update '.$table_name." set pid = {".$_SESSION['pid']."},groupname='".$_SESSION['authProvider']."',user='".$_SESSION['authUser']."',authorized=$userauthorized,activity=1,date = NOW(), where id=$id"); */
 }
 ]]></xsl:text>
 </xsl:if>

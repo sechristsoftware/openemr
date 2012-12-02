@@ -32,6 +32,8 @@ require_once('../../globals.php');
 require_once($GLOBALS['srcdir'].'/api.inc');
 /* for generate_display_field() */
 require_once($GLOBALS['srcdir'].'/options.inc.php');
+/* for sql escaping */
+require_once($GLOBALS['srcdir'].'/formdata.inc.php');
 /* The name of the function is significant and must match the folder name */
 function ]]></xsl:text>
 <xsl:value-of select="safename" />
@@ -76,7 +78,7 @@ $lists = array(]]></xsl:text>
 </xsl:if>
 <xsl:if test="//table[@type='extended']">
 <xsl:text disable-output-escaping="yes"><![CDATA[);
-    $data = sqlQuery('select * from '.$table_name." where pid='".$pid."' and id='".$id."' order by date DESC limit 0,1");
+    $data = sqlQuery("select * from " . add_escape_custom($table_name) . " where pid=? and id=? order by date DESC limit 0,1", array($pid, $id) );
 ]]></xsl:text>
 </xsl:if>
 <xsl:text disable-output-escaping="yes"><![CDATA[    if ($data) {
@@ -115,7 +117,7 @@ $lists = array(]]></xsl:text>
             if ($key == ']]></xsl:text>
 <xsl:value-of select="@name" /><xsl:text disable-output-escaping="yes"><![CDATA[' ) 
             { 
-                echo xl_layout_label(']]></xsl:text><xsl:value-of select="@label"/><xsl:text disable-output-escaping="yes"><![CDATA[').":";
+                echo text(xl_layout_label(']]></xsl:text><xsl:value-of select="@label"/><xsl:text disable-output-escaping="yes"><![CDATA[')).":";
             }
 ]]></xsl:text>
 </xsl:for-each>
