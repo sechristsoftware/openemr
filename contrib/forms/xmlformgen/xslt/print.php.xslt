@@ -27,6 +27,10 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
  * The page shown when the user requests to print this form. This page automatically prints itsself, and closes its parent browser window.
  */
 
+/* For security */
+$sanitize_all_escapes=true;
+$fake_register_globals=false;
+
 /* for $GLOBALS[], ?? */
 require_once('../../globals.php');
 /* for acl_check(), ?? */
@@ -63,15 +67,15 @@ $returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_enco
 <link rel="stylesheet" href="<?php echo $css_header; ?>" type="text/css"/>
 <!-- Form Specific Stylesheet. -->
 <link rel="stylesheet" href="../../forms/<?php echo $form_folder; ?>/style.css" type="text/css"/>
-<title><?php echo htmlspecialchars('Print '.$form_name); ?></title>
+<title><?php echo xlt('Print') . ' ' . text(xl_form_title($form_name)); ?></title>
 
 </head>
 <body class="body_top">
 
-<div class="print_date"><?php xl('Printed on ','e'); echo date('F d, Y', time()); ?></div>
+<div class="print_date"><?php echo xlt('Printed on') . ' '; echo date('F d, Y', time()); ?></div>
 
-<form method="post" id="<?php echo $form_folder; ?>" action="">
-<div class="title"><?php xl($form_name,'e'); ?></div>
+<form method="post" id="<?php echo attr($form_folder); ?>" action="">
+<div class="title"><?php echo text(xl_form_title($form_name)); ?></div>
 
 <!-- container for the main body of the form -->
 <div id="print_form_container">

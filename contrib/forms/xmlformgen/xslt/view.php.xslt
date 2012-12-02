@@ -27,6 +27,10 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
  * The page shown when the user requests to see this form. Allows the user to edit form contents, and save. has a button for printing the saved form contents.
  */
 
+/* For security */
+$sanitize_all_escapes=true;
+$fake_register_globals=false;
+
 /* for $GLOBALS[], ?? */
 require_once('../../globals.php');
 /* for acl_check(), ?? */
@@ -42,15 +46,15 @@ require_once($GLOBALS['srcdir'].'/options.inc.php');
 <xsl:apply-templates select="table" mode="fetch"/>
 <xsl:apply-templates select="layout|manual" mode="head"/>
 <xsl:if test="//table[@type='extended']">
-<xsl:text disable-output-escaping="yes"><![CDATA[$submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=new&amp;return=encounter&amp;id='.$_GET['id'];]]></xsl:text>
+<xsl:text disable-output-escaping="yes"><![CDATA[$submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=new&amp;return=encounter&amp;id='.attr($_GET['id']);]]></xsl:text>
 </xsl:if>
 <xsl:if test="//table[@type='form']">
-<xsl:text disable-output-escaping="yes"><![CDATA[$submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=update&amp;return=encounter&amp;id='.$_GET['id'];]]></xsl:text>
+<xsl:text disable-output-escaping="yes"><![CDATA[$submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=update&amp;return=encounter&amp;id='.attr($_GET['id']);]]></xsl:text>
 </xsl:if>
 <xsl:text disable-output-escaping="yes"><![CDATA[
 if ($_GET['mode']) {
  if ($_GET['mode']=='noencounter') {
- $submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=new&amp;return=show&amp;id='.$_GET['id'];
+ $submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=new&amp;return=show&amp;id='.attr($_GET['id']);
  $returnurl = 'show.php';
  }
 }
@@ -85,7 +89,7 @@ else
 <!-- Global Stylesheet -->
 <link rel="stylesheet" href="<?php echo $css_header; ?>" type="text/css"/>
 <!-- Form Specific Stylesheet. -->
-<link rel="stylesheet" href="../../forms/<?php echo $form_folder; ?>/style.css" type="text/css"/>
+<link rel="stylesheet" href="../../forms/<?php echo attr($form_folder); ?>/style.css" type="text/css"/>
 
 ]]></xsl:text>
 <xsl:if test="//field[@type='date']">
@@ -109,30 +113,30 @@ var mypcc = '<?php echo $GLOBALS['phone_country_code']; ?>';
 
 <!-- FIXME: this needs to detect access method, and construct a URL appropriately! -->
 function PrintForm() {
-    newwin = window.open("<?php echo $rootdir.'/forms/'.$form_folder.'/print.php?id='.$_GET['id']; ?>","print_<?php echo $form_name; ?>");
+    newwin = window.open("<?php echo $rootdir.'/forms/'.attr($form_folder).'/print.php?id='.attr($_GET['id']); ?>","print_<?php echo attr($form_name); ?>");
 }
 
 </script>
-<title><?php echo htmlspecialchars('View '.$form_name); ?></title>
+<title><?php echo xlt('View') . ' ' . text(xl_form_title($form_name)); ?></title>
 
 </head>
 <body class="body_top">
 
 <div id="title">
 <a href="<?php echo $returnurl; ?>" onclick="top.restoreSession()">
-<span class="title"><?php htmlspecialchars(xl($form_name,'e')); ?></span>
-<span class="back">(<?php xl('Back','e'); ?>)</span>
+<span class="title"><?php echo text(xl_form_title($form_name)); ?></span>
+<span class="back">(<?php echo xlt('Back'); ?>)</span>
 </a>
 </div>
 
-<form method="post" action="<?php echo $submiturl; ?>" id="<?php echo $form_folder; ?>"> 
+<form method="post" action="<?php echo $submiturl; ?>" id="<?php echo attr($form_folder); ?>"> 
 
 <!-- Save/Cancel buttons -->
 <div id="top_buttons" class="top_buttons">
 <fieldset class="top_buttons">
-<input type="button" class="save" value="<?php xl('Save Changes','e'); ?>" />
-<input type="button" class="dontsave" value="<?php xl('Don\'t Save Changes','e'); ?>" />
-<input type="button" class="print" value="<?php xl('Print','e'); ?>" />
+<input type="button" class="save" value="<?php echo xla('Save Changes'); ?>" />
+<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save Changes'); ?>" />
+<input type="button" class="print" value="<?php echo xla('Print'); ?>" />
 </fieldset>
 </div><!-- end top_buttons -->
 
@@ -149,9 +153,9 @@ function PrintForm() {
 <!-- Save/Cancel buttons -->
 <div id="bottom_buttons" class="button_bar">
 <fieldset>
-<input type="button" class="save" value="<?php xl('Save Changes','e'); ?>" />
-<input type="button" class="dontsave" value="<?php xl('Don\'t Save Changes','e'); ?>" />
-<input type="button" class="print" value="<?php xl('Print','e'); ?>" />
+<input type="button" class="save" value="<?php echo xla('Save Changes'); ?>" />
+<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save Changes'); ?>" />
+<input type="button" class="print" value="<?php echo xla('Print'); ?>" />
 </fieldset>
 </div><!-- end bottom_buttons -->
 </form>
@@ -159,7 +163,7 @@ function PrintForm() {
 // jQuery stuff to make the page a little easier to use
 
 $(document).ready(function(){
-    $(".save").click(function() { top.restoreSession(); document.forms["<?php echo $form_folder; ?>"].submit(); });
+    $(".save").click(function() { top.restoreSession(); document.forms["<?php echo attr($form_folder); ?>"].submit(); });
     $(".dontsave").click(function() { location.href='<?php echo $returnurl; ?>'; });
     $(".print").click(function() { PrintForm(); });
     

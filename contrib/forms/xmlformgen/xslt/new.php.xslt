@@ -27,6 +27,10 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
  * The page shown when the user requests a new form. allows the user to enter form contents, and save.
  */
 
+/* For security */
+$sanitize_all_escapes=true;
+$fake_register_globals=false;
+
 /* for $GLOBALS[], ?? */
 require_once('../../globals.php');
 /* for acl_check(), ?? */
@@ -43,10 +47,10 @@ require_once($GLOBALS['srcdir'].'/options.inc.php');
 <xsl:if test="//table[@type='extended']">
 <xsl:text disable-output-escaping="yes"><![CDATA[
 /* new is only called from encounters. */
-$submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=new&amp;return=encounter';]]></xsl:text>
+$submiturl = $GLOBALS['rootdir'].'/forms/'.attr($form_folder).'/save.php?mode=new&amp;return=encounter';]]></xsl:text>
 </xsl:if>
 <xsl:if test="//table[@type='form']">
-<xsl:text disable-output-escaping="yes"><![CDATA[$submiturl = $GLOBALS['rootdir'].'/forms/'.$form_folder.'/save.php?mode=new&amp;return=encounter';]]></xsl:text>
+<xsl:text disable-output-escaping="yes"><![CDATA[$submiturl = $GLOBALS['rootdir'].'/forms/'.attr($form_folder).'/save.php?mode=new&amp;return=encounter';]]></xsl:text>
 </xsl:if>
 <xsl:text disable-output-escaping="yes"><![CDATA[
 /* no get logic here */
@@ -73,7 +77,7 @@ $returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_enco
 <!-- Global Stylesheet -->
 <link rel="stylesheet" href="<?php echo $css_header; ?>" type="text/css"/>
 <!-- Form Specific Stylesheet. -->
-<link rel="stylesheet" href="../../forms/<?php echo $form_folder; ?>/style.css" type="text/css"/>
+<link rel="stylesheet" href="../../forms/<?php echo attr($form_folder); ?>/style.css" type="text/css"/>
 
 <!-- pop up calendar -->
 <style type="text/css">@import url(<?php echo $GLOBALS['webroot']; ?>/library/dynarch_calendar.css);</style>
@@ -112,25 +116,25 @@ require_once($GLOBALS['srcdir'].'/options_listadd.inc');
 </xsl:if>
 <xsl:text disable-output-escaping="yes"><![CDATA[
 
-<title><?php echo htmlspecialchars('New '.$form_name); ?></title>
+<title><?php echo xlt('New') . ' ' . text(xl_form_title($form_name)); ?></title>
 
 </head>
 <body class="body_top">
 
 <div id="title">
 <a href="<?php echo $returnurl; ?>" onclick="top.restoreSession()">
-<span class="title"><?php xl($form_name,'e'); ?></span>
-<span class="back">(<?php xl('Back','e'); ?>)</span>
+<span class="title"><?php echo text(xl_form_title($form_name)); ?></span>
+<span class="back">(<?php echo xlt('Back'); ?>)</span>
 </a>
 </div>
 
-<form method="post" action="<?php echo $submiturl; ?>" id="<?php echo $form_folder; ?>"> 
+<form method="post" action="<?php echo $submiturl; ?>" id="<?php echo attr($form_folder); ?>"> 
 
 <!-- Save/Cancel buttons -->
 <div id="top_buttons" class="top_buttons">
 <fieldset class="top_buttons">
-<input type="button" class="save" value="<?php xl('Save','e'); ?>" />
-<input type="button" class="dontsave" value="<?php xl('Don\'t Save','e'); ?>" />
+<input type="button" class="save" value="<?php echo xla('Save'); ?>" />
+<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save'); ?>" />
 </fieldset>
 </div><!-- end top_buttons -->
 
@@ -147,8 +151,8 @@ require_once($GLOBALS['srcdir'].'/options_listadd.inc');
 <!-- Save/Cancel buttons -->
 <div id="bottom_buttons" class="button_bar">
 <fieldset>
-<input type="button" class="save" value="<?php xl('Save','e'); ?>" />
-<input type="button" class="dontsave" value="<?php xl('Don\'t Save','e'); ?>" />
+<input type="button" class="save" value="<?php echo xla('Save'); ?>" />
+<input type="button" class="dontsave" value="<?php echo xla('Don\'t Save'); ?>" />
 </fieldset>
 </div><!-- end bottom_buttons -->
 </form>
@@ -156,7 +160,7 @@ require_once($GLOBALS['srcdir'].'/options_listadd.inc');
 // jQuery stuff to make the page a little easier to use
 
 $(document).ready(function(){
-    $(".save").click(function() { top.restoreSession(); document.forms["<?php echo $form_folder; ?>"].submit(); });
+    $(".save").click(function() { top.restoreSession(); document.forms["<?php echo attr($form_folder); ?>"].submit(); });
     $(".dontsave").click(function() { location.href='<?php echo "$rootdir/patient_file/encounter/$returnurl"; ?>'; });
 
 	$(".sectionlabel input").click( function() {
