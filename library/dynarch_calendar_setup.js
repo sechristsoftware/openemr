@@ -59,7 +59,10 @@
  *  pass none of "inputField", "displayArea" or "button" you'll get a warning
  *  saying "nothing to setup".
  */
+
 Calendar.setup = function (params) {
+  
+
 	function param_default(pname, def) { if (typeof params[pname] == "undefined") { params[pname] = def; } };
 
 	param_default("inputField",     null);
@@ -104,6 +107,19 @@ Calendar.setup = function (params) {
 
 	function onSelect(cal) {
 		var p = cal.params;
+		if(p.ifFormat.search("useGlobals")!=-1)
+		{
+ 		if(p.ifFormat.search("%H")==-1)
+		{
+		p.ifFormat = date_format;
+		p.daFormat = date_format;
+		}
+		else  //If the IfFormat Contains time also
+		{
+		  p.ifFormat = date_format + " %H:%M";
+		  p.daFormat = date_format + " %H:%M";
+		}
+		}
 		var update = (cal.dateClicked || p.electric);
 		if (update && p.inputField) {
 			p.inputField.value = cal.date.print(p.ifFormat);
@@ -132,7 +148,10 @@ Calendar.setup = function (params) {
 		var cal = new Calendar(params.firstDay, params.date, params.onSelect || onSelect);
 		cal.showsOtherMonths = params.showOthers;
 		cal.showsTime = params.showsTime;
+		if(time_format == 0)
 		cal.time24 = (params.timeFormat == "24");
+		else if(time_format == 1)
+		cal.time24 = (params.timeFormat == "12");
 		cal.params = params;
 		cal.weekNumbers = params.weekNumbers;
 		cal.setRange(params.range[0], params.range[1]);
@@ -152,6 +171,19 @@ Calendar.setup = function (params) {
 	var triggerEl = params.button || params.displayArea || params.inputField;
 	triggerEl["on" + params.eventName] = function() {
 		var dateEl = params.inputField || params.displayArea;
+		if(params.ifFormat.search("useGlobals")!=-1)
+		{
+		if(params.ifFormat.search("%H")==-1)
+		{
+		params.ifFormat = date_format;
+		params.daFormat = date_format;
+		}
+		else  //If the IfFormat Contains time also
+		{
+		  params.ifFormat = date_format + " %H:%M";
+		  params.daFormat = date_format + " %H:%M";
+		}
+		}
 		var dateFmt = params.inputField ? params.ifFormat : params.daFormat;
 		var mustCreate = false;
 		var cal = window.calendar;
@@ -163,7 +195,10 @@ Calendar.setup = function (params) {
 							     params.onSelect || onSelect,
 							     params.onClose || function(cal) { cal.hide(); });
 			cal.showsTime = params.showsTime;
+			if(time_format == 0)
 			cal.time24 = (params.timeFormat == "24");
+			else if(time_format == 1)
+			cal.time24 = (params.timeFormat == "12");
 			cal.weekNumbers = params.weekNumbers;
 			mustCreate = true;
 		} else {

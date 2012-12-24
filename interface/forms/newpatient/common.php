@@ -23,7 +23,7 @@ if ($viewmode) {
     exit();
   }
 }
-
+// 
 // Sort comparison for sensitivities by their order attribute.
 function sensitivity_compare($a, $b) {
   return ($a[2] < $b[2]) ? -1 : 1;
@@ -282,7 +282,7 @@ if ($fres) {
      <td class='bold' nowrap><?php xl('Date of Service:','e'); ?></td>
      <td class='text' nowrap>
       <input type='text' size='10' name='form_date' id='form_date' <?php echo $disabled ?>
-       value='<?php echo $viewmode ? substr($result['date'], 0, 10) : date('Y-m-d'); ?>'
+       value='<?php echo $viewmode ? oeFormatShortDate(substr($result['date'], 0, 10)) : oeFormatShortDate(date('Y-m-d')); ?>'
        title='<?php xl('yyyy-mm-dd Date of service','e'); ?>'
        onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' />
         <img src='../../pic/show_calendar.gif' align='absbottom' width='24' height='22'
@@ -294,8 +294,8 @@ if ($fres) {
     <tr<?php if ($GLOBALS['ippf_specific'] || $GLOBALS['athletic_team']) echo " style='visibility:hidden;'"; ?>>
      <td class='bold' nowrap><?php xl('Onset/hosp. date:','e'); ?></td>
      <td class='text' nowrap><!-- default is blank so that while generating claim the date is blank. -->
-      <input type='text' size='10' name='form_onset_date' id='form_onset_date'
-       value='<?php echo $viewmode && $result['onset_date']!='0000-00-00 00:00:00' ? substr($result['onset_date'], 0, 10) : ''; ?>' 
+      <input type='text' size='20' name='form_onset_date' id='form_onset_date'
+       value='<?php echo $viewmode && $result['onset_date']!='0000-00-00 00:00:00' ? oeFormatShortDate($result['onset_date']) : ''; ?>' 
        title='<?php xl('yyyy-mm-dd Date of onset or hospitalization','e'); ?>'
        onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' />
         <img src='../../pic/show_calendar.gif' align='absbottom' width='24' height='22'
@@ -379,8 +379,8 @@ while ($irow = sqlFetchArray($ires)) {
 
 <script language="javascript">
 /* required for popup calendar */
-Calendar.setup({inputField:"form_date", ifFormat:"%Y-%m-%d", button:"img_form_date"});
-Calendar.setup({inputField:"form_onset_date", ifFormat:"%Y-%m-%d", button:"img_form_onset_date"});
+Calendar.setup({inputField:"form_date", ifFormat:"useGlobals", button:"img_form_date"});
+Calendar.setup({inputField:"form_onset_date", ifFormat:"useGlobals %H:%M", button:"img_form_onset_date", showsTime:'true'});
 <?php
 if (!$viewmode) {
   $erow = sqlQuery("SELECT count(*) AS count " .

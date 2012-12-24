@@ -19,12 +19,21 @@ function oeFormatMoney($amount, $symbol=false) {
 
 function oeFormatShortDate($date='today') {
   if ($date === 'today') $date = date('Y-m-d');
+  if(strstr($date,":") != '')
+  {
+  $time = substr($date,10,6);
+  $date = substr($date,0,10);
+  }
   if (strlen($date) == 10) {
     // assume input is yyyy-mm-dd
     if ($GLOBALS['date_display_format'] == 1)      // mm/dd/yyyy
       $date = substr($date, 5, 2) . '/' . substr($date, 8, 2) . '/' . substr($date, 0, 4);
     else if ($GLOBALS['date_display_format'] == 2) // dd/mm/yyyy
       $date = substr($date, 8, 2) . '/' . substr($date, 5, 2) . '/' . substr($date, 0, 4);
+  }
+  if($time!='')
+  {
+  return $date . $time;
   }
   return $date;
 }
@@ -97,20 +106,39 @@ function DateToYYYYMMDD($DateValue)
 	 {
 	  return '';
 	 }
-	 
+	 if(strstr($DateValue,":") != '')
+	 {
+	 $time = substr($DateValue,10,6);
+	 $DateValue = substr($DateValue,0,10);
+	 }
 	if($GLOBALS['date_display_format']==0)
 	 {
+	  if($time!=''){
+	  return $DateValue . $time;
+	  }
 	  return $DateValue;
 	 }
 	else if($GLOBALS['date_display_format']==1 || $GLOBALS['date_display_format']==2)
 	 {
+	  if(strstr($DateValue,'-')!='')
+	  {
+	  $DateValueArray=split('-',$DateValue);
+	  }
+	  else{
 	  $DateValueArray=split('/',$DateValue);
+	  }
 	  if($GLOBALS['date_display_format']==1)
 	   {
+		  if($time!=''){
+		  return $DateValueArray[2].'-'.$DateValueArray[0].'-'.$DateValueArray[1] . $time;
+		  }
 		  return $DateValueArray[2].'-'.$DateValueArray[0].'-'.$DateValueArray[1];
 	   }
 	  if($GLOBALS['date_display_format']==2)
 	   {
+		  if($time!=''){
+		  return $DateValueArray[2].'-'.$DateValueArray[1].'-'.$DateValueArray[0] . $time;
+		  }
 		  return $DateValueArray[2].'-'.$DateValueArray[1].'-'.$DateValueArray[0];
 	   }
 	 }

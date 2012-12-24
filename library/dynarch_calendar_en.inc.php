@@ -1,3 +1,7 @@
+<?php
+include_once("formatting.inc.php");
+?>
+
 <script type="text/javascript">
 // ** I18N
 // Calendar EN language
@@ -118,6 +122,9 @@ Calendar._TT["WEEKEND"] = "0,6";
 Calendar._TT["CLOSE"] = "<?php xl("Close","e"); ?>";
 Calendar._TT["TODAY"] = "<?php xl("Today","e"); ?>";
 Calendar._TT["TIME_PART"] = "<?php xl("(Shift-)Click or drag to change value","e"); ?>";
+
+var date_format = "<?php echo DateFormatRead(); ?>";
+var time_format = "<?php echo $GLOBALS['time_display_format']; ?>";
 
 // date formats
 Calendar._TT["DEF_DATE_FORMAT"] = "%Y-%m-%d";

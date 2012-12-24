@@ -14,8 +14,8 @@ require_once("$srcdir/formdata.inc.php");
 
 $conn = $GLOBALS['adodb']['db'];
 
-$date             = formData('form_date');
-$onset_date       = formData('form_onset_date');
+$date             = DateToYYYYMMDD(formData('form_date'));
+$onset_date       = DateToYYYYMMDD(formData('form_onset_date'));
 $sensitivity      = formData('form_sensitivity');
 $pc_catid         = formData('pc_catid');
 $facility_id      = formData('facility_id');
