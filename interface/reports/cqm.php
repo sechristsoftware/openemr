@@ -10,6 +10,7 @@
 $sanitize_all_escapes=true;
 //
 
+
 //STOP FAKE REGISTER GLOBALS
 $fake_register_globals=false;
 //
@@ -20,6 +21,10 @@ require_once("$srcdir/formatting.inc.php");
 require_once "$srcdir/options.inc.php";
 require_once "$srcdir/formdata.inc.php";
 require_once "$srcdir/clinical_rules.php";
+include_once("../emr4.php");
+
+
+
 
 // Collect report type parameter (standard, amc, or cqm)
 $type_report = (isset($_GET['type'])) ? trim($_GET['type']) : "standard";
@@ -34,6 +39,301 @@ $rule_filter = (isset($_POST['form_rule_filter'])) ? trim($_POST['form_rule_filt
 $plan_filter = (isset($_POST['form_plan_filter'])) ? trim($_POST['form_plan_filter']) : "";
 $organize_method = (empty($plan_filter)) ? "default" : "plans";
 $provider  = trim($_POST['form_provider']);
+
+
+
+
+//RUN AN AUDIT REPORT SHOWING THE DATA AND ANY ERRORS BEHIND THE REPORT
+
+if ($provider!='' && $begin_date!='' && $target_date!=''){
+
+echo "<a href=#report>Report</a><p>Provider ID: " . $provider . "<p> ";
+
+$dbhost = 'localhost';
+$dbuser = 'openemr';
+$dbpass = 'sierra17';
+$mydb=$mydbis;
+$connx = mysql_connect($dbhost, $dbuser, $dbpass) or die                      ('Error connecting to mysql');
+
+$connection=$connx;
+
+$db_selected = mysql_select_db("$mydb",$connx);
+
+
+ 
+ 
+ 
+
+
+
+//$sql= "delete from soaptemplatez where idnumber=" . $_SESSION['idis'] . "";
+
+$sql ="select * from patient_data order by id desc";
+//$sql="SELECT (select count(id) from lists where form_vitals.pid=form_encounter.pid) as `Lists`,(select count(id) from form_vitals where form_vitals.pid=form_encounter.pid) as `Vitals`,patient_data.fname,patient_data.lname,form_vitals.BPS,form_encounter.date as `Encounter`,form_encounter.provider_id from form_encounter join lists on lists.pid=form_encounter.id join patient_data on patient_data.pid=form_encounter.pid  join form_vitals on patient_data.pid=form_vitals.pid where provider_id=" . $provider . " order by form_encounter.id desc";// where encounter=" . "$encounter" . " and pid=" . "$thisid";
+//$sql="SELECT (select count(id) from lists where lists.pid=form_encounter.pid) as `Lists`,(select count(id) from form_vitals where form_vitals.pid=form_encounter.pid) as `Vitals`,patient_data.fname,patient_data.lname,form_vitals.BPS,form_encounter.date as `Encounter`,form_encounter.provider_id from form_encounter join lists on lists.pid=form_encounter.id join patient_data on patient_data.pid=form_encounter.pid  join form_vitals on patient_data.pid=form_vitals.pid where provider_id=" . $provider . " order by form_encounter.id desc";// where encounter=" . "$encounter" . " and pid=" . "$thisid";
+//$sql="SELECT (select count(id) from lists) as `Lists`),(select count(id) from form_vitals) as `Vitals`,patient_data.fname,patient_data.lname,form_vitals.BPS,form_encounter.date as `Encounter`,form_encounter.provider_id from form_encounter join lists on lists.pid=form_encounter.id join patient_data on patient_data.pid=form_encounter.pid  join form_vitals on patient_data.pid=form_vitals.pid where provider_id=" . $provider . " order by form_encounter.id desc";// where encounter=" . "$encounter" . " and pid=" . "$thisid";
+$sql="select patient_data.fname,patient_data.lname,patient_data.DOB,patient_data.sex,patient_data.language,patient_data.race,patient_data.ethnicity,form_vitals.BPS,form_vitals.BPD,form_vitals.Weight,form_vitals.Height,form_encounter.date as `Encounter`,form_encounter.provider_id,form_encounter.pid from form_encounter  join patient_data on patient_data.pid=form_encounter.pid  join form_vitals on patient_data.pid=form_vitals.pid where form_encounter.date>='" . $begin_date . "'" . " and form_encounter.date<='" . $target_date . "'" . " and provider_id=" . $provider . " order by form_encounter.pid desc";// where encounter=" . "$encounter" . " and pid=" . "$thisid";
+//  where pid=" . "$thisid" . " order by `id` desc";
+
+echo "<p><table border=1>";
+
+$resultx = mysql_query($sql,$connx);
+
+if (!$resultx)
+ die (mysql_error());
+  {
+  //print ('<p>1 Could not delete: ' . mysql_error());
+  }
+$c=0;
+
+
+
+
+   while ($zrow = mysql_fetch_assoc($resultx)) {
+   
+    $alldates[$zrow['Encounter']]=($alldates[$zrow['Encounter']]-0)+1;
+	
+
+	
+			
+            print "<tr>";
+			if($c==-1){
+
+            while(list($var, $val) = each($zrow)) {
+                //print "<B>$var</B>: $val<br />";
+				print "<td bgcolor=silver> " . strtoupper($var) . "";
+            }
+			print "<tr>";
+			$c=1;
+			};
+			
+            while(list($var, $val) = each($zrow)) {
+                print "<td bgcolor=silver><B>$var</B>: $val<br />";
+				//print "<td bgcolor=silver> $val";
+            }
+    
+            print "<tr />";
+
+
+//DOB: 1919-03-08
+//sex: Female
+//language: English
+//race: white
+//ethnicity: 
+
+if($zrow['ethnicity']==''){
+
+			print "<tr><td bgcolor=red colspan=1>No Ethnicity ";
+			//$noallergy=$noallergy . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+
+};
+if($zrow['race']==''){
+
+			print "<tr><td bgcolor=red colspan=1>No Race " ;
+			//$noallergy=$noallergy . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+
+};			
+
+if($zrow['sex']==''){
+
+			print "<tr><td bgcolor=red colspan=1>No sex " ;
+			//$noallergy=$noallergy . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+
+};
+			
+			
+
+
+			$sql="select Date,Type,Title from lists where pid=" . $zrow['pid'] . " order by Date";
+			$resultxz = mysql_query($sql,$connx);
+			
+			$meds=0;
+			$dxs=0;
+			$allergy=0;
+			
+if (!$resultxz)
+ die (mysql_error());
+  {
+  
+		while ($qzrow = mysql_fetch_assoc($resultxz)) {
+		print "<tr>";
+            while(list($var, $val) = each($qzrow)) {
+                print "<td><B>$var</B>: $val<br />";
+				//print "<td> $val";
+				if (stripos($val,"medication")>-1){
+				$meds=$meds+1;
+				};
+				if (stripos($val,"problem")>-1){
+				$dxs=$dxs+1;
+				};
+				
+				if (stripos($val,"aller")>-1){
+				//$allergy=$allergy+1;
+				};				
+            }
+		};
+  
+  }			
+			
+			
+		$patientId[$zrow['pid']]=($patientId[$zrow['pid']]-0)+1;
+
+		if($meds==0){
+			print "<tr><td bgcolor=red colspan=1>No medications";
+			$nomeds=$nomeds . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+		};	
+		if($meds!=0){$allmeds=$allmeds+1;};
+		if($dxs!=0){$alldxs=$alldxs+1;};
+		if($allergy!=0){$allallergy=$allallergy+1;};
+
+		if($allergy==0){
+			//print "<tr><td bgcolor=red colspan=1>No allergy list";
+			//$noallergy=$noallergy . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+		};	
+
+		
+		if($dxs==0){
+			print "<tr><td bgcolor=red colspan=1>No problem list";
+			$noprobs=$noprobs . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+		};	
+			
+			
+			$sql="select tobacco from history_data where pid=" . $zrow['pid'] . "";
+			$resultxz = mysql_query($sql,$connx);
+$t=false;
+			if (!$resultxz)
+ die (mysql_error());
+  {
+  
+		while ($qzrow = mysql_fetch_assoc($resultxz)) {
+		print "<tr>";
+            while(list($var, $val) = each($qzrow)) {
+                print "<td><B>$var</B>: $val<br />";
+				$t=true;
+				//print "<td> $val";
+				$tobacco[$val]=($tobacco[$val]-0)+1;
+				if($val=='|0||'){
+				//$notobacco=$notobacco . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+				};
+            }
+		};
+  
+  }			
+		if($t==false){
+		print "<tr><td bgcolor=red colspan=1>No Tobacco Reminder";
+		$notobacco=$notobacco . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+		};	
+			
+
+  
+
+
+
+			$sql="select * from lists_touch where pid=" . $zrow['pid'] . "";
+			$resultxz = mysql_query($sql,$connx);
+$t=false;
+			if (!$resultxz)
+ die (mysql_error());
+  {
+  
+		while ($qzrow = mysql_fetch_assoc($resultxz)) {
+		print "<tr>";
+            while(list($var, $val) = each($qzrow)) {
+                print "<td><B>$var</B>: $val<br />";
+				$t=true;
+				//print "<td> $val";
+				//$tobacco[$val]=($tobacco[$val]-0)+1;
+				if($val=='|0||'){
+				//$notobacco=$notobacco . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+				};
+				
+				if (stripos($val,"allergy")>-1){
+				$allergy=$allergy+1;
+				};
+				
+            }
+		};
+  
+  }			
+		if($t==false){
+		//print "<tr><td bgcolor=red colspan=1>No Tobacco Reminder";
+		//$notobacco=$notobacco . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+		};	
+			
+		if($allergy==0){
+			print "<tr><td bgcolor=red colspan=1>No allergy list";
+			$noallergy=$noallergy . $zrow['fname'] . " " . $zrow['lname'] . ", ";
+		};	
+  
+            ++$rowcount;
+			
+        }
+  
+
+
+  
+  
+  
+  print "</table>";
+  
+  print "<p>No of encounters: " . $rowcount;
+  
+echo "<p>Tobacco Clinical Reminder<br><Table border=1><tr><td><td>  ";
+   while (list($key,$value) = each($tobacco)) {
+if($key!=''){echo "<tr><td>$key <td> $value<br>"; $tobac=$tobac+($value-0);};
+}
+  print "</table><p>Summary<p><table border=1><tr><td valign=right>No Tobacco Reminder: <td valign=right>" . $notobacco; //. "<P>Tobacco Answered: " . $tobac;
+  //print "<tr><td valign=right>Tobacco Reminder Completed:<td valign=right> " . $tobac . "/" . $rowcount . "<td valign=right>" . number_format(100*($tobac/$rowcount)) . "%";
+  //print "<tr><td valign=right>With Medications: <td valign=right>" . $allmeds . "/" . $rowcount . "  <td valign=right>" . number_format(($allmeds/$rowcount)*100) . "%";
+ // print "<tr><td valign=right>No Medications:<td valign=right> " . $nomeds;
+  //print "<tr><td valign=right>With Problem List:<td valign=right> " . $alldxs  . "/" . $rowcount . " <td valign=right>" . number_format(($alldxs/$rowcount)*100) . "%";
+  print "<tr><td valign=right>No Medical Problems List:<td valign=right> " . $noprobs;
+  print "<tr><td valign=right>No Allergy List:<td valign=right> " . $noallergy;
+  print "</table>";
+  
+  while (list($key,$value) = each($patientId)) {
+  $totalpats=$totalpats+1;
+  
+  };
+  
+   while (list($key,$value) = each($alldates)) {
+	if($key!=''){echo "<p>$key = $value<br>";};
+   }
+  
+Print "<a name=report></a>  <table border=1>
+<tr><td bgcolor=silver>Title	 <td bgcolor=silver>Total Patients	 <td bgcolor=silver>Denominator	 <td bgcolor=silver>Numerator	 <td bgcolor=silver>Performance Percentage
+<tr><td>Use CPOE for medication orders directly entered by any licensed healthcare professional who can enter orders into the medical record per state, local and professional guidelines. ( AMC:170.304(a) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Generate and transmit permissible prescriptions electronically. ( AMC:170.304(b) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Incorporate clinical lab-test results into certified EHR technology as structured data. ( AMC:170.302(h) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Maintain active medication allergy list. ( AMC:170.302(e) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>" . $allallergy . "	<td>" . number_format(($allallergy/$rowcount)*100) . "%
+<tr><td>Maintain active medication list. ( AMC:170.302(d) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>" . $allmeds . "	<td>" . number_format(($allmeds/$rowcount)*100) . "%
+<tr><td>The EP, eligible hospital or CAH who receives a patient from another setting of care or provider of care or believes an encounter is relevant should perform medication reconciliation. ( AMC:170.302(j) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Use certified EHR technology to identify patient-specific education resources and provide those resources to the patient if appropriate. ( AMC:170.302(m) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Maintain an up-to-date problem list of current and active diagnoses. ( AMC:170.302(c) )	<td>" . $rowcount . "	<td>"  . $totalpats . "	<td>" . $alldxs  . "	<td>" . number_format(($alldxs/$rowcount)*100) . "%
+<tr><td>Provide patients with an electronic copy of their health information (including diagnostic test results, problem list, medication lists, medication allergies), upon request. ( AMC:170.304(f) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Provide clinical summaries for patients for each office visit. ( AMC:170.304(h) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Record demographics. ( AMC:170.304(c) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Record smoking status for patients 13 years old or older. ( AMC:170.302(g) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>" . $tobac . "	<td>" . number_format(100*($tobac/$rowcount)) . "%
+<tr><td>Record and chart changes in vital signs. ( AMC:170.302(f) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Send reminders to patients per patient preference for preventive/follow up care. ( AMC:170.304(d) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>The EP, eligible hospital or CAH who transitions their patient to another setting of care or provider of care or refers their patient to another provider of care should provide summary of care record for each transition of care or referral. ( AMC:170.304(i) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+<tr><td>Provide patients with timely electronic access to their health information (including lab results, problem list, medication lists, medication allergies) within four business days of the information being available to the EP. ( AMC:170.304(g) )	<td>" . $rowcount . "	<td>" . $totalpats . "	<td>0	<td>0%
+</table>";  
+  
+  
+  die;
+  
+
+  
+};  
+  
+//END -  RUN AN AUDIT REPORT SHOWING THE DATA AND ANY ERRORS BEHIND THE REPORT
+  
+  
+  
+  
+  
+  
 
 ?>
 
@@ -224,7 +524,7 @@ $provider  = trim($_POST['form_provider']);
 				 //
 
 				 $query = "SELECT id, lname, fname FROM users WHERE ".
-				  "authorized = 1 $provider_facility_filter ORDER BY lname, fname"; //(CHEMED) facility filter
+				  "authorized = 1  ORDER BY lname, fname"; //(CHEMED) facility filter
 
 				 $ures = sqlStatement($query);
 
@@ -358,6 +658,9 @@ $provider  = trim($_POST['form_provider']);
 <?php
 
   if ($type_report == "amc") {
+  
+  
+  
     // For AMC:
     //   need to make $target_date an array with two elements ('dateBegin' and 'dateTarget')
     //   need to to send a manual data entry option (number of labs)
@@ -368,7 +671,11 @@ $provider  = trim($_POST['form_provider']);
     $dataSheet = test_rules_clinic($provider,$rule_filter,$array_date,"report",'',$plan_filter,$organize_method,$options);
   }
   else {
-    $dataSheet = test_rules_clinic($provider,$rule_filter,$target_date,"report",'',$plan_filter,$organize_method);
+  
+  //echo $provider . " " . $rule_filter . " " . $target_date . " " . "report" . " " . '' . " " . $plan_filter . " " . $organize_method;
+  //die;
+  
+  $dataSheet = test_rules_clinic($provider,$rule_filter,$target_date,"report",'',$plan_filter,$organize_method);
   }
 
   $firstProviderFlag = TRUE;
@@ -486,3 +793,7 @@ $provider  = trim($_POST['form_provider']);
 
 </html>
 
+<?php
+
+
+	?>
