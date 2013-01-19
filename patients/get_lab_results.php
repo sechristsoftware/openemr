@@ -76,10 +76,13 @@
   			<tr class="header">
   				<th><?php echo htmlspecialchars( xl('Order Date'),ENT_NOQUOTES); ?></th>
   				<th><?php echo htmlspecialchars( xl('Order Name'),ENT_NOQUOTES); ?></th>
-  				<th><?php echo htmlspecialchars( xl('Report Status'),ENT_NOQUOTES); ?></th>
-  				<th><?php echo htmlspecialchars( xl('Results Group'),ENT_NOQUOTES); ?></th>
+                                <th><?php echo htmlspecialchars( xl('Result Name'),ENT_NOQUOTES); ?></th>
   				<th><?php echo htmlspecialchars( xl('Abnormal'),ENT_NOQUOTES); ?></th>
   				<th><?php echo htmlspecialchars( xl('Value'),ENT_NOQUOTES); ?></th>
+                                <th><?php echo htmlspecialchars( xl('Range'),ENT_NOQUOTES); ?></th>
+                                <th><?php echo htmlspecialchars( xl('Units'),ENT_NOQUOTES); ?></th>
+                                <th><?php echo htmlspecialchars( xl('Result Status'),ENT_NOQUOTES); ?></th>
+                                <th><?php echo htmlspecialchars( xl('Report Status'),ENT_NOQUOTES); ?></th>
   			</tr>
   		<?php
   		$even=false;
@@ -95,10 +98,13 @@
   			echo "<tr class='".$class."'>";
   			echo "<td>".htmlspecialchars($date[1]."/".$date[2]."/".$date[0],ENT_NOQUOTES)."</td>";
   			echo "<td>".htmlspecialchars($row['procedure_name'],ENT_NOQUOTES)."</td>";
-  			echo "<td>".htmlspecialchars($row['report_status'],ENT_NOQUOTES)."</td>";
-  			echo "<td>".htmlspecialchars($row['result_status'],ENT_NOQUOTES)."</td>";
+                        echo "<td>".htmlspecialchars($row['result_name'],ENT_NOQUOTES)."</td>";
   			echo "<td>".htmlspecialchars($row['abnormal'],ENT_NOQUOTES)."</td>";
   			echo "<td>".htmlspecialchars($row['result'],ENT_NOQUOTES)."</td>";
+                        echo "<td>".htmlspecialchars($row['result_def_range'],ENT_NOQUOTES)."</td>";
+                        echo "<td>".htmlspecialchars($row['result_def_units'],ENT_NOQUOTES)."</td>";
+                        echo "<td>".htmlspecialchars($row['result_status'],ENT_NOQUOTES)."</td>";
+                        echo "<td>".htmlspecialchars($row['report_status'],ENT_NOQUOTES)."</td>";
   			echo "</tr>";
   		}
 		echo "</table>";
