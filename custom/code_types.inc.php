@@ -205,6 +205,55 @@ function collect_codetypes($category,$return_format="array") {
 }
 
 /**
+ * Sequential code set searching function (algorithm contributed by yehster)
+ *
+ * Function is basically a wrapper of the code_set_search() function to support
+ * an optimized searching model. Model searches codes first; then if no hits, it
+ * will then search the descriptions (which are separated by each word in the
+ * code_set_search() function).
+ *
+ * @param  string    $form_code_type  code set key (special keywords are PROD and --ALL--)
+ * @param  string    $search_term     search term
+ * @param  array     $limit           Number of results to return (NULL means return all)
+ * @param  boolean   $count           if true, then will only return the number of entries
+ * @param  boolean   $active          if true, then will only return active entries
+ * @param  integer   $start           Query start limit (for pagination)
+ * @param  integer   $number          Query number returned (for pagination)
+ * @param  array     $filter_elements Array that contains elements to filter
+ * @return recordset
+ */
+function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
+
+  // Return the Search Results
+  // Search the code first
+  $res_code = code_set_search($form_code_type,$search_term,false,$active,false,$start,$number,$filter_elements,$limit,'code');
+  if(sqlNumRows($res_code)>0) {
+   if ($count) {
+    // just return the count
+    return  sqlNumRows($res_code);
+   }
+   else {
+    // return the data
+    return $res_code;
+   }
+  }
+  else {
+   // no codes found, so search the descriptions;
+   $res_desc = code_set_search($form_code_type,$search_term,false,$active,false,$start,$number,$filter_elements,$limit,'description');
+   if(sqlNumRows($res_desc)>0) {
+    if ($count) {
+     // just return the count
+     return sqlNumRows($res_desc);
+    }
+    else {
+     // return the data
+     return $res_desc;
+    }
+   }
+  }
+}
+
+/**
  * Main code set searching function.
  *
  * Function is able to search a variety of code sets. See the 'external' items in the comments at top
@@ -216,20 +265,37 @@ function collect_codetypes($category,$return_format="array") {
  * @param  boolean   $count           if true, then will only return the number of entries
  * @param  boolean   $active          if true, then will only return active entries (not pertinent for PROD code sets)
  * @param  boolean   $return_only_one if true, then will only return one perfect matching item
- * @param  integer   $start           Query start limit
- * @param  integer   $number          Query number returned
+ * @param  integer   $start           Query start limit (for pagination)
+ * @param  integer   $number          Query number returned (for pagination)
  * @param  array     $filter_elements Array that contains elements to filter
+ * @param  array     $limit           Number of results to return (NULL means return all); note this is ignored if set $start/number
+ * @param  array     $mode            'default' mode searches code and description, 'code' mode only searches code, 'description' mode searches description (and separates words); note this is ignored if set $return_only_one to TRUE
  * @return recordset 
  */
-function code_set_search($form_code_type,$search_term="",$count=false,$active=true,$return_only_one=false,$start=NULL,$number=NULL,$filter_elements=array()) {
+function code_set_search($form_code_type,$search_term="",$count=false,$active=true,$return_only_one=false,$start=NULL,$number=NULL,$filter_elements=array(),$limit=NULL,$mode='default') {
   global $code_types;
 
-  $limit_query = '';
   if ( !is_null($start) && !is_null($number) ) {
+    // For pagination of results
     $limit_query = " LIMIT $start, $number ";
   }
+  else if (!is_null($limit)) {
+    $limit_query = " LIMIT $limit ";
+  }
+  else {
+    // No pagination and no limit
+    $limit_query = '';
+  }
+
   if ($return_only_one) {
+     // Only return one result (this is where only matching for exact code match)
+     // Note this overrides the above limit settings
      $limit_query = " LIMIT 1 ";
+  }
+
+  if ($mode == 'description') {
+    // Separate the description keywords into an array
+    $description_keywords=preg_split("/ /",$search_term,-1,PREG_SPLIT_NO_EMPTY);
   }
 
   // build the filter_elements sql code
@@ -241,6 +307,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
   }
 
   if ($form_code_type == 'PROD') { // Search for products/drugs
+   // Note this does not support $active, $return_only_one, $filter_elements, $mode options
    $query = "SELECT dt.drug_id, dt.selector, d.name " .
             "FROM drug_templates AS dt, drugs AS d WHERE " .
             "( d.name LIKE ? OR " .
@@ -249,6 +316,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
             "ORDER BY d.name, dt.selector, dt.drug_id $limit_query";
    $res = sqlStatement($query, array("%".$search_term."%", "%".$search_term."%") );
   }
+
   else if ($form_code_type == '--ALL--') { // Search all codes from the default codes table
    // Note this will not search the external code sets
    $active_query = '';
@@ -256,19 +324,47 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     // Only filter for active codes
     $active_query=" AND c.active = 1 ";
    }
+   $sql_bind_array = array();
    $query = "SELECT c.id, c.code_text, c.code_text_short, c.code, c.code_type, c.modifier, c.units, c.fee, " .
             "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, c.financial_reporting, " .
             "ct.ct_key as code_type_name " .
             "FROM `codes` as c " .
             "LEFT OUTER JOIN `code_types` as ct " .
-            "ON c.code_type = ct.ct_id " .
-            "WHERE (c.code_text LIKE ? OR " .
-            "c.code LIKE ?) AND ct.ct_external = '0' " .
-            " $active_query " .
-            " $query_filter_elements " .
-            "ORDER BY code_type,code+0,code $limit_query";
-   $res = sqlStatement($query, array("%".$search_term."%", "%".$search_term."%") );
+            "ON c.code_type = ct.ct_id ";
+   if ($return_only_one) {
+    $query .= "WHERE c.code = ? ";
+    array_push($sql_bind_array,$search_term);
+   }
+   else if ($mode == "code") {
+    $query .= "WHERE (c.code LIKE ?) ";
+    array_push($sql_bind_array,$search_term."%");
+   }
+   else if ($mode == "description") {
+    if (is_array($description_keywords)) {
+     // Multiple description keywords
+     $query .= "WHERE ( 1=1 ";
+     foreach($description_keywords as $keyword) {
+       $query .=" AND c.code_text LIKE ? ";
+       array_push($sql_bind_array,"%".$keyword."%");
+      }
+     $query .= ") ";
+    }
+    else {
+     // Only one description keyword
+     $query .= "WHERE (c.code_text LIKE ?) ";
+     array_push($sql_bind_array,"%".$description_keywords."%");
+    }
+   }
+   else { // $mode == "default"
+    $query .= "WHERE (c.code_text LIKE ? OR c.code LIKE ?) ";
+    array_push($sql_bind_array,"%".$search_term."%", "%".$search_term."%");
+   }
+
+   $query .= "AND ct.ct_external = '0' $active_query $query_filter_elements " .
+             "ORDER BY code_type,code+0,code $limit_query";
+   $res = sqlStatement($query,$sql_bind_array);
   }
+
   else if ( !($code_types[$form_code_type]['external']) ) { // Search from default codes table
    $active_query = '';
    if ($active) {
@@ -284,7 +380,27 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $query .= "WHERE c.code = ? ";
     array_push($sql_bind_array,$search_term);
    }
-   else {
+   else if ($mode == "code") {
+    $query .= "WHERE (c.code LIKE ?) ";
+    array_push($sql_bind_array,$search_term."%");
+   }
+   else if ($mode == "description") {
+    if (is_array($description_keywords)) {
+     // Multiple description keywords
+     $query .= "WHERE ( 1=1 ";
+     foreach($description_keywords as $keyword) {
+       $query .=" AND c.code_text LIKE ? ";
+       array_push($sql_bind_array,"%".$keyword."%");
+      }
+     $query .= ") ";
+    }
+    else {
+     // Only one description keyword
+     $query .= "WHERE (c.code_text LIKE ?) ";
+     array_push($sql_bind_array,"%".$description_keywords."%");
+    }
+   }
+   else { // $mode == "default"
     $query .= "WHERE (c.code_text LIKE ? OR c.code LIKE ?) ";
     array_push($sql_bind_array,"%".$search_term."%", "%".$search_term."%");
    }
@@ -293,6 +409,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
    array_push($sql_bind_array,$code_types[$form_code_type]['id']);
    $res = sqlStatement($query,$sql_bind_array);
   }
+
   else if ($code_types[$form_code_type]['external'] == 1 ) { // Search from ICD10 diagnosis codeset tables
    $active_query = '';
    if ($active) {
@@ -314,17 +431,39 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
              "ON ref.formatted_dx_code = c.code AND c.code_type = ? ";
     array_push($sql_bind_array,$code_types[$form_code_type]['id']);
     if ($return_only_one) {
-     $query .= "WHERE ref.formatted_dx_code = ? AND ref.valid_for_coding = '1' AND ref.active = '1' $active_query $query_filter_elements ";
+     $query .= "WHERE ref.formatted_dx_code = ? ";
      array_push($sql_bind_array,$search_term);
     }
-    else {
-     $query .= "WHERE (ref.long_desc LIKE ? OR ref.formatted_dx_code LIKE ?) AND ref.valid_for_coding = '1' AND ref.active = '1' $active_query $query_filter_elements ";
+    else if ($mode == "code") {
+     $query .= "WHERE (ref.formatted_dx_code LIKE ?) ";
+     array_push($sql_bind_array,$search_term."%");
+    }
+    else if ($mode == "description") {
+     if (is_array($description_keywords)) {
+      // Multiple description keywords
+      $query .= "WHERE ( 1=1 ";
+      foreach($description_keywords as $keyword) {
+        $query .=" AND ref.long_desc LIKE ? ";
+        array_push($sql_bind_array,"%".$keyword."%");
+       }
+      $query .= ") ";
+     }
+     else {
+      // Only one description keyword
+      $query .= "WHERE (ref.long_desc LIKE ?) ";
+      array_push($sql_bind_array,"%".$description_keywords."%");
+     }
+    }
+    else { // $mode == "default"
+     $query .= "WHERE (ref.long_desc LIKE ? OR ref.formatted_dx_code LIKE ?) ";
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
+    $query .= "AND ref.valid_for_coding = '1' AND ref.active = '1' $active_query $query_filter_elements ";
     $query .= "ORDER BY ref.formatted_dx_code+0, ref.formatted_dx_code $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
+
   else if ($code_types[$form_code_type]['external'] == 2 || $code_types[$form_code_type]['external'] == 7) {
    // Search from SNOMED (RF1) diagnosis codeset tables OR Search from SNOMED (RF1) clinical terms codeset tables
    if ($code_types[$form_code_type]['external'] == 2) {
@@ -354,21 +493,44 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
              "ON ref.ConceptId = c.code AND c.code_type = ? ";
     array_push($sql_bind_array,$code_types[$form_code_type]['id']);
     if ($return_only_one) {
-     $query .= "WHERE (ref.ConceptId = ? AND $diagnosis_sql_specific) $active_query $query_filter_elements ";
+     $query .= "WHERE (ref.ConceptId = ? ";
      array_push($sql_bind_array,$search_term);
     }
-    else {
-     $query .= "WHERE ((ref.FullySpecifiedName LIKE ? OR ref.ConceptId LIKE ?) AND $diagnosis_sql_specific ) $active_query $query_filter_elements ";
+    else if ($mode == "code") {
+     $query .= "WHERE (ref.ConceptId LIKE ? ";
+     array_push($sql_bind_array,$search_term."%");
+    }
+    else if ($mode == "description") {
+     if (is_array($description_keywords)) {
+      // Multiple description keywords
+      $query .= "WHERE (( 1=1 ";
+      foreach($description_keywords as $keyword) {
+        $query .=" AND ref.FullySpecifiedName LIKE ? ";
+        array_push($sql_bind_array,"%".$keyword."%");
+       }
+      $query .= ") ";
+     }
+     else {
+      // Only one description keyword
+      $query .= "WHERE (ref.FullySpecifiedName LIKE ? ";
+      array_push($sql_bind_array,"%".$description_keywords."%");
+     }
+    }
+    else { // $mode == "default"
+     $query .= "WHERE ((ref.FullySpecifiedName LIKE ? OR ref.ConceptId LIKE ?) ";
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
+    $query .= "AND $diagnosis_sql_specific ) $active_query $query_filter_elements ";
     $query .= "AND ref.ConceptStatus = 0 " .
               "ORDER BY ref.ConceptId $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
+
   else if ($code_types[$form_code_type]['external'] == 3 ) { // Search from SNOMED (RF2) diagnosis codeset tables
    //placeholder
   }
+
   else if ($code_types[$form_code_type]['external'] == 4 ) { // Search from ICD9 diagnosis codeset tables
    if ($active) {
     // Only filter for active codes
@@ -389,17 +551,39 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
              "ON ref.formatted_dx_code = c.code AND c.code_type = ? ";
     array_push($sql_bind_array,$code_types[$form_code_type]['id']);
     if ($return_only_one) {
-     $query .= "WHERE ref.formatted_dx_code = ? AND ref.active = '1' $active_query $query_filter_elements ";
+     $query .= "WHERE ref.formatted_dx_code = ? ";
      array_push($sql_bind_array,$search_term);
     }
-    else {
-     $query .= "WHERE (ref.long_desc LIKE ? OR ref.formatted_dx_code LIKE ?) AND ref.active = '1' $active_query $query_filter_elements ";
+    else if ($mode == "code") {
+     $query .= "WHERE (ref.formatted_dx_code LIKE ?) ";
+     array_push($sql_bind_array,$search_term."%");
+    }
+    else if ($mode == "description") {
+     if (is_array($description_keywords)) {
+      // Multiple description keywords
+      $query .= "WHERE ( 1=1 ";
+      foreach($description_keywords as $keyword) {
+        $query .=" AND ref.long_desc LIKE ? ";
+        array_push($sql_bind_array,"%".$keyword."%");
+       }
+      $query .= ") ";
+     }
+     else {
+      // Only one description keyword
+      $query .= "WHERE (ref.long_desc LIKE ?) ";
+      array_push($sql_bind_array,"%".$description_keywords."%");
+     }
+    }
+    else { // $mode == "default"
+     $query .= "WHERE (ref.long_desc LIKE ? OR ref.formatted_dx_code LIKE ?) ";
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
+    $query .= "AND ref.active = '1' $active_query $query_filter_elements ";
     $query .= "ORDER BY ref.formatted_dx_code+0, ref.formatted_dx_code $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
+
   else if ($code_types[$form_code_type]['external'] == 5 ) { // Search from ICD9 Procedure/Service codeset tables
    if ($active) {
     // Only filter for active codes
@@ -413,24 +597,46 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $sql_bind_array = array();
     $query = "SELECT ref.formatted_sg_code as code, ref.long_desc as code_text, " .
              "c.id, c.code_type, c.modifier, c.units, c.fee, " .
-             "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, " .
+             "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, c.financial_reporting, " .
              "'" . add_escape_custom($form_code_type) . "' as code_type_name " .
              "FROM `icd9_sg_code` as ref " .
              "LEFT OUTER JOIN `codes` as c " .
              "ON ref.formatted_sg_code = c.code AND c.code_type = ? ";
     array_push($sql_bind_array,$code_types[$form_code_type]['id']);
     if ($return_only_one) {
-     $query .= "WHERE ref.formatted_sg_code = ? AND ref.active = '1' $active_query ";
+     $query .= "WHERE ref.formatted_sg_code = ? ";
      array_push($sql_bind_array,$search_term);
     }
-    else {
-     $query .= "WHERE (ref.long_desc LIKE ? OR ref.formatted_sg_code LIKE ?) AND ref.active = '1' $active_query ";
+    else if ($mode == "code") {
+     $query .= "WHERE (ref.formatted_sg_code LIKE ?) ";
+     array_push($sql_bind_array,$search_term."%");
+    }
+    else if ($mode == "description") {
+     if (is_array($description_keywords)) {
+      // Multiple description keywords
+      $query .= "WHERE ( 1=1 ";
+      foreach($description_keywords as $keyword) {
+        $query .=" AND ref.long_desc LIKE ? ";
+        array_push($sql_bind_array,"%".$keyword."%");
+       }
+      $query .= ") ";
+     }
+     else {
+      // Only one description keyword
+      $query .= "WHERE (ref.long_desc LIKE ?) ";
+      array_push($sql_bind_array,"%".$description_keywords."%");
+     }
+    }
+    else { // $mode == "default"
+     $query .= "WHERE (ref.long_desc LIKE ? OR ref.formatted_sg_code LIKE ?) ";
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
+    $query .= "AND ref.active = '1' $active_query $query_filter_elements ";
     $query .= "ORDER BY ref.formatted_sg_code+0, ref.formatted_sg_code $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
+
   else if ($code_types[$form_code_type]['external'] == 6 ) { // Search from ICD10 Procedure/Service codeset tables
    $active_query = '';
    if ($active) {
@@ -445,24 +651,46 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $sql_bind_array = array();
     $query = "SELECT ref.pcs_code as code, ref.long_desc as code_text, " .
              "c.id, c.code_type, c.modifier, c.units, c.fee, " .
-             "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, " .
+             "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, c.financial_reporting, " .
              "'" . add_escape_custom($form_code_type) . "' as code_type_name " .
              "FROM `icd10_pcs_order_code` as ref " .
              "LEFT OUTER JOIN `codes` as c " .
              "ON ref.pcs_code = c.code AND c.code_type = ? ";
     array_push($sql_bind_array,$code_types[$form_code_type]['id']);
     if ($return_only_one) {
-     $query .= "WHERE ref.pcs_code = ? AND ref.valid_for_coding = '1' AND ref.active = '1' $active_query ";
+     $query .= "WHERE ref.pcs_code = ? ";
      array_push($sql_bind_array,$search_term);
     }
-    else {
-     $query .= "WHERE (ref.long_desc LIKE ? OR ref.pcs_code LIKE ?) AND ref.valid_for_coding = '1' AND ref.active = '1' $active_query ";
+    else if ($mode == "code") {
+     $query .= "WHERE (ref.pcs_code LIKE ?) ";
+     array_push($sql_bind_array,$search_term."%");
+    }
+    else if ($mode == "description") {
+     if (is_array($description_keywords)) {
+      // Multiple description keywords
+      $query .= "WHERE ( 1=1 ";
+      foreach($description_keywords as $keyword) {
+        $query .=" AND ref.long_desc LIKE ? ";
+        array_push($sql_bind_array,"%".$keyword."%");
+       }
+      $query .= ") ";
+     }
+     else {
+      // Only one description keyword
+      $query .= "WHERE (ref.long_desc LIKE ?) ";
+      array_push($sql_bind_array,"%".$description_keywords."%");
+     }
+    }
+    else { // $mode == "default"
+     $query .= "WHERE (ref.long_desc LIKE ? OR ref.pcs_code LIKE ?) ";
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
+    $query .= "AND ref.valid_for_coding = '1' AND ref.active = '1' $active_query $query_filter_elements ";
     $query .= "ORDER BY ref.pcs_code+0, ref.pcs_code $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
+
   else {
    //using an external code that is not yet supported, so skip.
   }
