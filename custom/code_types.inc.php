@@ -23,11 +23,14 @@
  *  external - 0 for storing codes in the code table
  *             1 for storing codes in external ICD10 Diagnosis tables
  *             2 for storing codes in external SNOMED (RF1) Diagnosis tables
- *             3 for storing codes in external SNOMED (RF2) Diagnosis tables
+ *             3 for storing codes in external SNOMED (RF2) Diagnosis tables (for future)
  *             4 for storing codes in external ICD9 Diagnosis tables
  *             5 for storing codes in external ICD9 Procedure/Service tables
  *             6 for storing codes in external ICD10 Procedure/Service tables
- *             7 for storing codes in external SNOMED Clinical Term tables
+ *             7 for storing codes in external SNOMED (RF1) Clinical Term tables
+ *             8 for storing codes in external SNOMED (RF2) Clinical Term tables (for future)
+ *             9 for storing codes in external SNOMED (RF1) Procedure Term tables
+ *             10 for storing codes in external SNOMED (RF2) Procedure Term tables (for future)
  *  term     - 1 if this code type is used as a clinical term
  *  </pre>
  *
@@ -87,8 +90,8 @@ $cd_external_options = array(
   '1' => xl('ICD10 Diagnosis'),
   '6' => xl('ICD10 Procedure/Service'),
   '2' => xl('SNOMED (RF1) Diagnosis'),
-  '3' => xl('SNOMED (RF2) Diagnosis'),
-  '7' => xl('SNOMED Clinical Term')
+  '7' => xl('SNOMED (RF1) Clinical Term'),
+  '9' => xl('SNOMED (RF1) Procedure')
 );
 
 /**
@@ -325,16 +328,57 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $res = sqlStatement($query,$sql_bind_array);
    }
   }
-  else if ($code_types[$form_code_type]['external'] == 2 || $code_types[$form_code_type]['external'] == 7) {
-   // Search from SNOMED (RF1) diagnosis codeset tables OR Search from SNOMED (RF1) clinical terms codeset tables
+  else if ($code_types[$form_code_type]['external'] == 2 || $code_types[$form_code_type]['external'] == 9) {
+   // Search from SNOMED (RF1) diagnosis codeset tables OR Search from SNOMED (RF1) procedure codeset tables
+   
    if ($code_types[$form_code_type]['external'] == 2) {
      // Search from SNOMED (RF1) diagnosis codeset tables
-     $diagnosis_sql_specific = " ref.FullySpecifiedName LIKE '%(disorder)' ";
+     $semantic_tag_sql = "ref_conc.FullySpecifiedName LIKE '%(disorder)'";
    }
-   else {
-     // Search from SNOMED (RF1) clinical terms codeset tables
-     $diagnosis_sql_specific = " 1=1 ";
+   else { //$code_types[$form_code_type]['external'] == 9
+     // Search from SNOMED (RF1) procedure codeset tables
+     $semantic_tag_sql = "ref_conc.FullySpecifiedName LIKE '%(procedure)'";
    }
+   // Set the description type
+   //  1 for the preferred
+   //  3 for preferred that included the sematic tag following it (ie. disorder, procedure etc.)
+   $description_type = 1;
+   if ($active) {
+    // Only filter for active codes
+    // If there is no entry in codes sql table, then default to active
+    //  (this is reason for including NULL below)
+    $active_query=" AND (c.active = 1 || c.active IS NULL) ";
+   }
+   // Ensure the applicable table exists
+   $check_table = sqlQuery("SHOW TABLES LIKE 'sct_concepts'");
+   $check_table_2 = sqlQuery("SHOW TABLES LIKE 'sct_descriptions'");
+   if ( !(empty($check_table)) && !(empty($check_table_2)) ) {
+    $sql_bind_array = array();
+    $query = "SELECT ref_desc.ConceptId as code, ref_desc.Term as code_text, " .
+             "c.id, c.code_type, c.modifier, c.units, c.fee, " .
+             "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, c.financial_reporting, " .
+             "'" . add_escape_custom($form_code_type) . "' as code_type_name " .
+             "FROM `sct_concepts` as ref_conc " .
+             "LEFT OUTER JOIN `sct_descriptions` as ref_desc " .
+             "ON ref_conc.ConceptId = ref_desc.ConceptId AND ref_conc.ConceptStatus = 0 AND ref_desc.DescriptionStatus = 0 AND ref_desc.DescriptionType = $description_type " .
+             "LEFT OUTER JOIN `codes` as c " .
+             "ON ref_desc.ConceptId = c.code AND c.code_type = ? ";
+    array_push($sql_bind_array,$code_types[$form_code_type]['id']);
+    if ($return_only_one) {
+     $query .= "WHERE (ref_desc.ConceptId = ? AND $semantic_tag_sql) $active_query $query_filter_elements ";
+     array_push($sql_bind_array,$search_term);
+    }
+    else {
+     $query .= "WHERE ((ref_desc.Term LIKE ? OR ref_desc.ConceptId LIKE ?) AND $semantic_tag_sql) $active_query $query_filter_elements ";
+     array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
+    }
+    $query .= "ORDER BY ref_desc.ConceptId $limit_query";
+    $res = sqlStatement($query,$sql_bind_array);
+   }
+  }
+  else if ($code_types[$form_code_type]['external'] == 7) {
+   // Search from SNOMED (RF1) diagnosis codeset tables OR Search from SNOMED (RF1) clinical terms codeset tables
+   
    if ($active) {
     // Only filter for active codes
     // If there is no entry in codes sql table, then default to active
@@ -342,26 +386,26 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
     $active_query=" AND (c.active = 1 || c.active IS NULL) ";
    }
    // Ensure the sct_concepts sql table exists
-   $check_table = sqlQuery("SHOW TABLES LIKE 'sct_concepts'");
+   $check_table = sqlQuery("SHOW TABLES LIKE 'sct_descriptions'");
    if ( !(empty($check_table)) ) {
     $sql_bind_array = array();
-    $query = "SELECT ref.ConceptId as code, ref.FullySpecifiedName as code_text, " .
+    $query = "SELECT ref.ConceptId as code, ref.Term as code_text, " .
              "c.id, c.code_type, c.modifier, c.units, c.fee, " .
              "c.superbill, c.related_code, c.taxrates, c.cyp_factor, c.active, c.reportable, c.financial_reporting, " .
              "'" . add_escape_custom($form_code_type) . "' as code_type_name " .
-             "FROM `sct_concepts` as ref " .
+             "FROM `sct_descriptions` as ref " .
              "LEFT OUTER JOIN `codes` as c " .
              "ON ref.ConceptId = c.code AND c.code_type = ? ";
     array_push($sql_bind_array,$code_types[$form_code_type]['id']);
     if ($return_only_one) {
-     $query .= "WHERE (ref.ConceptId = ? AND $diagnosis_sql_specific) $active_query $query_filter_elements ";
+     $query .= "WHERE ref.ConceptId = ? $active_query $query_filter_elements ";
      array_push($sql_bind_array,$search_term);
     }
     else {
-     $query .= "WHERE ((ref.FullySpecifiedName LIKE ? OR ref.ConceptId LIKE ?) AND $diagnosis_sql_specific ) $active_query $query_filter_elements ";
+     $query .= "WHERE (ref.Term LIKE ? OR ref.ConceptId LIKE ?) $active_query $query_filter_elements ";
      array_push($sql_bind_array,"%".$search_term."%","%".$search_term."%");
     }
-    $query .= "AND ref.ConceptStatus = 0 " .
+    $query .= "AND ref.DescriptionStatus = 0 AND ref.DescriptionType = 3 " .
               "ORDER BY ref.ConceptId $limit_query";
     $res = sqlStatement($query,$sql_bind_array);
    }
@@ -532,15 +576,15 @@ function lookup_code_descriptions($codes) {
       else if ($code_types[$codetype]['external'] == 2 || $code_types[$codetype]['external'] == 7) {
         // Collect from SNOMED (RF1) Diagnosis codeset tables OR Search from SNOMED (RF1) clinical terms codeset tables 
         // Ensure the sct_concepts sql table exists
-        $check_table = sqlQuery("SHOW TABLES LIKE 'sct_concepts'");
+        $check_table = sqlQuery("SHOW TABLES LIKE 'sct_descriptions'");
         if ( !(empty($check_table)) ) {
           if ( !(empty($code)) ) {
-            $sql = "SELECT `FullySpecifiedName` FROM `sct_concepts` " .
-                   "WHERE `ConceptId` = ? AND `ConceptStatus` = 0 LIMIT 1";
+            $sql = "SELECT `Term` FROM `sct_descriptions` " .
+                   "WHERE `ConceptId` = ? AND `DescriptionStatus` = 0 AND `DescriptionType` = 1 LIMIT 1";
             $crow = sqlQuery($sql, array($code) );
-            if (!empty($crow['FullySpecifiedName'])) {
+            if (!empty($crow['Term'])) {
               if ($code_text) $code_text .= '; ';
-              $code_text .= $crow['FullySpecifiedName'];
+              $code_text .= $crow['Term'];
             }
           }
         }
