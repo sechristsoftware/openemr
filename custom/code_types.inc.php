@@ -380,7 +380,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
           $active_query=" AND c.active = 1 ";
           }
           $sql_bind_array = array();
-          $columns = " c.code as code, c.code_text as code_text, c.code_text_short as code_text_short, ".$common_columns;
+          $columns = " '0' as code_external, c.code as code, c.code_text as code_text, c.code_text_short as code_text_short, ".$common_columns;
           if($table_id==0)
           {
               // If code type is specified, then include the "constant" as part of the query results for consistency
@@ -454,7 +454,8 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
                 $query = "SELECT count(".$table_dot.$code_col . ") as count ";
             }
             else {
-                $query = "SELECT ".$table_dot.$code_col . " as code, " . 
+                $query = "SELECT '" . $table_id ."' as code_external, " .
+                         $table_dot.$code_col . " as code, " . 
                          $display_description . " as code_text, " .        
                          $display_description_brief . " as code_text_short, " .
                          $columns . " ";
@@ -680,9 +681,9 @@ function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$mo
     $modes=array('code','description');
   }
 
-  // If the mode is '--ALL--', then bypass below code and just run the all_code_set_search function instead
+  // If the mode is '--ALL--', then bypass below code and just run the multiple_code_set_search function instead
   if ($form_code_type == '--ALL--') {
-    return all_code_set_search($search_term,$limit,$modes,$count,$active,$start,$number,$filter_elements);
+    return multiple_code_set_search($search_term,$limit,$modes,$count,$active,$start,$number,$filter_elements);
   }
 
   // Return the Search Results (loop through each mode in order)
@@ -702,9 +703,9 @@ function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$mo
 }
 
 /**
-* Code set searching function for when searching all code sets
-* (note this is called within the sequential_code_set_search function)
+* Code set searching function for when searching multiple code sets (it will also work for one code set search)
 *
+* @param array $form_code_types code set keys (will default to checking all active code types if blank)
 * @param string $search_term search term
 * @param array $limit Number of results to return (NULL means return all)
 * @param array $modes Holds the search modes to process along with the order of processing (default behavior is described in above function comment)
@@ -715,9 +716,12 @@ function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$mo
 * @param array $filter_elements Array that contains elements to filter
 * @return recordset/integer
 */
-function all_code_set_search($search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
-  // Collect the active code types
-  $active_cts = collect_codetypes("active","array");
+function multiple_code_set_search($form_code_types=array(),$search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
+
+  if (empty($form_code_types)) {
+    // Collect the active code types
+    $form_code_types = collect_codetypes("active","array");
+  }
 
   if ($count) {
     //start the counter
@@ -746,20 +750,22 @@ function all_code_set_search($search_term,$limit=NULL,$modes=NULL,$count=false,$
 
   // Loop through each code type
   $flag_first = true;
-  foreach ($active_cts as $active_ct) {
+  $flag_hit = false; //ensure there is a hit to avoid trying an empty query
+  foreach ($form_code_types as $form_code_type) {
     // see if there is a hit
     $mode_hit = NULL;
-    $mode_hit = sequential_code_set_search($active_ct,$search_term,NULL,$modes,$count,$active,NULL,NULL,$filter_elements,true);
+    $mode_hit = sequential_code_set_search($form_code_type,$search_term,NULL,$modes,$count,$active,NULL,NULL,$filter_elements,true);
     if ($mode_hit) {
       if ($count) {
         // count the hits
-        $count_hits = code_set_search($active_ct,$search_term,$count,$active,false,NULL,NULL,$filter_elements,NULL,$mode_hit);
+        $count_hits = code_set_search($form_code_type,$search_term,$count,$active,false,NULL,NULL,$filter_elements,NULL,$mode_hit);
         // increment the counter
         $counter += $count_hits;
       }
       else {
+        $flag_hit = true;
         // build the query
-        $return_query = code_set_search($active_ct,$search_term,$count,$active,false,NULL,NULL,$filter_elements,NULL,$mode_hit,true);
+        $return_query = code_set_search($form_code_type,$search_term,$count,$active,false,NULL,NULL,$filter_elements,NULL,$mode_hit,true);
         if (!empty($sql_bind_array)) {
           $sql_bind_array = array_merge($sql_bind_array,$return_query['binds']);
         }
@@ -783,8 +789,10 @@ function all_code_set_search($search_term,$limit=NULL,$modes=NULL,$count=false,$
     // Finish the query string
     $query .= ")) as atari $limit_query";
     
-    // Process and return the query
-    return sqlStatement($query,$sql_bind_array);
+    // Process and return the query (if there was a hit)
+    if ($flag_hit) {
+      return sqlStatement($query,$sql_bind_array);
+    }
   }
 }
 ?>

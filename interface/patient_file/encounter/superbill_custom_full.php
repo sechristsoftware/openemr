@@ -161,9 +161,15 @@ if (!empty($related_code)) {
 }
 
 $fstart = $_REQUEST['fstart'] + 0;
-$filter = $_REQUEST['filter'] + 0;
-if ($filter) {
- $filter_key = convert_type_id_to_key($filter);
+if (isset($_REQUEST['filter'])) {
+  $filter = array();
+  $filter_key = array();
+  foreach ($_REQUEST['filter'] as $var) {
+    $var = $var+0;
+    array_push($filter,$var);
+    $var_key = convert_type_id_to_key($var);
+    array_push($filter_key,$var_key);
+  }
 }
 $search = $_REQUEST['search'];
 $search_reportable = $_REQUEST['search_reportable'];
@@ -179,12 +185,7 @@ if (!empty($search_financial_reporting)) {
 }
 
 if (isset($_REQUEST['filter'])) {
-  if ($filter) {
-   $count = sequential_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
-  }
-  else {
-   $count = sequential_code_set_search("--ALL--",$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
-  }
+ $count = multiple_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
 }
 
 if ($fstart >= $count) $fstart -= $pagesize;
@@ -521,18 +522,14 @@ if ($taxline) {
  <tr>
 
   <td class='text'>
-   <select name='filter' onchange='submitList(0)'>
+   <select name='filter[]' multiple='multiple'>
 <?php
 foreach ($code_types as $key => $value) {
   echo "<option value='" . attr($value['id']) . "'";
-  if ($value['id'] == $filter) echo " selected";
+  if (in_array($value['id'],$filter)) echo " selected";
   echo ">" . xlt($value['label']) . "</option>\n";
 }
 ?>
-    <option value='0' <?php if ($filter === 0 && isset($_REQUEST['filter'])) echo " selected";?> >
-    <?php echo xlt("All");
-    ?>
-    </option>
    </select>
    &nbsp;&nbsp;&nbsp;&nbsp;
 
@@ -589,19 +586,9 @@ while ($prow = sqlFetchArray($pres)) {
   <td></td>
  </tr>
 <?php
-// Flag is this is from an external set
-$is_external_set=false;
-if (in_array($filter_key,$external_sets)) {
-  $is_external_set=true;
-}
 
 if (isset($_REQUEST['filter'])) {
-  if ($filter) {
-   $res = sequential_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
-  }
-  else {
-   $res = sequential_code_set_search("--ALL--",$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
-  }
+  $res = multiple_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
 }
 
 for ($i = 0; $row = sqlFetchArray($res); $i++) $all[$i] = $row;
@@ -622,7 +609,7 @@ if (!empty($all)) {
     echo " <tr>\n";
     echo "  <td class='text'>" . text($iter["code"]) . "</td>\n";
     echo "  <td class='text'>" . text($iter["modifier"]) . "</td>\n";
-    if ($is_external_set) {
+    if ($iter["code_external"] > 0) {
       // If there is no entry in codes sql table, then default to active
       //  (this is reason for including NULL below)
       echo "  <td class='text'>" . ( ($iter["active"] || $iter["active"]==NULL) ? xlt('Yes') : xlt('No')) . "</td>\n";
@@ -656,7 +643,7 @@ if (!empty($all)) {
       echo "<td class='text' align='right'>" . text(bucks($prow['pr_price'])) . "</td>\n";
     }
 
-    if ($is_external_set) {
+    if ($iter["code_external"] > 0) {
       echo "  <td align='right'><a class='link' href='javascript:submitModify(\"" . attr($iter['code_type_name']) . "\",\"" . attr($iter['code']) . "\",\"" . attr($iter['id']) . "\")'>[" . xlt('Modify') . "]</a></td>\n";
     }
     else {
