@@ -178,12 +178,15 @@ if (!empty($search_financial_reporting)) {
  $filter_elements['financial_reporting'] = $search_financial_reporting;
 }
 
-if ($filter) {
- $count = sequential_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
+if (isset($_REQUEST['filter'])) {
+  if ($filter) {
+   $count = sequential_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
+  }
+  else {
+   $count = sequential_code_set_search("--ALL--",$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
+  }
 }
-else {
- $count = sequential_code_set_search("--ALL--",$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
-}
+
 if ($fstart >= $count) $fstart -= $pagesize;
 if ($fstart < 0) $fstart = 0;
 $fend = $fstart + $pagesize;
@@ -519,26 +522,6 @@ if ($taxline) {
 
   <td class='text'>
    <select name='filter' onchange='submitList(0)'>
-    <option value='0'>
-    <?php $all_string = xlt("All");
-          if ( !(empty($external_sets) )) {
-           // Show the external code sets that will not work with All selection
-           $all_string .= " (" . xlt("Except") . " ";
-           $first_flag = true;
-           foreach ($external_sets as $set) {
-            if ($first_flag) { //deal with the comma
-             $first_flag = false;
-            }
-            else {
-             $all_string .= ",";
-            }
-            $all_string .= xlt($code_types[$set]['label']);
-           }
-           $all_string .= ")";
-          }
-          echo $all_string;
-    ?>
-    </option>
 <?php
 foreach ($code_types as $key => $value) {
   echo "<option value='" . attr($value['id']) . "'";
@@ -546,6 +529,10 @@ foreach ($code_types as $key => $value) {
   echo ">" . xlt($value['label']) . "</option>\n";
 }
 ?>
+    <option value='0' <?php if ($filter === 0 && isset($_REQUEST['filter'])) echo " selected";?> >
+    <?php echo xlt("All");
+    ?>
+    </option>
    </select>
    &nbsp;&nbsp;&nbsp;&nbsp;
 
@@ -587,6 +574,7 @@ foreach ($code_types as $key => $value) {
   <td><span class='bold'><?php echo xlt('Serv Rep'); ?></span></td>
   <td><span class='bold'><?php echo xlt('Type'); ?></span></td>
   <td><span class='bold'><?php echo xlt('Description'); ?></span></td>
+  <td><span class='bold'><?php echo xlt('Short Description'); ?></span></td>
 <?php if (related_codes_are_used()) { ?>
   <td><span class='bold'><?php echo xlt('Related'); ?></span></td>
 <?php } ?>
@@ -607,11 +595,13 @@ if (in_array($filter_key,$external_sets)) {
   $is_external_set=true;
 }
 
-if ($filter) {
- $res = sequential_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
-}
-else {
- $res = sequential_code_set_search("--ALL--",$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
+if (isset($_REQUEST['filter'])) {
+  if ($filter) {
+   $res = sequential_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
+  }
+  else {
+   $res = sequential_code_set_search("--ALL--",$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
+  }
 }
 
 for ($i = 0; $row = sqlFetchArray($res); $i++) $all[$i] = $row;
@@ -644,6 +634,7 @@ if (!empty($all)) {
     echo "  <td class='text'>" . ($iter["financial_reporting"] ? xlt('Yes') : xlt('No')) . "</td>\n";
     echo "  <td class='text'>" . text($iter['code_type_name']) . "</td>\n";
     echo "  <td class='text'>" . text($iter['code_text']) . "</td>\n";
+    echo "  <td class='text'>" . text($iter['code_text_short']) . "</td>\n";
 
     if (related_codes_are_used()) {
       // Show related codes.

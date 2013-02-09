@@ -85,6 +85,7 @@ while ($ctrow = sqlFetchArray($ctres)) {
 $code_external_tables=array();
 define('EXT_COL_CODE','code');
 define('EXT_COL_DESCRIPTION','description');
+define('EXT_COL_DESCRIPTION_BRIEF','description_brief');
 define('EXT_TABLE_NAME','table');
 define('EXT_FILTER_CLAUSES','filter_clause');
 define('EXT_VERSION_ORDER','filter_version_order');
@@ -101,15 +102,17 @@ define('DISPLAY_DESCRIPTION',"display_description");
  * @param type $table_name          The name of the table which stores the code informattion (e.g. icd9_dx_code
  * @param type $col_code            The name of the column which is the code
  * @param type $col_description     The name of the column which is the description
+ * @param type $col_description_brief The name of the column which is the brief description
  * @param type $filter_clauses      An array of clauses to be included in the search "WHERE" clause that limits results
  * @param type $version_order       How to choose between different revisions of codes
  * @param type $joins               An array which describes additional tables to join as part of a code search.  
  */
-function define_external_table(&$results, $index, $table_name,$col_code, $col_description,$filter_clauses=array(),$version_order="",$joins=array(),$display_desc="")
+function define_external_table(&$results, $index, $table_name,$col_code, $col_description,$col_description_brief,$filter_clauses=array(),$version_order="",$joins=array(),$display_desc="")
 {
     $results[$index]=array(EXT_TABLE_NAME=>$table_name,
                            EXT_COL_CODE=>$col_code,
                            EXT_COL_DESCRIPTION=>$col_description,
+                           EXT_COL_DESCRIPTION_BRIEF=>$col_description_brief,
                            EXT_FILTER_CLAUSES=>$filter_clauses,
                            EXT_JOINS=>$joins,
                            EXT_VERSION_ORDER=>$version_order,
@@ -117,18 +120,18 @@ function define_external_table(&$results, $index, $table_name,$col_code, $col_de
                            );
 }
 // In order to treat all the code types the same for lookup_code_descriptions, we include metadata for the original codes table
-define_external_table($code_external_tables,0,'codes','code','code_text',array(),'id');
+define_external_table($code_external_tables,0,'codes','code','code_text','code_text_short',array(),'id');
 
 // ICD9 External Definitions
-define_external_table($code_external_tables,4,'icd9_dx_code','formatted_dx_code','long_desc',array("active='1'"),'revision DESC');
-define_external_table($code_external_tables,5,'icd9_sg_code','formatted_sg_code','long_desc',array("active='1'"),'revision DESC');
+define_external_table($code_external_tables,4,'icd9_dx_code','formatted_dx_code','long_desc','short_desc',array("active='1'"),'revision DESC');
+define_external_table($code_external_tables,5,'icd9_sg_code','formatted_sg_code','long_desc','short_desc',array("active='1'"),'revision DESC');
 //**** End ICD9 External Definitions
 
 // SNOMED Definitions
 // For generic SNOMED-CT, there is no need to join with the descriptions table to get a specific description Type
 
 // For generic concepts, use the fully specified description (DescriptionType=3) so we can tell the difference between them.
-define_external_table($code_external_tables,7,'sct_descriptions','ConceptId','Term',array("DescriptionStatus=0","DescriptionType=3"),"");
+define_external_table($code_external_tables,7,'sct_descriptions','ConceptId','Term','Term',array("DescriptionStatus=0","DescriptionType=3"),"");
 
 
 // To determine codes, we need to evaluate data in both the sct_descriptions table, and the sct_concepts table.
@@ -136,12 +139,12 @@ define_external_table($code_external_tables,7,'sct_descriptions','ConceptId','Te
 $SNOMED_joins=array(JOIN_TABLE=>"sct_concepts",JOIN_FIELDS=>array("sct_descriptions.ConceptId=sct_concepts.ConceptId"));
 
 // For disorders, use the preferred term (DescriptionType=1)
-define_external_table($code_external_tables,2,'sct_descriptions','ConceptId','Term',array("DescriptionStatus=0","DescriptionType=1"),"",array($SNOMED_joins));
+define_external_table($code_external_tables,2,'sct_descriptions','ConceptId','Term','Term',array("DescriptionStatus=0","DescriptionType=1"),"",array($SNOMED_joins));
 // Add the filter to choose only disorders. This filter happens as part of the join with the sct_concepts table
 array_push($code_external_tables[2][EXT_JOINS][0][JOIN_FIELDS],"FullySpecifiedName like '%(disorder)'");
 
 // SNOMED-PR definition
-define_external_table($code_external_tables,9,'sct_descriptions','ConceptId','Term',array("DescriptionStatus=0","DescriptionType=1"),"",array($SNOMED_joins));
+define_external_table($code_external_tables,9,'sct_descriptions','ConceptId','Term','Term',array("DescriptionStatus=0","DescriptionType=1"),"",array($SNOMED_joins));
 // Add the filter to choose only procedures. This filter happens as part of the join with the sct_concepts table
 array_push($code_external_tables[9][EXT_JOINS][0][JOIN_FIELDS],"FullySpecifiedName like '%(procedure)'");
 
@@ -149,8 +152,8 @@ array_push($code_external_tables[9][EXT_JOINS][0][JOIN_FIELDS],"FullySpecifiedNa
 //**** End SNOMED Definitions
 
 // ICD 10 Definitions
-define_external_table($code_external_tables,1,'icd10_dx_order_code','formatted_dx_code','long_desc',array("active='1'","valid_for_coding = '1'"),'revision DESC');
-define_external_table($code_external_tables,6,'icd10_pcs_order_code','pcs_code','long_desc',array("active='1'","valid_for_coding = '1'"),'revision DESC');
+define_external_table($code_external_tables,1,'icd10_dx_order_code','formatted_dx_code','long_desc','short_desc',array("active='1'","valid_for_coding = '1'"),'revision DESC');
+define_external_table($code_external_tables,6,'icd10_pcs_order_code','pcs_code','long_desc','short_desc',array("active='1'","valid_for_coding = '1'"),'revision DESC');
 //**** End ICD 10 Definitions
 
 /**
@@ -241,7 +244,7 @@ function convert_type_id_to_key($id) {
  * as 1) an array and as 2) a comma-separated lists that has been
  * process by urlencode() in order to place into URL  address safely.
  *
- * @param  string       $category       category of code types('diagnosis', 'procedure' or 'clinical_term')
+ * @param  string       $category       category of code types('diagnosis', 'procedure', 'clinical_term' or 'active')
  * @param  string       $return_format  format or returned code types ('array' or 'csv')
  * @return string/array
  */
@@ -268,6 +271,11 @@ function collect_codetypes($category,$return_format="array") {
     array_push($return,$ct_key);
    }
   }
+  else if ($category == "active") {
+   if ($ct_arr['active']) {
+    array_push($return,$ct_key);
+   }
+  }
   else {
    //return nothing since no supported category was chosen
   }
@@ -290,7 +298,7 @@ function collect_codetypes($category,$return_format="array") {
  * of this page for a listing of the code sets supported. Also note that Products (using PROD as code type)
  * is also supported.
  *
- * @param  string    $form_code_type  code set key (special keywords are PROD and --ALL--)
+ * @param  string    $form_code_type  code set key (special keywords are PROD) (Note --ALL-- has been deprecated and should be run through the sequential_code_set_search() function instead)
  * @param  string    $search_term     search term
  * @param  boolean   $count           if true, then will only return the number of entries
  * @param  boolean   $active          if true, then will only return active entries (not pertinent for PROD code sets)
@@ -300,9 +308,10 @@ function collect_codetypes($category,$return_format="array") {
  * @param  array     $filter_elements Array that contains elements to filter
  * @param array      $limit           Number of results to return (NULL means return all); note this is ignored if set $start/number
  * @param array      $mode            'default' mode searches code and description, 'code' mode only searches code, 'description' mode searches description (and separates words); note this is ignored if set $return_only_one to TRUE
- * @return recordset/integer 
+ * @param  array     $return_query    This is a mode that will only return the query (everything except for the LIMIT is included) (returned as an array to include the query string and binding array)
+ * @return recordset/integer/array
  */
-function code_set_search($form_code_type,$search_term="",$count=false,$active=true,$return_only_one=false,$start=NULL,$number=NULL,$filter_elements=array(),$limit=NULL,$mode='default') {
+function code_set_search($form_code_type,$search_term="",$count=false,$active=true,$return_only_one=false,$start=NULL,$number=NULL,$filter_elements=array(),$limit=NULL,$mode='default',$return_query=false) {
   global $code_types,$code_external_tables;
 
   // Figure out the appropriate limit clause
@@ -363,6 +372,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
           $table_dot="c.";              // $table_dot is used to prevent awkward looking concatenations when referring to columns in
           $code_col="code";
           $code_text_col="code_text";
+          $code_text_short_col="code_text_short";
 
           $active_query = '';
              if ($active) {
@@ -370,7 +380,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
           $active_query=" AND c.active = 1 ";
           }
           $sql_bind_array = array();
-          $columns = " c.code_text, c.code_text_short, c.code, ".$common_columns;
+          $columns = " c.code as code, c.code_text as code_text, c.code_text_short as code_text_short, ".$common_columns;
           if($table_id==0)
           {
               // If code type is specified, then include the "constant" as part of the query results for consistency
@@ -420,16 +430,19 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
             $table_dot=$table.".";
             $code_col=$table_info[EXT_COL_CODE];
             $code_text_col=$table_info[EXT_COL_DESCRIPTION];
-            
+            $code_text_short_col=$table_info[EXT_COL_DESCRIPTION_BRIEF];
+
             // If the description is supposed to come from "joined" table instead of the "main", 
             // the metadata defines a DISPLAY_DESCRIPTION element, and we use that to build up the query
             if($table_info[DISPLAY_DESCRIPTION]!="")
             {
                 $display_description=$table_info[DISPLAY_DESCRIPTION];
+                $display_description_brief=$table_info[DISPLAY_DESCRIPTION];
             }
             else
             {
                 $display_description=$table_dot.$code_text_col;
+                $display_description_brief=$table_dot.$code_text_short_col;
             }
             // Ensure the external table exists
             $check_table = sqlQuery("SHOW TABLES LIKE '".$table."'");
@@ -443,6 +456,7 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
             else {
                 $query = "SELECT ".$table_dot.$code_col . " as code, " . 
                          $display_description . " as code_text, " .        
+                         $display_description_brief . " as code_text_short, " .
                          $columns . " ";
             }
             $query .= " FROM ".$table.
@@ -513,6 +527,15 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
         $query .=$active_query . $query_filter_elements;
 
         $query .= " ORDER BY ".$table_dot.$code_col."+0,".$table_dot.$code_col; 
+
+        if ($return_query) {
+          // Just returning the actual query without the LIMIT information in it. This
+          // information can then be used to combine queries of different code types
+          // via the mysql UNION command. Returning an array to contain the query string
+          // and the binding parameters.
+          return array('query'=>$query,'binds'=>$sql_bind_array);
+        }
+
         $query .= $limit_query;
         
         $res = sqlStatement($query,$sql_bind_array);         
@@ -543,10 +566,17 @@ function code_set_search($form_code_type,$search_term="",$count=false,$active=tr
  * items in the comments at top of this page for a listing of the code sets supported.
  *
  * @param  string $codes  Is of the form "type:code;type:code; etc.".
+ * @param  string $desc_detail Can choose either the normal description('code_text') or the brief description('code_text_short').
  * @return string         Is of the form "description;description; etc.".
  */
-function lookup_code_descriptions($codes) {
+function lookup_code_descriptions($codes,$desc_detail="code_text") {
   global $code_types, $code_external_tables;
+
+  // ensure $desc_detail is set properly
+  if ( ($desc_detail != "code_text") && ($desc_detail != "code_text_short") ) {
+    $desc_detail="code_text";
+  }
+
   $code_text = '';
   if (!empty($codes)) {
     $relcodes = explode(';', $codes);
@@ -560,8 +590,9 @@ function lookup_code_descriptions($codes) {
         $table_name=$table_info[EXT_TABLE_NAME];
         $code_col=$table_info[EXT_COL_CODE];
         $desc_col= $table_info[DISPLAY_DESCRIPTION]=="" ? $table_info[EXT_COL_DESCRIPTION] : $table_info[DISPLAY_DESCRIPTION];
+        $desc_col_short= $table_info[DISPLAY_DESCRIPTION]=="" ? $table_info[EXT_COL_DESCRIPTION_BRIEF] : $table_info[DISPLAY_DESCRIPTION];
         $sqlArray = array();
-        $sql = "SELECT ".$desc_col." as code_text FROM ".$table_name;
+        $sql = "SELECT ".$desc_col." as code_text,".$desc_col_short." as code_text_short FROM ".$table_name;
         
         // include the "JOINS" so that we get the preferred term instead of the FullySpecifiedName when appropriate.
         foreach($table_info[EXT_JOINS] as $join_info)
@@ -609,9 +640,9 @@ function lookup_code_descriptions($codes) {
 
         $sql .= " LIMIT 1";
         $crow = sqlQuery($sql,$sqlArray);
-        if (!empty($crow["code_text"])) {
+        if (!empty($crow[$desc_detail])) {
           if ($code_text) $code_text .= '; ';
-          $code_text .= $crow["code_text"];
+          $code_text .= $crow[$desc_detail];
         }
       }
 
@@ -640,21 +671,120 @@ function lookup_code_descriptions($codes) {
 * @param integer $start Query start limit (for pagination)
 * @param integer $number Query number returned (for pagination)
 * @param array $filter_elements Array that contains elements to filter
-* @return recordset/integer
+* @param string $is_hit_mode This is a mode that simply returns the name of the mode if results were found
+* @return recordset/integer/string
 */
-function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
+function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array(),$is_hit_mode=false) {
   // Set the default behavior that is described in above function comments
   if (empty($modes)) {
     $modes=array('code','description');
+  }
+
+  // If the mode is '--ALL--', then bypass below code and just run the all_code_set_search function instead
+  if ($form_code_type == '--ALL--') {
+    return all_code_set_search($search_term,$limit,$modes,$count,$active,$start,$number,$filter_elements);
   }
 
   // Return the Search Results (loop through each mode in order)
   foreach ($modes as $mode) {
     $res = code_set_search($form_code_type,$search_term,$count,$active,false,$start,$number,$filter_elements,$limit,$mode);
     if ( ($count && $res>0) || (!$count && sqlNumRows($res)>0) ) {
-      // returns the count number if count is true or returns the data if count is false
-      return $res;
+      if ($is_hit_mode) {
+        // just return the mode
+        return $mode;
+      }
+      else {
+        // returns the count number if count is true or returns the data if count is false
+        return $res;
+      }
     }
+  }
+}
+
+/**
+* Code set searching function for when searching all code sets
+* (note this is called within the sequential_code_set_search function)
+*
+* @param string $search_term search term
+* @param array $limit Number of results to return (NULL means return all)
+* @param array $modes Holds the search modes to process along with the order of processing (default behavior is described in above function comment)
+* @param boolean $count if true, then will only return the number of entries
+* @param boolean $active if true, then will only return active entries
+* @param integer $start Query start limit (for pagination)
+* @param integer $number Query number returned (for pagination)
+* @param array $filter_elements Array that contains elements to filter
+* @return recordset/integer
+*/
+function all_code_set_search($search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
+  // Collect the active code types
+  $active_cts = collect_codetypes("active","array");
+
+  if ($count) {
+    //start the counter
+    $counter = 0;
+  }
+  else {
+    // Figure out the appropriate limit clause
+    if ( !is_null($start) && !is_null($number) ) {
+      // For pagination of results
+      $limit_query = " LIMIT $start, $number ";
+    }
+    else if (!is_null($limit)) {
+      $limit_query = " LIMIT $limit ";
+    }
+    else {
+      // No pagination and no limit
+      $limit_query = '';
+    }
+
+    // Prepare the sql bind array
+    $sql_bind_array = array();
+
+    // Start the query string
+    $query = "SELECT * FROM ((";
+  }
+
+  // Loop through each code type
+  $flag_first = true;
+  foreach ($active_cts as $active_ct) {
+    // see if there is a hit
+    $mode_hit = NULL;
+    $mode_hit = sequential_code_set_search($active_ct,$search_term,NULL,$modes,$count,$active,NULL,NULL,$filter_elements,true);
+    if ($mode_hit) {
+      if ($count) {
+        // count the hits
+        $count_hits = code_set_search($active_ct,$search_term,$count,$active,false,NULL,NULL,$filter_elements,NULL,$mode_hit);
+        // increment the counter
+        $counter += $count_hits;
+      }
+      else {
+        // build the query
+        $return_query = code_set_search($active_ct,$search_term,$count,$active,false,NULL,NULL,$filter_elements,NULL,$mode_hit,true);
+        if (!empty($sql_bind_array)) {
+          $sql_bind_array = array_merge($sql_bind_array,$return_query['binds']);
+        }
+        else {
+          $sql_bind_array = $return_query['binds'];
+        }
+        if (!$flag_first) {
+          $query .= ") UNION ALL (";
+        }
+        $query .= $return_query['query'];
+      }
+      $flag_first = false;
+    }
+  }
+
+  if ($count) {
+    //return the count
+    return $counter;
+  }
+  else {
+    // Finish the query string
+    $query .= ")) as atari $limit_query";
+    
+    // Process and return the query
+    return sqlStatement($query,$sql_bind_array);
   }
 }
 ?>
