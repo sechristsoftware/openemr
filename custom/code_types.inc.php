@@ -292,11 +292,59 @@ function collect_codetypes($category,$return_format="array") {
 }
 
 /**
- * Main code set searching function.
+ * Return the code information for a specific code.
+ *
+ * Function is able to search a variety of code sets. See the code type items in the comments at top
+ * of this page for a listing of the code sets supported.
+ *
+ * @param  string    $form_code_type  code set key
+ * @param  string    $code            code
+ * @param  boolean   $active          if true, then will only return active entries (not pertinent for PROD code sets)
+ * @return recordset                  will contain only one item (row).
+ */
+function return_code_information($form_code_type,$code,$active=true) {
+  return code_set_search($form_code_type,$code,false,$active,true);  
+}
+
+/**
+* The main code set searching function.
+*
+* It will work for searching one or numerous code sets simultaneously.
+* Note that when searching numerous code sets, you CAN NOT search the PROD
+* codes; the PROD codes can only be searched by itself. 
+*
+* @param string/array  $form_code_type   code set key(s) (can either be one key in a string or multiple/one key(s) in an array
+* @param string        $search_term      search term
+* @param integer       $limit            Number of results to return (NULL means return all)
+* @param array         $modes            Holds the search modes to process along with the order of processing (if NULL, then default behavior is sequential code then description search)
+* @param boolean       $count            if true, then will only return the number of entries
+* @param boolean       $active           if true, then will only return active entries
+* @param integer       $start            Query start limit (for pagination) (Note this setting will override the above $limit parameter)
+* @param integer       $number           Query number returned (for pagination) (Note this setting will override the above $limit parameter)
+* @param array         $filter_elements  Array that contains elements to filter
+* @return recordset/integer              Will contain either a integer(if counting) or the results (recordset)
+*/
+function main_code_set_search($form_code_type,$search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
+  if (!empty($form_code_type)) {
+    if ( is_array($form_code_type) && (count($form_code_type) > 1) ) {
+      // run the multiple code set search
+      return multiple_code_set_search($form_code_type,$search_term,$limit,$modes,$count,$active,$start,$number,$filter_elements);
+    }
+    if ( is_array($form_code_type) && (count($form_code_type) == 1) ) {
+      // prepare the variable (ie. convert the one array item to a string) for the non-multiple code set search
+      $form_code_type = $form_code_type[0];
+    }
+    // run the non-multiple code set search
+    return sequential_code_set_search($form_code_type,$search_term,$limit,$modes,$count,$active,$start,$number,$filter_elements);
+  }
+}
+
+/**
+ * Main "internal" code set searching function.
  *
  * Function is able to search a variety of code sets. See the 'external' items in the comments at top
  * of this page for a listing of the code sets supported. Also note that Products (using PROD as code type)
- * is also supported.
+ * is also supported. (This function is not meant to be called directly)
  *
  * @param  string    $form_code_type  code set key (special keywords are PROD) (Note --ALL-- has been deprecated and should be run through the multiple_code_set_search() function instead)
  * @param  string    $search_term     search term
@@ -611,12 +659,13 @@ function lookup_code_descriptions($codes,$desc_detail="code_text") {
 }
 
 /**
-* Sequential code set searching function
+* Sequential code set "internal" searching function
 *
 * Function is basically a wrapper of the code_set_search() function to support
 * a optimized searching models. The default mode will:
 * Searches codes first; then if no hits, it will then search the descriptions
 * (which are separated by each word in the code_set_search() function).
+* (This function is not meant to be called directly)
 *
 * @param string $form_code_type code set key (special keyword is PROD) (Note --ALL-- has been deprecated and should be run through the multiple_code_set_search() function instead)
 * @param string $search_term search term
@@ -653,7 +702,10 @@ function sequential_code_set_search($form_code_type,$search_term,$limit=NULL,$mo
 }
 
 /**
-* Code set searching function for when searching multiple code sets (it will also work for one code set search)
+* Code set searching "internal" function for when searching multiple code sets.
+*
+* It will also work for one code set search, although not meant for this.
+* (This function is not meant to be called directly)
 *
 * @param array $form_code_types code set keys (will default to checking all active code types if blank)
 * @param string $search_term search term

@@ -137,7 +137,7 @@ if (isset($mode)) {
     $code_type_name_external = $_POST['code_type_name_external'];
     $code_external = $_POST['code_external'];
     $code_id = $_POST['code_id'];
-    $results = code_set_search($code_type_name_external,$code_external,false,false,true); // only will return one item
+    $results = return_code_information($code_type_name_external,$code_external,false); // only will return one item
     while ($row = sqlFetchArray($results)) {
       $code         = $row['code'];
       $code_text    = $row['code_text'];
@@ -185,7 +185,7 @@ if (!empty($search_financial_reporting)) {
 }
 
 if (isset($_REQUEST['filter'])) {
- $count = multiple_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
+ $count = main_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
 }
 
 if ($fstart >= $count) $fstart -= $pagesize;
@@ -588,7 +588,7 @@ while ($prow = sqlFetchArray($pres)) {
 <?php
 
 if (isset($_REQUEST['filter'])) {
-  $res = multiple_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
+  $res = main_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
 }
 
 for ($i = 0; $row = sqlFetchArray($res); $i++) $all[$i] = $row;
