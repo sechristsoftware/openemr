@@ -6,10 +6,10 @@ require_once("library/htmlspecialchars.inc.php");
 require_once("library/translation.inc.php");
 require_once("custom/code_types.inc.php");
 
-function main_search_test($type,$string,$limit=20,$modes=NULL,$count=false)
+function main_search_test($type,$string,$limit=20,$modes=NULL,$count=false,$category=NULL)
 {
     echo "<ol>";
-    $res=main_code_set_search($type,$string,$limit,$modes,$count);
+    $res=main_code_set_search($type,$string,$limit,$category,true,$modes,$count);
     if ($count) {
         echo "<li>" . $res . "</li>";
     }
@@ -57,6 +57,11 @@ main_search_test(array("CVX","ICD10"),"100");
 
 main_search_test(array("ICD9","ICD10","SNOMED"),"colon benign");
 main_search_test(array("ICD9","SNOMED"),"colon benign");
+
+main_search_test("","polio",40,NULL,false,"active");
+main_search_test("","polio",40,NULL,false,"diagnosis");
+main_search_test("","polio",40,NULL,false,"procedure");
+main_search_test("","polio",40,NULL,false,"clinical_term");
 
 main_search_test("ICD9","401",NULL,array('code','description'),true);
 main_search_test("ICD9","401",NULL,array('description','code'),true);

@@ -316,15 +316,23 @@ function return_code_information($form_code_type,$code,$active=true) {
 * @param string/array  $form_code_type   code set key(s) (can either be one key in a string or multiple/one key(s) in an array
 * @param string        $search_term      search term
 * @param integer       $limit            Number of results to return (NULL means return all)
+* @param string        $category         Category of code sets. This WILL OVERRIDE the $form_code_type setting (category options can be found in the collect_codetypes() function above)      
+* @param boolean       $active           if true, then will only return active entries
 * @param array         $modes            Holds the search modes to process along with the order of processing (if NULL, then default behavior is sequential code then description search)
 * @param boolean       $count            if true, then will only return the number of entries
-* @param boolean       $active           if true, then will only return active entries
 * @param integer       $start            Query start limit (for pagination) (Note this setting will override the above $limit parameter)
 * @param integer       $number           Query number returned (for pagination) (Note this setting will override the above $limit parameter)
 * @param array         $filter_elements  Array that contains elements to filter
 * @return recordset/integer              Will contain either a integer(if counting) or the results (recordset)
 */
-function main_code_set_search($form_code_type,$search_term,$limit=NULL,$modes=NULL,$count=false,$active=true,$start=NULL,$number=NULL,$filter_elements=array()) {
+function main_code_set_search($form_code_type,$search_term,$limit=NULL,$category=NULL,$active=true,$modes=NULL,$count=false,$start=NULL,$number=NULL,$filter_elements=array()) {
+
+  // check for a category
+  if (!empty($category)) {
+    $form_code_type = collect_codetypes($category,"array");
+  }
+
+  // do the search
   if (!empty($form_code_type)) {
     if ( is_array($form_code_type) && (count($form_code_type) > 1) ) {
       // run the multiple code set search

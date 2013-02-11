@@ -185,7 +185,7 @@ if (!empty($search_financial_reporting)) {
 }
 
 if (isset($_REQUEST['filter'])) {
- $count = main_code_set_search($filter_key,$search,NULL,NULL,true,false,NULL,NULL,$filter_elements);
+ $count = main_code_set_search($filter_key,$search,NULL,NULL,false,NULL,true,NULL,NULL,$filter_elements);
 }
 
 if ($fstart >= $count) $fstart -= $pagesize;
@@ -588,7 +588,7 @@ while ($prow = sqlFetchArray($pres)) {
 <?php
 
 if (isset($_REQUEST['filter'])) {
-  $res = main_code_set_search($filter_key,$search,NULL,NULL,false,false,$fstart,($fend - $fstart),$filter_elements);
+  $res = main_code_set_search($filter_key,$search,NULL,NULL,false,NULL,false,$fstart,($fend - $fstart),$filter_elements);
 }
 
 for ($i = 0; $row = sqlFetchArray($res); $i++) $all[$i] = $row;
