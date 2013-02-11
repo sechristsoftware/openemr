@@ -281,3 +281,39 @@ INSERT INTO code_types (ct_key, ct_id, ct_seq, ct_mod, ct_just, ct_fee, ct_rel, 
 DROP TABLE `temp_table_one`;
 #EndIf
 
+#IfNotTable background_services 
+CREATE TABLE IF NOT EXISTS `background_services` (
+  `name` 	varchar(31)	NOT NULL,
+  `next_run` 	timestamp	NOT NULL default CURRENT_TIMESTAMP,
+  `is_running`  tinyint(1)	NOT NULL default 0,
+  PRIMARY KEY (`name`)
+) ENGINE=MyISAM;
+#EndIf
+
+#IfNotRow background_services name phimail
+INSERT INTO `background_services` (name) VALUES ('phimail');
+#EndIf
+
+#IfNotRow users username phimail-service
+INSERT INTO `users` (username,password,lname,authorized,active) 
+  VALUES ('phimail-service','NoLogin','phiMail Gateway',0,0);
+#EndIf
+
+#IfNotTable direct_message_log
+CREATE TABLE IF NOT EXISTS `direct_message_log` (
+  `id` bigint(20) NOT NULL auto_increment,
+  `msg_type` char(1) NOT NULL COMMENT 'S=sent, R=received',
+  `msg_id` varchar(127) NOT NULL,
+  `sender` varchar(255) NOT NULL,
+  `recipient` varchar(255) NOT NULL,
+  `create_ts` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `status` char(1) NOT NULL COMMENT 'Q=queued,D=dispatched,R=received,F=failed',
+  `status_info` varchar(511) default NULL,
+  `status_ts` timestamp NULL default NULL,
+  `patient_id` bigint(20) default NULL,
+  `user` varchar(255) default NULL,
+  PRIMARY KEY  (`id`),
+  KEY `msg_id` (`msg_id`),
+  KEY `patient_id` (`patient_id`)
+) ENGINE=MyISAM;
+#EndIf

@@ -372,6 +372,9 @@ function genFindBlock() {
     // run updater every 60 seconds 
      var repeater = setTimeout("getReminderCount()", 60000); 
    });
+   //piggy-back on this repeater to run other background-services
+   //this is a silent task manager that returns no output
+   $.post("<?php echo $GLOBALS['webroot']; ?>/library/ajax/execute_background_services.php");
  }   
  
  $(document).ready(function (){
