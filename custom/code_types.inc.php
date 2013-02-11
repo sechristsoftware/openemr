@@ -694,7 +694,8 @@ function multiple_code_set_search($form_code_types=array(),$search_term,$limit=N
   foreach ($form_code_types as $form_code_type) {
     // see if there is a hit
     $mode_hit = NULL;
-    $mode_hit = sequential_code_set_search($form_code_type,$search_term,NULL,$modes,$count,$active,NULL,NULL,$filter_elements,true);
+    // only use the count method here, since it's much more efficient than doing the actual query
+    $mode_hit = sequential_code_set_search($form_code_type,$search_term,NULL,$modes,true,$active,NULL,NULL,$filter_elements,true);
     if ($mode_hit) {
       if ($count) {
         // count the hits
