@@ -5166,9 +5166,9 @@ CREATE TABLE `users` (
 --
 -- Dumping data for table `users`
 --
+-- NOTE THIS IS DONE AFTER INSTALLATION WHERE THE sql/official_additional_users.sql script is called durig setup
+--  (so these inserts can be found in the sql/official_additional_users.sql script)
 
-INSERT INTO `users` (username,password,lname,authorized,active) VALUES ('phimail-service','NoLogin','phiMail Gateway',0,0);
-INSERT INTO `users` (username,password,lname,authorized,active) VALUES ('portal-user','NoLogin','Patient Portal User',0,0);
 
 -- --------------------------------------------------------
 

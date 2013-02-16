@@ -111,6 +111,10 @@ require_once("../globals.php");
   </th>
 
   <th align='center'>
+   <?php echo xlt('Automatic'); ?>
+  </th>
+
+  <th align='center'>
    <?php echo xlt('Interval (minutes)'); ?>
   </th>
 
@@ -135,10 +139,33 @@ require_once("../globals.php");
 ?>
  <tr>
       <td align='center'><?php echo xlt($row['title']); ?></td>
-      <td align='center'><?php echo ($row['active']) ? xlt("Yes") : xlt("No"); ?></td>    
-      <td align='center'><?php echo text($row['execute_interval']); ?></td>
-      <td align='center'><?php echo ($row['running']) ? xlt("Yes") : xlt("No"); ?></td>
-      <td align='center'><?php echo text($row['next_run']); ?></td>
+
+      <td align='center'><?php echo ($row['active']) ? xlt("Yes") : xlt("No"); ?></td>
+
+      <?php if ($row['active']) { ?>
+          <td align='center'><?php echo ($row['execute_interval'] > 0) ? xlt("Yes") : xlt("No"); ?></td>
+      <?php } else { ?>
+          <td align='center'><?php echo xlt('Not Applicable'); ?></td>
+      <?php } ?>
+
+      <?php if ($row['active'] && ($row['execute_interval'] > 0)) { ?>
+          <td align='center'><?php echo text($row['execute_interval']); ?></td>
+      <?php } else { ?>
+          <td align='center'><?php echo xlt('Not Applicable'); ?></td>
+      <?php } ?>
+
+      <?php if ( $row['active'] && ($row['execute_interval'] > 0) ) { ?>
+          <td align='center'><?php echo ($row['running']) ? xlt("Yes") : xlt("No"); ?></td>
+      <?php } else { ?>
+          <td align='center'><?php echo xlt('Not Applicable'); ?></td>
+      <?php } ?>
+
+      <?php if ( $row['active'] && ($row['execute_interval'] > 0) ) { ?>
+          <td align='center'><?php echo text($row['next_run']); ?></td>
+      <?php } else { ?>
+          <td align='center'><?php echo xlt('Not Applicable'); ?></td>
+      <?php } ?>
+
       <?php if ($row['name'] == "phimail") { ?>
          <td align='center'><a href='direct_message_log.php' onclick='top.restoreSession()'><?php echo xlt("View Log"); ?></a></td>
       <?php } else { ?>
