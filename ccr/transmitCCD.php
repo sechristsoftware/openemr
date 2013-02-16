@@ -52,25 +52,25 @@ function transmitCCD($ccd,$recipient,$requested_by) {
 	       break;
        default: return("$config_err 2");
    }
-   $fp=fsockopen($server,$phimail_server['port'],$err1,$err2);
+   $fp=@fsockopen($server,$phimail_server['port']);
    if ($fp===false) return("$config_err 3");
    @fwrite($fp,"AUTH $phimail_username $phimail_password\n");
-   @fflush($fp);
-   $ret=@fgets($fp,256);
+   fflush($fp);
+   $ret=fgets($fp,256);
    if($ret!="OK\n") {
-       @fwrite($fp,"BYE\n");
-       @fclose($fp);
+       fwrite($fp,"BYE\n");
+       fclose($fp);
        return("$config_err 4");
    }
-   @fwrite($fp,"TO $recipient\n");
-   @fflush($fp);
-   $ret=@fgets($fp,256);
+   fwrite($fp,"TO $recipient\n");
+   fflush($fp);
+   $ret=fgets($fp,256);
    if($ret!="OK\n") {
-       @fwrite($fp,"BYE\n");
-       @fclose($fp);
+       fwrite($fp,"BYE\n");
+       fclose($fp);
        return( xl("Delivery is not currently permitted to the specified Direct Address.") );
    }
-   $ret=@fgets($fp,1024); //ignore extra server data
+   $ret=fgets($fp,1024); //ignore extra server data
 
    if($requested_by=="patient")
 	$text_out = xl("Delivery of the attached clinical document was requested by the patient.");
@@ -78,52 +78,62 @@ function transmitCCD($ccd,$recipient,$requested_by) {
 	$text_out = xl("A clinical document is attached.");
 
    $text_len=strlen($text_out);
-   @fwrite($fp,"TEXT $text_len\n");
-   @fflush($fp);
+   fwrite($fp,"TEXT $text_len\n");
+   fflush($fp);
    $ret=@fgets($fp,256);
    if($ret!="BEGIN\n") {
-       @fwrite($fp,"BYE\n");
-       @fclose($fp);
+       fwrite($fp,"BYE\n");
+       fclose($fp);
        return("$config_err 5");
    }
-   @fwrite($fp,$text_out);
-   @fflush($fp);
+   fwrite($fp,$text_out);
+   fflush($fp);
    $ret=@fgets($fp,256);
    if($ret!="OK\n") {
-       @fwrite($fp,"BYE\n");
-       @fclose($fp);
+       fwrite($fp,"BYE\n");
+       fclose($fp);
        return("$config_err 6");
    }
 
    $ccd_out=$ccd->saveXml();
    $ccd_len=strlen($ccd_out);
 
-   @fwrite($fp,"CDA $ccd_len\n");
-   @fflush($fp);
-   $ret=@fgets($fp,256);
+   fwrite($fp,"CDA $ccd_len\n");
+   fflush($fp);
+   $ret=fgets($fp,256);
    if($ret!="BEGIN\n") {
-       @fwrite($fp,"BYE\n");
-       @fclose($fp);
+       fwrite($fp,"BYE\n");
+       fclose($fp);
        return("$config_err 7");
    }
-   @fwrite($fp,$ccd_out);
-   @fflush($fp);
-   $ret=@fgets($fp,256);
+   fwrite($fp,$ccd_out);
+   fflush($fp);
+   $ret=fgets($fp,256);
    if($ret!="OK\n") {
-       @fwrite($fp,"BYE\n");
-       @fclose($fp);
+       fwrite($fp,"BYE\n");
+       fclose($fp);
        return("$config_err 8");
    }
-   @fwrite($fp,"SEND\n");
-   @fflush($fp);
-   $ret=@fgets($fp,256);
-   @fwrite($fp,"BYE\n");
-   @fclose($fp);
+   fwrite($fp,"SEND\n");
+   fflush($fp);
+   $ret=fgets($fp,256);
+   fwrite($fp,"BYE\n");
+   fclose($fp);
 
-   if($requested_by=="patient") 
+   if($requested_by=="patient")  {
 	$reqBy="portal-user";
-   else
+	$sql = "SELECT id FROM users WHERE username='portal-user'";
+	if (($r = sqlStatementNoLog($sql)) === FALSE ||
+	    ($u = sqlFetchArray($r)) === FALSE) {
+	    $reqID = 1; //default if we don't have a service user
+	} else {
+	    $reqID = $u['id'];
+	}
+
+   } else {
 	$reqBy=$_SESSION['authUser'];
+        $reqID=$_SESSION['authUserID'];
+   }
 
    if(substr($ret,5)=="ERROR") {
        //log the failure
@@ -144,9 +154,9 @@ function transmitCCD($ccd,$recipient,$requested_by) {
    }
    newEvent("transmit-ccd",$reqBy,$_SESSION['authProvider'],1,$ret,$pid);
    $adodb=$GLOBALS['adodb']['db'];
-   $sql="INSERT INTO direct_message_log (msg_type,msg_id,sender,recipient,status,status_ts,patient_id,user) " .
+   $sql="INSERT INTO direct_message_log (msg_type,msg_id,sender,recipient,status,status_ts,patient_id,user_id) " .
 	"VALUES ('S', ?, ?, ?, 'S', NOW(), ?, ?)";
-   $res=@sqlStatementNoLog($sql,array($msg_id[2],$phimail_username,$recipient,$pid,$reqBy));
+   $res=@sqlStatementNoLog($sql,array($msg_id[2],$phimail_username,$recipient,$pid,$reqID));
 
    return("SUCCESS");
 }

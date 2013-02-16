@@ -283,15 +283,22 @@ DROP TABLE `temp_table_one`;
 
 #IfNotTable background_services 
 CREATE TABLE IF NOT EXISTS `background_services` (
-  `name` 	varchar(31)	NOT NULL,
-  `next_run` 	timestamp	NOT NULL default CURRENT_TIMESTAMP,
-  `is_running`  tinyint(1)	NOT NULL default 0,
-  PRIMARY KEY (`name`)
+  `name` varchar(31) NOT NULL,
+  `title` varchar(127) NOT NULL COMMENT 'name for reports',
+  `active` tinyint(1) NOT NULL default '0',
+  `running` tinyint(1) NOT NULL default '0',
+  `next_run` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `execute_interval` int(11) NOT NULL default '5' COMMENT 'minimum number of minutes between function calls',
+  `function` varchar(127) NOT NULL COMMENT 'name of background service function',
+  `require_once` varchar(255) default NULL COMMENT 'include file (if necessary)',
+  `sort_order` int(11) NOT NULL default '100' COMMENT 'lower numbers will be run first',
+  PRIMARY KEY  (`name`)
 ) ENGINE=MyISAM;
 #EndIf
 
 #IfNotRow background_services name phimail
-INSERT INTO `background_services` (name) VALUES ('phimail');
+INSERT INTO `background_services` (`name`, `title`, `function`, `require_once`, `sort_order`) VALUES
+('phimail', 'phiMail Direct Messaging Service', 'phimail_check', '/library/direct_message_check.inc', 100);
 #EndIf
 
 #IfNotRow users username phimail-service
@@ -299,10 +306,15 @@ INSERT INTO `users` (username,password,lname,authorized,active)
   VALUES ('phimail-service','NoLogin','phiMail Gateway',0,0);
 #EndIf
 
+#IfNotRow users username portal-user
+INSERT INTO `users` (username,password,lname,authorized,active) 
+  VALUES ('portal-user','NoLogin','Patient Portal User',0,0);
+#EndIf
+
 #IfNotTable direct_message_log
 CREATE TABLE IF NOT EXISTS `direct_message_log` (
   `id` bigint(20) NOT NULL auto_increment,
-  `msg_type` char(1) NOT NULL COMMENT 'S=sent, R=received',
+  `msg_type` char(1) NOT NULL COMMENT 'S=sent,R=received',
   `msg_id` varchar(127) NOT NULL,
   `sender` varchar(255) NOT NULL,
   `recipient` varchar(255) NOT NULL,
@@ -311,7 +323,7 @@ CREATE TABLE IF NOT EXISTS `direct_message_log` (
   `status_info` varchar(511) default NULL,
   `status_ts` timestamp NULL default NULL,
   `patient_id` bigint(20) default NULL,
-  `user` varchar(255) default NULL,
+  `user_id` bigint(20) default NULL,
   PRIMARY KEY  (`id`),
   KEY `msg_id` (`msg_id`),
   KEY `patient_id` (`patient_id`)

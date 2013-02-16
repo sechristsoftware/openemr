@@ -374,7 +374,8 @@ function genFindBlock() {
    });
    //piggy-back on this repeater to run other background-services
    //this is a silent task manager that returns no output
-   $.post("<?php echo $GLOBALS['webroot']; ?>/library/ajax/execute_background_services.php");
+   $.post("<?php echo $GLOBALS['webroot']; ?>/library/ajax/execute_background_services.php",
+      { skip_timeout_reset: "1", ajax: "1" });
  }   
  
  $(document).ready(function (){
@@ -1125,6 +1126,7 @@ if ($GLOBALS['athletic_team']) {
       <?php genTreeLink('RTop','ono',xl('Ofc Notes')); ?>
       <?php genMiscLink('RTop','adm','0',xl('BatchCom'),'batchcom/batchcom.php'); ?>
       <?php genMiscLink('RTop','prf','0',xl('Preferences'),'super/edit_globals.php?mode=user'); ?>
+      <?php if(acl_check('patients','docs')) genMiscLink('RTop','adm','0',xl('New Documents'),'../controller.php?document&list&patient_id=0'); ?>
     </ul>
   </li>
 
@@ -1398,6 +1400,7 @@ if (!empty($reg)) {
       <?php genMiscLink('RTop','adm','0',xl('BatchCom'),'batchcom/batchcom.php'); ?>
       <?php genTreeLink('RTop','pwd',xl('Password')); ?>
       <?php genMiscLink('RTop','prf','0',xl('Preferences'),'super/edit_globals.php?mode=user'); ?>
+      <?php if(acl_check('patients','docs')) genMiscLink('RTop','adm','0',xl('New Documents'),'../controller.php?document&list&patient_id=0'); ?>
     </ul>
   </li>
 

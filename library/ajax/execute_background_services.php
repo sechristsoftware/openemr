@@ -4,17 +4,27 @@
  *
  * This script may be executed by a suitable Ajax request, by a cron job, or both.
  *
+ * When called from cron, optinal args are [site] [service] [force]
+ * @param site to specify a specific site, 'default' used if omitted
+ * @param service to specify a specific service, 'all' used if omitted
+ * @param force '1' to ignore specified wait interval, '0' to honor wait interval
+ *
+ * The same parameters can be accessed via Ajax using the $_POST variables
+ * 'site', 'background_service', and 'background_force', respectively.
+ *
  * For both calling methods, this script guarantees that each active
- * background service call will not be called again before it has completed,
- * and will not be called any more frequently than at the specified interval.
- * 
- * Notes:
+ * background service function: (1) will not be called again before it has completed,
+ * and (2) will not be called any more frequently than at the specified interval
+ * (unless the force execution flag is used).  A service function that is already running 
+ * will not be called a second time even if the force execution flag is used.
+ *
+ * Notes for the default background behavior:
  * 1. If the Ajax method is used, services will only be checked while
  * Ajax requests are being received, which is currently only when users are
  * logged in. 
  * 2. All services are checked and called sequentially in the order specified
- * by the array below. Service calls that are "slow" should be put at the end
- * of the list.
+ * by the sort_order field in the background_services table. Service calls that are "slow" 
+ * should be given a higher sort_order value.
  * 3. The actual interval between two calls to a given background service may be
  * as long as the time to complete that service plus the interval between
  * n+1 calls to this script where n is the number of other services preceding it
@@ -44,17 +54,25 @@
 
 //SANITIZE ALL ESCAPES
 $sanitize_all_escapes=true;
-//
 
 //STOP FAKE REGISTER GLOBALS
 $fake_register_globals=false;
-//
 
-//while the number of services is small, dependencies can be loaded here
-//when some critical threshold is reached, this may need to be revisited.
+//ajax param should be set by calling ajax scripts
+$isAjaxCall = isset($_POST['ajax']);
+
+//if false, we may assume this is a cron job and set up accordingly
+if (!$isAjaxCall) {
+   $ignoreAuth = 1; 
+   //process optional arguments when called from cron
+   $_GET['site'] = (isset($argv[1])) ? $argv[1] : 'default';
+   if (isset($argv[2]) && $argv[2]!='all') $_GET['background_service'] = $argv[2];
+   if (isset($argv[3]) && $argv[3]=='1') $_GET['background_force'] = 1;
+}
+
+//an additional require file can be specified for each service in the background_services table
 require_once(dirname(__FILE__) . "/../../interface/globals.php");
 require_once(dirname(__FILE__) . "/../sql.inc");
-require_once(dirname(__FILE__) . "/../direct_message_check.inc");
 
 //Remove time limit so script doesn't time out
 set_time_limit(0);
@@ -65,75 +83,66 @@ session_write_close();
 //Safety in case one of the background functions tries to output data
 ignore_user_abort(1);
 
-//ajax=true should be set by calling ajax scripts
-//if false, we may assume this is a cron job
-$isAjaxCall = isset($_POST['ajax']);
-
 /**
- * @var timed_functions: array of timed services
- * Each element is an array and desribes one service, following this format:
- *   'service_name' => array(
- *      is_active,  //expression that evaluates to true only if the service is active,
- *	interval,   //the interval at which the service task should be run in seconds,
- *	func_name,  //the function_name to call to perform the task,
- *	func_param  //an optional parameter to pass to the function (or NULL)
- *   )
- *
- * Each service must do its own logging, as appropriate, and should disable itself
+ * Execute background services
+ * This function reads a list of available services from the background_services table
+ * For each service that is not already running and is due for execution, the associated
+ * background function is run.
+ * 
+ * Note: Each service must do its own logging, as appropriate, and should disable itself
  * to prevent continued service calls if an error condition occurs which requires 
- * administrator intervention. The function return values and output are ignored.
- *
+ * administrator intervention. Any service function return values and output are ignored.
  */
 
-$timed_functions = array(
-    'phimail' => array(
-	$GLOBALS['phimail_enable'],	// true when service activated
-	300,				// 5 minute minimum interval between calls (300 seconds)
-	'phimail_check',		// name of service function to be called
-	NULL				// optional parameter not used for this service
-    )
-);
-
-//In case a service function calls die() or exit()
-register_shutdown_function(background_shutdown);
-
 function execute_background_service_calls() {
+  /**
+   * Note: The global $service_name below is set to the name of the service currently being 
+   * processed before the actual service function call, and is unset after normal
+   * completion of the loop. If the script exits abnormally, the shutdown_function
+   * uses the value of $service_name to do any required clean up.
+   */
   global $service_name;
-  global $timed_functions;
 
-  foreach($timed_functions as $service_name => $service_param) {
-    $adodb = $GLOBALS['adodb']['db'];
+  $single_service = (isset($_GET['background_service']) ? $_GET['background_service'] : 
+	(isset($_POST['background_service']) ? $_POST['background_service'] : ''));
+  $force = ($_GET['background_force'] || $_POST['background_force']) ? 
+	'' : 'AND NOW() > next_run '; 
 
-    if(!$service_param[0]) continue;
-    $interval=(int)$service_param[1];
+  $sql = 'SELECT * FROM background_services';
+  if ($single_service!="")
+    $services = sqlStatementNoLog($sql.' WHERE name=?',array($single_service));
+  else
+    $services = sqlStatementNoLog($sql.' ORDER BY sort_order');
+
+  while($service = sqlFetchArray($services)){
+    $service_name = $service['name'];
+    if(!$service['active'] || $service['running']) continue;
+    $interval=(int)$service['execute_interval'];
 
     //leverage locking built-in to UPDATE to prevent race conditions
     //will need to assess performance in high concurrency setting at some point
-    $sql="UPDATE background_services SET is_running = 1, next_run = NOW()+ INTERVAL " .
-	$interval. " SECOND WHERE is_running = 0 AND NOW() > next_run AND name=" . 
-	$adodb->qstr($service_name) ;
+    $sql='UPDATE background_services SET running = 1, next_run = NOW()+ INTERVAL ?'
+	. ' MINUTE WHERE running = 0 ' . $force . 'AND name = ?';
+    if(sqlStatementNoLog($sql,array($interval,$service_name))===FALSE) continue;
+    $acquiredLock =  mysql_affected_rows($GLOBALS['dbh']);
+    if($acquiredLock<1) continue; //service is already running or not due yet
 
-    if(@sqlStatementNoLog($sql)===FALSE) continue;
-    $acquiredLock =  @mysql_affected_rows($GLOBALS['dbh']);
-    if($acquiredLock<1) continue;
+    if ($service['require_once'])
+	require_once($GLOBALS['fileroot'] . $service['require_once']);
+    if (!function_exists($service['function'])) continue;
 
     //use try/catch in case service functions throw an unexpected Exception
     try {
-	if(isset($service_param[3]))
-	    @$service_param[2]($service_param[3]);
-	else
-	    @$service_param[2]();
+	$service['function']();
     } catch (Exception $e) {
 	//do nothing
     }
 
-    $sql="UPDATE background_services SET is_running=0 WHERE name=" . $adodb->qstr($service_name);
-    $res = @sqlStatementNoLog($sql);
+    $sql = 'UPDATE background_services SET running = 0 WHERE name = ?';
+    $res = sqlStatementNoLog($sql, array($service_name));
   }
-}
 
-execute_background_service_calls();
-unset($service_name);
+}
 
 /**
  * Catch unexpected failures.
@@ -143,17 +152,18 @@ unset($service_name);
  * so we need to reset the is_running flag for that service before quitting
  */
 
-
 function background_shutdown() {
-  global $service_name;
-  $adodb = $GLOBALS['adodb']['db'];
-  
+  global $service_name; //required for proper functioning
   if (isset($service_name)) {
     
-    $sql="UPDATE background_services SET is_running=0 WHERE name=" . $adodb->qstr($service_name);
-    $res = @sqlStatementNoLog($sql);
+    $sql = 'UPDATE background_services SET running = 0 WHERE name = ?';
+    $res = sqlStatementNoLog($sql, array($service_name));
 
   }
 }
+
+register_shutdown_function(background_shutdown);
+execute_background_service_calls();
+unset($service_name);
 
 ?>
