@@ -288,7 +288,7 @@ CREATE TABLE IF NOT EXISTS `background_services` (
   `active` tinyint(1) NOT NULL default '0',
   `running` tinyint(1) NOT NULL default '0',
   `next_run` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  `execute_interval` int(11) NOT NULL default '5' COMMENT 'minimum number of minutes between function calls',
+  `execute_interval` int(11) NOT NULL default '0' COMMENT 'minimum number of minutes between function calls,0=manual mode',
   `function` varchar(127) NOT NULL COMMENT 'name of background service function',
   `require_once` varchar(255) default NULL COMMENT 'include file (if necessary)',
   `sort_order` int(11) NOT NULL default '100' COMMENT 'lower numbers will be run first',
@@ -297,8 +297,8 @@ CREATE TABLE IF NOT EXISTS `background_services` (
 #EndIf
 
 #IfNotRow background_services name phimail
-INSERT INTO `background_services` (`name`, `title`, `function`, `require_once`, `sort_order`) VALUES
-('phimail', 'phiMail Direct Messaging Service', 'phimail_check', '/library/direct_message_check.inc', 100);
+INSERT INTO `background_services` (`name`, `title`, `execute_interval`, `function`, `require_once`, `sort_order`) VALUES
+('phimail', 'phiMail Direct Messaging Service', 5, 'phimail_check', '/library/direct_message_check.inc', 100);
 #EndIf
 
 #IfNotRow users username phimail-service

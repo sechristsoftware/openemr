@@ -108,9 +108,9 @@ function execute_background_service_calls() {
   $force = ($_GET['background_force'] || $_POST['background_force']) ? 
 	'' : 'AND NOW() > next_run '; 
 
-  $sql = 'SELECT * FROM background_services';
+  $sql = 'SELECT * FROM background_services WHERE execute_interval > 0';
   if ($single_service!="")
-    $services = sqlStatementNoLog($sql.' WHERE name=?',array($single_service));
+    $services = sqlStatementNoLog($sql.' AND name=?',array($single_service));
   else
     $services = sqlStatementNoLog($sql.' ORDER BY sort_order');
 
@@ -153,7 +153,7 @@ function execute_background_service_calls() {
  */
 
 function background_shutdown() {
-  global $service_name; //required for proper functioning
+  global $service_name;
   if (isset($service_name)) {
     
     $sql = 'UPDATE background_services SET running = 0 WHERE name = ?';

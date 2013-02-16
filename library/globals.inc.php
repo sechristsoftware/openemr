@@ -1556,8 +1556,8 @@ $GLOBALS_METADATA = array(
     'phimail_interval' => array(
       xl('phiMail Message Check Interval (minutes)'),
       'num',                           // data type
-      '10',
-      xl('Contact EMR Direct to subscribe to the phiMail Direct messaging service')
+      '5',
+      xl('Interval between message checks (set to zero for manual checks only)')
     )
 
   ),
