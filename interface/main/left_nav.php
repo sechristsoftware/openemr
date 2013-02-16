@@ -1098,7 +1098,7 @@ if ($GLOBALS['athletic_team']) {
       <?php if (acl_check('admin', 'users'    )) genMiscLink('RTop','adm','0',xl('Users'),'usergroup/usergroup_admin.php'); ?>
       <?php genTreeLink('RTop','pwd','Users Password Change'); ?>
       <?php if (acl_check('admin', 'practice' )) genMiscLink('RTop','adm','0',xl('Practice'),'../controller.php?practice_settings'); ?>
-      <?php if (acl_check('admin', 'superbill')) genTreeLink('RTop','sup',xl('Services')); ?>
+      <?php if (acl_check('admin', 'superbill')) genTreeLink('RTop','sup',xl('Codes')); ?>
       <?php if (acl_check('admin', 'super'    )) genMiscLink('RTop','adm','0',xl('Layouts'),'super/edit_layout.php'); ?>
       <?php if (acl_check('admin', 'super'    )) genMiscLink('RTop','adm','0',xl('Lists'),'super/edit_list.php'); ?>
       <?php if (acl_check('admin', 'acl'      )) genMiscLink('RTop','adm','0',xl('ACL'),'usergroup/adminacl.php'); ?>
@@ -1252,7 +1252,7 @@ if (!empty($reg)) {
       <?php
 	  // Changed the target URL from practice settings -> Practice Settings - Pharmacy... Dec 09,09 .. Visolve ... This replaces empty frame with Pharmacy window
 	  if (acl_check('admin', 'practice' )) genMiscLink('RTop','adm','0',xl('Practice'),'../controller.php?practice_settings&pharmacy&action=list'); ?>
-      <?php if (acl_check('admin', 'superbill')) genTreeLink('RTop','sup',xl('Services')); ?>
+      <?php if (acl_check('admin', 'superbill')) genTreeLink('RTop','sup',xl('Codes')); ?>
       <?php if (acl_check('admin', 'super'    )) genMiscLink('RTop','adm','0',xl('Layouts'),'super/edit_layout.php'); ?>
       <?php if (acl_check('admin', 'super'    )) genMiscLink('RTop','adm','0',xl('Lists'),'super/edit_list.php'); ?>
       <?php if (acl_check('admin', 'acl'      )) genMiscLink('RTop','adm','0',xl('ACL'),'usergroup/adminacl.php'); ?>
@@ -1385,6 +1385,15 @@ if (!empty($reg)) {
 ?>
         </ul>
       </li>
+    <?php if (acl_check('admin','super')) { ?>
+      <li><a class="collapsed_lv2"><span><?php echo xlt('Services') ?></span></a>
+        <ul>
+          <?php genMiscLink('RTop','rep','0',xl('Background Services'),'reports/background_services.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Direct Message Log'),'reports/direct_message_log.php'); ?>
+        </ul>
+      </li>
+    <?php } ?>
+
       <?php // genTreeLink('RTop','rep','Other'); ?>
     </ul>
   </li>
