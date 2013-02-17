@@ -105,10 +105,9 @@ function execute_background_service_calls() {
 
   $single_service = (isset($_GET['background_service']) ? $_GET['background_service'] : 
 	(isset($_POST['background_service']) ? $_POST['background_service'] : ''));
-  $force = ($_GET['background_force'] || $_POST['background_force']) ? 
-	'' : 'AND NOW() > next_run '; 
+  $force = ($_GET['background_force'] || $_POST['background_force']);
 
-  $sql = 'SELECT * FROM background_services WHERE execute_interval > 0';
+  $sql = 'SELECT * FROM background_services WHERE ' . ($force ? '1' : 'execute_interval > 0');
   if ($single_service!="")
     $services = sqlStatementNoLog($sql.' AND name=?',array($single_service));
   else
@@ -122,7 +121,7 @@ function execute_background_service_calls() {
     //leverage locking built-in to UPDATE to prevent race conditions
     //will need to assess performance in high concurrency setting at some point
     $sql='UPDATE background_services SET running = 1, next_run = NOW()+ INTERVAL ?'
-	. ' MINUTE WHERE running = 0 ' . $force . 'AND name = ?';
+	. ' MINUTE WHERE running < 1 ' . ($force ? '' : 'AND NOW() > next_run ') . 'AND name = ?';
     if(sqlStatementNoLog($sql,array($interval,$service_name))===FALSE) continue;
     $acquiredLock =  mysql_affected_rows($GLOBALS['dbh']);
     if($acquiredLock<1) continue; //service is already running or not due yet

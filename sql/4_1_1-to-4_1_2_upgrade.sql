@@ -286,7 +286,7 @@ CREATE TABLE IF NOT EXISTS `background_services` (
   `name` varchar(31) NOT NULL,
   `title` varchar(127) NOT NULL COMMENT 'name for reports',
   `active` tinyint(1) NOT NULL default '0',
-  `running` tinyint(1) NOT NULL default '0',
+  `running` tinyint(1) NOT NULL default '-1',
   `next_run` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `execute_interval` int(11) NOT NULL default '0' COMMENT 'minimum number of minutes between function calls,0=manual mode',
   `function` varchar(127) NOT NULL COMMENT 'name of background service function',
