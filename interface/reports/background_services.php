@@ -40,6 +40,8 @@ require_once("../globals.php");
 
 <title><?php echo xlt('Background Services'); ?></title>
 
+<script type="text/javascript" src="../../library/js/jquery-1.7.2.min.js"></script>
+
 <style type="text/css">
 
 /* specifically include & exclude from printing */
