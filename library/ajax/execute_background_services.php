@@ -115,7 +115,7 @@ function execute_background_service_calls() {
 
   while($service = sqlFetchArray($services)){
     $service_name = $service['name'];
-    if(!$service['active'] || $service['running']) continue;
+    if(!$service['active'] || $service['running'] == 1) continue;
     $interval=(int)$service['execute_interval'];
 
     //leverage locking built-in to UPDATE to prevent race conditions
