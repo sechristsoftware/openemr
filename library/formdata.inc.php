@@ -12,8 +12,8 @@
  *
  */
 
-/** Main function that will manage POST, GET, and REQUEST variables 
- *
+/**(Note this function is deprecated and no longer used for new scripts)
+ * Main function that will manage POST, GET, and REQUEST variables 
  * @param string $name name of the variable requested.
  * @param string $type 'P', 'G' for post or get data, otherwise uses request.
  * @param bool $istrim whether to use trim() on the data.
@@ -30,6 +30,7 @@ function formData($name, $type='P', $isTrim=false) {
   return formDataCore($s,$isTrim);
 }
 
+//(Note this function is deprecated and no longer used for new scripts)
 // Core function that will be called by formData.
 // Note it can also be called directly if preparing
 // normal variables (not GET,POST, or REQUEST)
@@ -43,6 +44,7 @@ function formDataCore($s, $isTrim=false) {
       return $s;
 }
 
+//(Note this function is deprecated and no longer used for new scripts)
 // Will remove escapes if needed (ie magic quotes turned on) from string
 // Called by above formDataCore() function to prepare for database insertion.
 // Can also be called directly if simply need to remove escaped characters
@@ -62,6 +64,35 @@ function add_escape_custom($s) {
       //prepare for safe mysql insertion
       $s = mysql_real_escape_string($s);
       return $s;
+}
+
+// Will escape integers within the LIMIT ?, ? part of a sql query.
+// Note that there is a maximum value to these numbers, which is why
+// should only use for the LIMIT ? , ? part of the sql query and why
+// this is centralized to a function (in case need to upgrade this
+// function to support larger numbers in the future).
+function escape_limit($s) {
+      //prepare for safe mysql insertion
+      $s = (int)$s;
+      return $s;
+}
+
+// Will escape sort order string.
+// Done by whitelisting only certain keywords.
+// If the keyword is illegal, then will default to ASC.
+function escape_sort_order($s) {
+      $ok = array("asc","desc");
+      $key = array_search(strtolower($s),$ok);
+      return $ok[$key];
+}
+
+// Will escape sort order string.
+// Done by whitelisting only certain identifiers($whitelist is an array of acceptable identifiers).
+// If the keyword is illegal, then will default to the first item in $whitelist array.
+function escape_identifier($s,$whitelist) {
+      $ok = $whitelist;
+      $key = array_search($s,$ok);
+      return $ok[$key];
 }
 
 // This function is only being kept to support
