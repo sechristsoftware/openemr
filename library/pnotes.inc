@@ -78,7 +78,7 @@ function getPnotesByUser($activity="1",$show_all="no",$user='',$count=false,$sor
           LEFT JOIN patient_data ON pnotes.pid = patient_data.pid) WHERE $activity_query
           pnotes.deleted != '1' AND pnotes.assigned_to LIKE ?";
   if (!empty($sortby) || !empty($sortorder)  || !empty($begin) || !empty($listnumber)) {
-    $sql .= " order by ".escape_identifier($sortby,TRUE,$sortbyoptions).
+    $sql .= " order by ".escape_identifier($sortby,$sortbyoptions).
             " ".escape_sort_order($sortorder).
             " limit ".escape_limit($begin).", ".escape_limit($listnumber);
   }
