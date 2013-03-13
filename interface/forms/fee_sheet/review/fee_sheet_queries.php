@@ -68,6 +68,9 @@ function update_issues($pid,$encounter,$diags)
     $idx_list_id=count($encounter_params)-1;
     foreach($diags as $diags)
     {
+        // ensure that the code type is active and allowed to create problems
+        if (!(check_code_set_filters($diags->code_type,array("active","problem")))) continue;
+
         $diagnosis_key=$diags->code_type.":".$diags->code;
         $list_id=null;
         if($diags->db_id!=null)
