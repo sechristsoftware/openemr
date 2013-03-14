@@ -24,6 +24,7 @@ $sanitize_all_escapes=true;
 
 require_once("../../../globals.php");
 
+require_once("../../custom/code_types.inc.php");
 require_once("fee_sheet_queries.php");
 include_once("$srcdir/jsonwrapper/jsonwrapper.php");
 if(!acl_check('acct', 'bill'))
@@ -86,8 +87,17 @@ if($task=='update')
         }
         else
         {
-            $new_diag->db_id=null;
-            $new_diag->create_problem=$diag->{'create_problem'};
+            if(check_code_set_filters($diag->{'code_type'},array("active","problem")))
+            {
+                // The code type is set to code medical problems.
+                $new_diag->db_id=null;
+                $new_diag->create_problem=$diag->{'create_problem'};
+            }
+            else
+            {
+                // The code type is not set to code medical problems.
+                $new_diag->db_id=0;
+            }
         }
         $diags[]=$new_diag;
     }

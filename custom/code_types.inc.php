@@ -250,8 +250,11 @@ function check_code_set_filters($key,$filters=array()) {
  if (empty($filters)) return false;
 
  foreach ($filters as $filter) {
-  if (!($code_types[$key][$filter])) return false;
+  if ($code_types[$key][$filter] != 1) return false;
  }
+
+ // Filter was passed
+ return true;
 }
 
 /**

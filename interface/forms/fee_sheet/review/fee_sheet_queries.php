@@ -254,6 +254,10 @@ function issue_diagnoses($pid,$encounter)
             $diagnosis=explode(":",$code_key);
             $code=$diagnosis[1];
             $code_type=$diagnosis[0];
+
+            // ensure that the code type is active and allowed to be used as a diagnosis code
+            if (!(check_code_set_filters($code_type,array("active","diag")))) continue; 
+ 
             $new_info=new code_info($code,$code_type,$title,$res['selected']!=0);
             $new_info->db_id=$db_id;
             $retval[]=$new_info;
