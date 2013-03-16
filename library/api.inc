@@ -108,7 +108,7 @@ function formJump ($address = "0")
 function formFetch ($tableName, $id, $cols="*", $activity="1")
 {
         // Note that tableName is hard-coded, so no need to run through escape_table_name() function (at least not yet).
-	return sqlQuery ( "select $cols from `" . $tableName . "` where id=? and pid = ? and activity like ? order by date DESC LIMIT 0,1", array($id,{$GLOBALS['pid']},$activity) ) ;
+	return sqlQuery ( "select $cols from `" . $tableName . "` where id=? and pid = ? and activity like ? order by date DESC LIMIT 0,1", array($id,$GLOBALS['pid'],$activity) ) ;
 }
 
 function formGetIds ($tableName, $cols = "*", $limit='all', $start=0, $activity = "1")
