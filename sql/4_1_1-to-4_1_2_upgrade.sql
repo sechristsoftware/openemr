@@ -352,3 +352,33 @@ UPDATE code_types SET ct_problem = 1 WHERE ct_key='ICD10';
 UPDATE code_types SET ct_problem = 1 WHERE ct_key='SNOMED';
 #EndIf
 
+#IfMissingColumn procedure_questions tips
+ALTER TABLE `immunizations`
+  MODIFY COLUMN administered_date datetime;
+#EndIf
+
+#IfMissingColumn procedure_questions tips
+ALTER TABLE `immunizations`
+  ADD COLUMN `amount_administered_unit` varchar(50) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn procedure_questions tips
+ALTER TABLE `immunizations`
+  ADD COLUMN `expiration_date` datetime DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn procedure_questions tips
+ALTER TABLE `immunizations`
+  ADD COLUMN `route` varchar(100) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn procedure_questions tips
+ALTER TABLE `immunizations`
+  ADD COLUMN `administration_site` varchar(100) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn procedure_questions tips
+ALTER TABLE `immunizations`
+  ADD COLUMN `added_erroneously` tinyint(1) DEFAULT 0;
+#EndIf
+

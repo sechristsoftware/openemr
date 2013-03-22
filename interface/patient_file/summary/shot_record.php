@@ -27,20 +27,28 @@ $res2 = sqlQuery("select concat(p.lname,', ',p.fname,' ',p.mname) patient_name "
                 );
 
 //collect immunizations
-$sqlstmt = "select date_format(i1.administered_date,'%Y-%m-%d') as '" . xl('Date') . "\n" . xl('Administered') . "' ".
+$sqlstmt = "select date_format(i1.administered_date,'%Y-%m-%d %H:%i') as '" . xl('Date') . "\n" . xl('Administered') . "' ".
             ",i1.immunization_id as '" . xl('Vaccine') . "' ".
             ",c.code_text_short as cvx_text ".
+			",concat(i1.amount_administered,' ',l_options_d_unit.title) as '" . xl('Amount') . "\n" . xl('Administered') . "' ".
+			",date_format(i1.expiration_date, '%Y-%m-%d') as '" . xl('Expiration') . "\n" . xl('Date') . "' ".
             ",i1.manufacturer as '" . xl('Manufacturer') . "' ".
             ",i1.lot_number as '" . xl('Lot') . "\n" . xl('Number') . "' ".
             ",concat(u.lname,', ',u.fname) as '" . xl('Administered By') . "' ".
             ",date_format(i1.education_date,'%Y-%m-%d') as '" . xl('Patient') . "\n" . xl('Education') . "\n" . xl('Date') . "' ".
-            ",i1.note as '" . xl('Comments') . "'".
+			",l_options_route.title as '" . xl('Route') . "'".
+            ",l_options_admin_site.title as '" . xl('Administration') . "\n" . xl('Site') . "'".
+			",i1.note as '" . xl('Comments') . "'".			
             " from immunizations i1 ".
             " left join users u on i1.administered_by_id = u.id ".
             " left join patient_data p on i1.patient_id = p.pid ".
             " left join code_types ct on ct.ct_key = 'CVX' ".
             " left join codes c on c.code_type = ct.ct_id AND i1.cvx_code = c.code ".
-            " where p.pid = ? ";
+			" left join list_options l_options_d_unit on i1.amount_administered_unit = l_options_d_unit.option_id AND l_options_d_unit.list_id = 'drug_units' ".
+			" left join list_options l_options_route on i1.route = l_options_route.option_id AND l_options_route.list_id = 'drug_route' ".
+			" left join list_options l_options_admin_site on i1.administration_site = l_options_admin_site.option_id AND l_options_admin_site.list_id = 'proc_body_site' ".						
+            " where p.pid = ? ".
+			" and i1.added_erroneously = 0";
 
 // sort the results, as they are on the user's screen
 $sqlstmt .= " order by ";
