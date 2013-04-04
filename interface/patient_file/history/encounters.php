@@ -485,6 +485,7 @@ while ($result4 = sqlFetchArray($res4)) {
           } // end if (!$issue)
 
             // show encounter reason/title
+            $reason_string=nl2br($reason_string);
             echo "<td>".$reason_string;
             echo "<div style='padding-left:10px;'>";
 
