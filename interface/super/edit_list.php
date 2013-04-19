@@ -1,14 +1,34 @@
 <?php
-// Copyright (C) 2007-2011 Rod Roark <rod@sunsetsystems.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+/**
+ * library/sql_upgrade_fx.php Upgrading and patching functions of database.
+ *
+ * Functions to allow safe database modifications
+ * during upgrading and patches.
+ *
+ * Copyright (C) 2007-2011 Rod Roark <rod@sunsetsystems.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Rod Roark <rod@sunsetsystems.com>
+ * @author  Brady Miller <brady@sparmy.com>
+ * @author  Teny <teny@zhservices.com> 
+ * @link    http://www.open-emr.org
+ */
 
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/lists.inc");
 require_once("../../custom/code_types.inc.php");
 
 $list_id = empty($_REQUEST['list_id']) ? 'language' : $_REQUEST['list_id'];
@@ -90,8 +110,10 @@ if ($_POST['formaction']=='save' && $list_id) {
     else if ($list_id == 'issue_types') {
       // special case for issue_types
       sqlStatement("DELETE FROM issue_types");
-      for ($lino = 1; isset($opt["$lino"]['type']); ++$lino) {
+      for ($lino = 1; isset($opt["$lino"]['category']); ++$lino) {
         $iter        = $opt["$lino"];
+        $it_category = formTrim($iter['category']);
+        $it_ordering = formTrim($iter['ordering']);
         $it_type     = formTrim($iter['type']);
         $it_plural   = formTrim($iter['plural']);
         $it_singular = formTrim($iter['singular']);
@@ -99,10 +121,12 @@ if ($_POST['formaction']=='save' && $list_id) {
         $it_style    = formTrim($iter['style']);
         $it_fshow    = formTrim($iter['force_show']);
         
-        if (strlen($it_id) > 0) {
+        if ( (strlen($it_category) > 0) && (strlen($it_type) > 0) ) {
           sqlInsert("INSERT INTO issue_types ( " .
-            "type, plural, singular, abbreviation, style, force_show " .
+            "`category`,`ordering`, `type`, `plural`, `singular`, `abbreviation`, `style`, `force_show` " .
             ") VALUES ( "   .
+            "'$it_category' , " .
+            "'$it_ordering' , " .
             "'$it_type' , " .
             "'$it_plural'  , " .
             "'$it_singular' , " .
@@ -385,10 +409,10 @@ function writeFSLine($category, $option, $codes) {
 function itGenCell($opt_line_no, $it_array, $name, $size, $maxlength, $title='') {
   $value = isset($it_array[$name]) ? $it_array[$name] : '';
   $s = "  <td align='center' class='optcell'";
-  if ($title) $s .= " title='" . addslashes($title) . "'";
+  if ($title) $s .= " title='" . attr($title) . "'";
   $s .= ">";
   $s .= "<input type='text' name='opt[$opt_line_no][$name]' value='";
-  $s .= htmlspecialchars($value, ENT_QUOTES);
+  $s .= attr($value);
   $s .= "' size='$size' maxlength='$maxlength' class='optin' />";
   $s .= "</td>\n";
   return $s;
@@ -437,6 +461,10 @@ function writeCTLine($ct_array) {
     xl('Unique numeric identifier for this type'));
   echo ctGenCell($opt_line_no, $ct_array, 'ct_label' , 6, 30,
     xl('Label for this type'));
+  // if not english and translating lists then show the translation
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+       echo "  <td align='center' class='translation'>" . xlt($ct_array['ct_label']) . "</td>\n";
+  }
   echo ctGenCell($opt_line_no, $ct_array, 'ct_seq' , 2,  3,
     xl('Numeric display order'));
   echo ctGenCell($opt_line_no, $ct_array, 'ct_mod' , 1,  2,
@@ -483,15 +511,26 @@ function writeITLine($it_array) {
   ++$opt_line_no;
   $bgcolor = "#" . (($opt_line_no & 1) ? "ddddff" : "ffdddd");
   echo " <tr bgcolor='$bgcolor'>\n";
-  echo itGenCell($opt_line_no, $it_array, 'type'  , 20, 75, xl('Issue Type')); 
+  echo itGenCell($opt_line_no, $it_array, 'category' , 20, 20, xl('OpenEMR Application Category (Default vs Sports Teams vs IPPF)'));
+  echo itGenCell($opt_line_no, $it_array, 'ordering' , 10, 10, xl('Order'));
+  echo itGenCell($opt_line_no, $it_array, 'type' , 20, 75, xl('Issue Type'));
   echo itGenCell($opt_line_no, $it_array, 'plural' , 20, 75, xl('Plural'));
+  // if not english and translating lists then show the translation
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+       echo "  <td align='center' class='translation'>" . xlt($it_array['plural']) . "</td>\n";
+  }
   echo itGenCell($opt_line_no, $it_array, 'singular' , 20,  75, xl('Singular'));
+  // if not english and translating lists then show the translation
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+       echo "  <td align='center' class='translation'>" . xlt($it_array['singular']) . "</td>\n";
+  }
   echo itGenCell($opt_line_no, $it_array, 'abbreviation' , 10,  10, xl('Abbreviation'));
-  echo itGenCell($opt_line_no, $it_array, 'style', 6, 6, xl('0 - Normal; 1 - Simplified: only title, start date,
-    comments and an Active checkbox;no diagnosis, occurrence, end date, referred-by or sports fields.; 2 - Football Injury;'));
-  echo itGenCell($opt_line_no, $it_array, 'force_show', 10,  10, xl('0 - Do not show this category on the patient summary
-    screen if there have been no issues entered in for this category;  1 - Show this category on the patient summary screen even
-    if no issues have been entered for this category.'));
+  // if not english and translating lists then show the translation
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+       echo "  <td align='center' class='translation'>" . xlt($it_array['abbreviation']) . "</td>\n";
+  }
+  echo itGenCell($opt_line_no, $it_array, 'style', 6, 6, xl('0 - Normal; 1 - Simplified: only title, start date, comments and an Active checkbox;no diagnosis, occurrence, end date, referred-by or sports fields.; 2 - Football Injury;'));
+  echo itGenCell($opt_line_no, $it_array, 'force_show', 10,  10, xl('0 - Do not show this category on the patient summary screen if there have been no issues entered in for this category;  1 - Show this category on the patient summary screen even if no issues have been entered for this category.'));
   echo " </tr>\n";
 }
 
@@ -751,6 +790,10 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('Key'        ,'e'); ?></b></td>
   <td><b><?php xl('ID'          ,'e'); ?></b></td>
   <td><b><?php xl('Label'       ,'e'); ?></b></td>
+  <?php //show translation column if not english and the translation lists flag is set
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+    echo "<td><b>".xl('Translation')."</b><span class='help' title='".xl('The translated Title that will appear in current language')."'> (?)</span></td>";
+  } ?>
   <td><b><?php xl('Seq'         ,'e'); ?></b></td>
   <td><b><?php xl('ModLength'   ,'e'); ?></b></td>
   <td><b><?php xl('Justify'     ,'e'); ?></b></td>
@@ -765,12 +808,26 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('Medical Problem'     ,'e'); ?></b></td>
   <td><b><?php xl('External'    ,'e'); ?></b></td>
 <?php } else if ($list_id == 'issue_types') { ?>
-  <td><b><?php xl('Type'        ,'e'); ?></b></td>
-  <td><b><?php xl('Plural'      ,'e'); ?></b></td>
-  <td><b><?php xl('Singular'    ,'e'); ?></b></td>
-  <td><b><?php xl('Abbreviation','e'); ?></b></td>
-  <td><b><?php xl('Style'       ,'e'); ?></b></td>
-  <td><b><?php xl('Force Show'  ,'e'); ?></b></td>
+  <td><b><?php echo xlt('OpenEMR Application Category'); ?></b></td>
+  <td><b><?php echo xlt('Order'); ?></b></td>
+  <td><b><?php echo xlt('Type'); ?></b></td>
+  <td><b><?php echo xlt('Plural'); ?></b></td>
+  <?php //show translation column if not english and the translation lists flag is set
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+    echo "<td><b>".xl('Translation')."</b><span class='help' title='".xl('The translated Title that will appear in current language')."'> (?)</span></td>";
+  } ?>
+  <td><b><?php echo xlt('Singular'); ?></b></td>
+  <?php //show translation column if not english and the translation lists flag is set
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+    echo "<td><b>".xl('Translation')."</b><span class='help' title='".xl('The translated Title that will appear in current language')."'> (?)</span></td>";
+  } ?>
+  <td><b><?php echo xlt('Abbreviation'); ?></b></td>
+  <?php //show translation column if not english and the translation lists flag is set
+  if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
+    echo "<td><b>".xl('Translation')."</b><span class='help' title='".xl('The translated Title that will appear in current language')."'> (?)</span></td>";
+  } ?>
+  <td><b><?php echo xlt('Style'); ?></b></td>
+  <td><b><?php echo xlt('Force Show'); ?></b></td>
 <?php } else { ?>
   <td title=<?php xl('Click to edit','e','\'','\''); ?>><b><?php  xl('ID','e'); ?></b></td>
   <td><b><?php xl('Title'  ,'e'); ?></b></td>	
@@ -825,7 +882,7 @@ if ($list_id) {
   }
   else if ($list_id == 'issue_types') {
     $res = sqlStatement("SELECT * FROM issue_types " .
-      "ORDER BY type");  
+      "ORDER BY category, ordering ASC");  
     while ($row = sqlFetchArray($res)) {
       writeITLine($row);
     }

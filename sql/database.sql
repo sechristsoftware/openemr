@@ -2354,6 +2354,45 @@ CREATE TABLE `issue_encounter` (
 
 -- --------------------------------------------------------
 
+--
+-- Table structure for table `issue_types`
+--
+
+DROP TABLE IF EXISTS `issue_types`;
+CREATE TABLE `issue_types` (
+    `category` varchar(75) NOT NULL DEFAULT '',
+    `type` varchar(75) NOT NULL DEFAULT '',
+    `plural` varchar(75) NOT NULL DEFAULT '',
+    `singular` varchar(75) NOT NULL DEFAULT '',
+    `abbreviation` varchar(75) NOT NULL DEFAULT '',
+    `style` smallint(6) NOT NULL DEFAULT '0',
+    `force_show` smallint(6) NOT NULL DEFAULT '0',
+    `ordering` int(11) NOT NULL DEFAULT '0',
+    PRIMARY KEY (`category`,`type`)
+) ENGINE=MyISAM;
+
+--
+-- Dumping data for table `issue_types`
+--
+
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('10','default','medical_problem','Medical Problems','Problem','P','0','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('30','default','medication','Medications','Medication','M','0','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('20','default','allergy','Allergies','Allergy','A','0','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('40','default','surgery','Surgeries','Surgery','S','0','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('50','default','dental','Dental Issues','Dental','D','0','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('10','athletic_team','football_injury','Football Injuries','Injury','I','2','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('20','athletic_team','medical_problem','Medical Problems','Medical','P','0','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('30','athletic_team','allergy','Allergies','Allergy','A','1','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('40','athletic_team','general','General','General','G','1','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('10','ippf_specific','medical_problem','Medical Problems','Problem','P','0','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('30','ippf_specific','medication','Medications','Medication','M','0','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('20','ippf_specific','allergy','Allergies','Allergy','Y','0','1');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('40','ippf_specific','surgery','Surgeries','Surgery','S','0','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('50','ippf_specific','ippf_gcac','Abortions','Abortion','A','3','0');
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES ('60','ippf_specific','contraceptive','Contraception','Contraception','C','4','0');
+
+-- --------------------------------------------------------
+
 -- 
 -- Table structure for table `lang_constants`
 -- 
@@ -3602,16 +3641,6 @@ INSERT INTO list_options(list_id,option_id,title) VALUES ('lists','surgery_issue
 INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('surgery_issue_list', 'tonsillectomy', 'Tonsillectomy', 10);
 INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('surgery_issue_list', 'appendectomy', 'Appendectomy', 20);
 INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('surgery_issue_list', 'cholecystectomy', 'Cholecystectomy', 30);
-
--- Immunizations Issue List
-INSERT INTO list_options(list_id,option_id,title) VALUES ('lists','immunizations_issue_list','Immunizations Issue List');
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'Gardasil #1', 'Gardasil #1', 10);
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'Gardasil #2', 'Gardasil #2', 20);
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'Gardasil #3', 'Gardasil #3', 30);
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'MMR', 'MMR', 40);
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'tetanus', 'Tetanus', 50);
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'varicella', 'Varicella', 60);
-INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('immunizations_issue_list', 'Zostavax', 'Zostavax', 70);
 
 -- Dental Issue List
 INSERT INTO list_options(list_id,option_id,title) VALUES ('lists','dental_issue_list','Dental Issue List');
@@ -5728,36 +5757,3 @@ CREATE TABLE `product_warehouse` (
 ) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
-
--- 
--- Table structure for table `issue_types`
--- 
-
-DROP TABLE IF EXISTS `issue_types`;
-CREATE TABLE `issue_types` (
-    `id` smallint(6) NOT NULL AUTO_INCREMENT,
-    `type` varchar(75) NOT NULL,
-    `plural` varchar(75) DEFAULT NULL,
-    `singular` varchar(75) DEFAULT NULL,
-    `abbreviation` varchar(75) DEFAULT NULL,
-    `style` smallint(6) DEFAULT NULL,
-    `force_show` smallint(6) DEFAULT NULL,
-    PRIMARY KEY (`type`),
-    KEY `id` (`id`)
-  );
-
--- 
--- Dumping data for table `issue_types`
--- 
-
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('medical_problem','Medical Problems','Problem','P','0','1');
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('medication','Medications','Medication','M','0','1');
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('allergy','Allergies','Allergy','A','0','1');
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('surgery','Surgeries','Surgery','S','0','1');
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('immunizations','Immunizations','Immunization','I','0','0');
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('general','General Issues','General','G','0','0');
-INSERT INTO issue_types(type,plural,singular,abbreviation,style,force_show) VALUES ('dental','Dental Issues','Dental','D','0','0');
- 
-
--- --------------------------------------------------------
-
