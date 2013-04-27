@@ -514,6 +514,7 @@ sub createDefinitions() {
  my $tempCounter; 
  my @numberRow = split($de,$page[$languageNumRow]);
  my $counter = 1;
+ $tempReturn .= "INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES\n";
  for (my $i = $constantColumn + 1; $i < @numberRow; $i++) {
   for (my $j = $constantRow; $j < @page; $j++) {
    my @tempRow = split($de,$page[$j]);
@@ -521,16 +522,24 @@ sub createDefinitions() {
    my $tempDefinition = $tempRow[$i];
    my $tempLangNumber = $numberRow[$i];
    if ($tempDefinition !~ /^\s*$/) {
-    $tempReturn .= "INSERT INTO `lang_definitions` VALUES (".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."');\n";
+# RAMIN
+   if ( ($i == @numberRow - $constantColumn) && ($j == @page - $constantRow + 4) ) {
+		$tempReturn .= "(".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."');\n";
+	}
+	else {
+		$tempReturn .= "(".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."'),\n";
+	}
+
     $tempCounter = $counter;
     $counter += 1;
-       
+     
     # set up for statistics
     $numberConstantsLanguages[($tempLangNumber - 1)] += 1;
    }
   }
  }
  $tempCounter += 1;
+
 
  # create header
  my $return = "\
@@ -543,7 +552,7 @@ CREATE TABLE `lang_definitions` (
   `def_id` int(11) NOT NULL auto_increment,
   `cons_id` int(11) NOT NULL default '0',
   `lang_id` int(11) NOT NULL default '0',
-  `definition` mediumtext,
+  `definition` mediumtext CHARACTER SET utf8,
   UNIQUE KEY `def_id` (`def_id`),
   KEY `cons_id` (`cons_id`) 
 ) ENGINE=MyISAM AUTO_INCREMENT=".$tempCounter." ;
