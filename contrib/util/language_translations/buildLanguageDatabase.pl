@@ -392,6 +392,7 @@ sub createLanguages() {
  my @numberRow = split($de,$page[$languageNumRow]);
  my @idRow = split($de,$page[$languageIdRow]);
  my @nameRow = split($de,$page[$languageNameRow]);
+ $tempReturn .= "INSERT INTO `lang_languages` VALUES (".$numberRow[$i].", '".$idRow[$i]."', '".$nameRow[$i]."');\n";
  for (my $i = $constantColumn; $i < @numberRow; $i++) {
   $tempReturn .= "INSERT INTO `lang_languages` VALUES (".$numberRow[$i].", '".$idRow[$i]."', '".$nameRow[$i]."');\n";
   $tempCounter = $numberRow[$i];
@@ -513,6 +514,11 @@ sub createDefinitions() {
  my $tempReturn;
  my $tempCounter; 
  my @numberRow = split($de,$page[$languageNumRow]);
+
+# RAMIN - Create a single INSERT Header Line
+# $tempReturn .= "INSERT INTO `lang_definitions` VALUES (".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."');\n";
+  $tempReturn .= "INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES;\n";
+
  my $counter = 1;
  for (my $i = $constantColumn + 1; $i < @numberRow; $i++) {
   for (my $j = $constantRow; $j < @page; $j++) {
@@ -521,10 +527,22 @@ sub createDefinitions() {
    my $tempDefinition = $tempRow[$i];
    my $tempLangNumber = $numberRow[$i];
    if ($tempDefinition !~ /^\s*$/) {
-    $tempReturn .= "INSERT INTO `lang_definitions` VALUES (".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."');\n";
+# RAMIN - Now only have the data on  aper line basis. 
+#         All lines end with a comma (,), except the 
+#         last line ending with a semicolumn(;).
+#    this code is NOT debugged. have to check the condition test for IF statement
+#    May have to compare against @numberRow + or - 1 ...
+#   $tempReturn .= "INSERT INTO `lang_definitions` VALUES (".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."');\n";
+    IF ($counter == @numberRow) {
+		$tempReturn .= "(".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."');\n";
+	}
+	ELSE {
+		$tempReturn .= "(".$counter.", ".$tempId.", ".$tempLangNumber.", '".$tempDefinition."'),\n";
+	}
+
     $tempCounter = $counter;
     $counter += 1;
-       
+     
     # set up for statistics
     $numberConstantsLanguages[($tempLangNumber - 1)] += 1;
    }
@@ -543,11 +561,16 @@ CREATE TABLE `lang_definitions` (
   `def_id` int(11) NOT NULL auto_increment,
   `cons_id` int(11) NOT NULL default '0',
   `lang_id` int(11) NOT NULL default '0',
-  `definition` mediumtext,
+-- RAMIN: Not to leave data type to be determined by user 
+--        environment's Default setting 
+-- CHANGE:  (Ramin)
+--  `definition` mediumtext,
+  `definition` mediumtext CHARACTER SET utf8,
   UNIQUE KEY `def_id` (`def_id`),
   KEY `cons_id` (`cons_id`) 
 ) ENGINE=MyISAM AUTO_INCREMENT=".$tempCounter." ;
 \n
+
 -- 
 -- Dumping data for table `lang_definitions`
 --\n\n";
