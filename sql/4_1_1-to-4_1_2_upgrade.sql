@@ -406,3 +406,7 @@ INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbrev
 ALTER TABLE `issue_types` ADD COLUMN `active` tinyint(1) NOT NULL DEFAULT '1';
 #EndIf
 
+#IfMissingColumn documents path_depth
+ALTER TABLE `documents` ADD COLUMN `path_depth` TINYINT DEFAULT '1' COMMENT 'Depth of path to use in url to find document. Not applicable for CouchDB.';
+#Endif
+
