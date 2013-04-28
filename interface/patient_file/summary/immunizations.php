@@ -275,7 +275,7 @@ var mypcc = '<?php echo htmlspecialchars( $GLOBALS['phone_country_code'], ENT_QU
           <td align="right"><span class="text"><?php echo htmlspecialchars( xl('Amount Administered'), ENT_NOQUOTES); ?></span></td>
           <td class='text'>
 		  	<input class='text' type='text' name="immuniz_amt_adminstrd" size="25" value="<?php echo htmlspecialchars( $immuniz_amt_adminstrd, ENT_QUOTES); ?>">
-		  	<?php echo generate_select_list("form_drug_units", "drug_units", $drugunitselecteditem,'','Select Drug Unit','Unassigned','','form_drug_units',array('style'=>'width:120px')); ?>
+		  	<?php echo generate_select_list("form_drug_units", "drug_units", $drugunitselecteditem,'Select Drug Unit',''); ?>
 		  </td>
         </tr>
         <tr>
@@ -359,13 +359,13 @@ var mypcc = '<?php echo htmlspecialchars( $GLOBALS['phone_country_code'], ENT_QU
         <tr>
           <td align="right" class='text'><?php echo htmlspecialchars( xl('Route'), ENT_NOQUOTES); ?></td>
           <td>
-		  	<?php echo generate_select_list('immuniz_route', 'drug_route', $immuniz_route, 'Select Route', 'Unassigned');?>		  
+		  	<?php echo generate_select_list('immuniz_route', 'drug_route', $immuniz_route, 'Select Route', '');?>		  
 		  </td>
         </tr>
         <tr>
           <td align="right" class='text'><?php echo htmlspecialchars( xl('Administration Site'), ENT_NOQUOTES); ?></td>
           <td>
-		  	<?php echo generate_select_list('immuniz_admin_ste', 'proc_body_site', $immuniz_admin_ste, 'Select Administration Site', 'Unassigned');?>
+		  	<?php echo generate_select_list('immuniz_admin_ste', 'proc_body_site', $immuniz_admin_ste, 'Select Administration Site', ' ');?>
 		  </td>
         </tr>
         <tr>
@@ -463,10 +463,14 @@ var mypcc = '<?php echo htmlspecialchars( $GLOBALS['phone_country_code'], ENT_QU
 				$administered_date_summary = $administered_date_summary->format('Y-m-d H:i');
 			} else {
 				$administered_date_summary = "";
-			}
-			
+			}			
 			echo "<td>" . $del_tag_open . htmlspecialchars( $administered_date_summary, ENT_NOQUOTES) . $del_tag_close . "</td>";
-			echo "<td>" . $del_tag_open . htmlspecialchars( $row["amount_administered"] . " " . generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['amount_administered_unit']) , ENT_NOQUOTES) . $del_tag_close . "</td>";
+                        if ($row["amount_administered"] > 0) {
+			        echo "<td>" . $del_tag_open . htmlspecialchars( $row["amount_administered"] . " " . generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['amount_administered_unit']) , ENT_NOQUOTES) . $del_tag_close . "</td>";
+                        }
+                        else {
+                               echo "<td>&nbsp</td>";
+                        }
             echo "<td>" . $del_tag_open . htmlspecialchars( $row["manufacturer"], ENT_NOQUOTES) . $del_tag_close . "</td>";
             echo "<td>" . $del_tag_open . htmlspecialchars( $row["lot_number"], ENT_NOQUOTES) . $del_tag_close . "</td>";
             echo "<td>" . $del_tag_open . htmlspecialchars( $row["administered_by"], ENT_NOQUOTES) . $del_tag_close . "</td>";

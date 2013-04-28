@@ -64,8 +64,13 @@ function convertToDataArray($data_array) {
 		$data[$current][xl('Vaccine')] = $vaccine_display;
 		
 		//Amount
-		$data[$current][xl('Amount') . "\n" . xl('Admin')] = $row['amount_administered'] . " " . 
-			generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['amount_administered_unit']);	
+                if ($row['amount_administered'] > 0) {
+		        $data[$current][xl('Amount') . "\n" . xl('Admin')] = $row['amount_administered'] . " " . 
+			        generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['amount_administered_unit']);
+                }
+                else {
+                        $data[$current][xl('Amount') . "\n" . xl('Admin')] = "";
+                }
 		
 		//expiration date
 		$temp_date = new DateTime($row['expiration_date']);
@@ -282,7 +287,7 @@ function printHTML($res, $res2, $data) {
   </script>
   </body>
   </html>
-  <?
+  <?php
 }
 
 
