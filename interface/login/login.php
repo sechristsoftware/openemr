@@ -6,7 +6,9 @@
 
 $ignoreAuth=true;
 include_once("../globals.php");
+include_once("$srcdir/sha1.js");
 include_once("$srcdir/sql.inc");
+include_once("$srcdir/md5.js");
 require_once("../../library/authentication/rsa.php");
 ?>
 <html>
@@ -19,33 +21,61 @@ require_once("../../library/authentication/rsa.php");
 <script src="../../library/js/crypt/jsbn.js"></script>
 <script src="../../library/js/crypt/rsa.js"></script>
 <script language='JavaScript'>
-function RSAProblem()
+
+function encrypt_form(user)
 {
-	window.alert("Server Configuration Problem!");
-};
-
-$(document).ajaxError(RSAProblem);
-
-function encrypt_form()
-{
-
     var rsa_ajax='<?php echo $webroot;?>/library/ajax/rsa_request.php';
-    $.post(rsa_ajax,{},
+    $.post(rsa_ajax,{user: user},
         function(data)
         {
-            var key = RSA.getPublicKey(data);
-            var encryptedPass=RSA.encrypt(document.forms[0].clearPass.value, key);
-            if(encryptedPass==false)
-            {
-                RSAProblem();
-                return;
+            var method = data.method;
+            if (method == "rsa") {
+                var key = RSA.getPublicKey(data.key);
+                var encryptedPass=RSA.encrypt(document.forms[0].clearPass.value, key);
+                document.forms[0].pk.value=data.key;
+                document.forms[0].client_salt='';
+                document.forms[0].authPass.value=encryptedPass;
+                document.forms[0].authPassExtra.value='';
+                document.forms[0].clearPass.value='';
             }
-            document.forms[0].authPass.value=encryptedPass;
+            else if (method == "sha1") {
+                var salt = data.salt;
+                var encryptedPass='$SHA1$' + SHA1(salt + document.forms[0].clearPass.value);
+                document.forms[0].pk.value='';
+                document.forms[0].client_salt='';
+                document.forms[0].authPass.value=encryptedPass;
+                document.forms[0].authPassExtra.value='';
+                document.forms[0].clearPass.value='';
+            }
+            else if (method == "sha1upgrade") {
+                var salt = data.salt;
+                var encryptedPass='$SHA1$' + SHA1(salt + document.forms[0].clearPass.value);
+                var encryptedPassExtra=SHA1(document.forms[0].clearPass.value);
+                document.forms[0].pk.value='';
+                document.forms[0].client_salt=salt;
+                document.forms[0].authPass.value=encryptedPass;
+                document.forms[0].authPassExtra.value=encryptedPassExtra;
+                document.forms[0].clearPass.value='';
+            }
+            else if (method == "md5") {
+                var salt = data.salt;
+                var encryptedPass='$SHA1$' + SHA1(salt + document.forms[0].clearPass.value);
+                var encryptedPassExtra=MD5(document.forms[0].clearPass.value);
+                document.forms[0].pk.value='';
+                document.forms[0].client_salt=salt;
+                document.forms[0].authPass.value=encryptedPass;
+                document.forms[0].authPassExtra.value=encryptedPassExtra;
+                document.forms[0].clearPass.value='';
+            }
+            else {
+                alert("<?php echo xls("Server Configuration Error"); ?>");
+                return false;
+            }
 
-            document.forms[0].clearPass.value='';
-            document.forms[0].pk.value=data;   
             document.forms[0].submit();
+
         }
+    , "json"
     );
 }
 function imsubmitted() {
@@ -201,8 +231,10 @@ if (count($result3) != 1) { ?>
 
 <tr><td>&nbsp;</td><td>
 <input type="hidden" name="authPass">
+<input type="hidden" name="authPassExtra">
+<input type="hidden" name="client_salt">
 <input type="hidden" name="pk">
-<input class="button large" type="submit" onClick="encrypt_form()" value="<?php xl('Login','e');?>">
+<input class="button large" type="submit" onClick="encrypt_form(document.forms[0].authUser.value)" value="<?php xl('Login','e');?>">
 </td></tr>
 <tr><td colspan='2' class='text' style='color:red'>
 <?php

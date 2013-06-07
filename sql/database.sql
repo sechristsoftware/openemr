@@ -550,6 +550,19 @@ CREATE TABLE `syndromic_surveillance` (
 
 -- --------------------------------------------------------
 
+--
+-- Table structure for table `client_salt_dummy`
+--
+
+CREATE TABLE `client_salt_dummy` (
+  `username` varchar(255) DEFAULT NULL,
+  `salt_client_side` varchar(255),
+  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`username`)
+) ENGINE=InnoDb;
+
+-- --------------------------------------------------------
+
 -- 
 -- Table structure for table `config`
 -- 
@@ -4019,6 +4032,7 @@ CREATE TABLE `patient_access_onsite`(
   `portal_pwd` VARCHAR(100) ,
   `portal_pwd_status` TINYINT DEFAULT '1' COMMENT '0=>Password Created Through Demographics by The provider or staff. Patient Should Change it at first time it.1=>Pwd updated or created by patient itself',
   `portal_salt` VARCHAR(100) ,
+  `portal_salt_client_side` VARCHAR(100),
   PRIMARY KEY (`id`)
 )ENGINE=MyISAM AUTO_INCREMENT=1;
 
@@ -5278,6 +5292,7 @@ CREATE TABLE `users_secure` (
   `salt_history1` varchar(255),
   `password_history2` varchar(255),
   `salt_history2` varchar(255),
+  `salt_client_side` varchar(255),
   PRIMARY KEY (`id`),
   UNIQUE KEY `USERNAME_ID` (`id`,`username`)
 ) ENGINE=InnoDb;

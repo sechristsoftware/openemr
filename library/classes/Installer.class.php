@@ -218,7 +218,9 @@ class Installer
     }
     $password_hash = "NoLongerUsed";  // This is the value to insert into the password column in the "users" table. password details are now being stored in users_secure instead.
     $salt=password_salt();     // Uses the functions defined in library/authentication/password_hashing.php
-    $hash=password_hash($this->iuserpass,$salt);
+    $client_salt=password_salt(true);  // Uses the functions defined in library/authentication/password_hashing.php to force a sha1 salt
+    $pre_hash=password_hash($this->iuserpass,$client_salt); // First round of hash to simulate the client side hash
+    $hash=password_hash($pre_hash,$salt); // Second round of hash to simulate the server side hash
     if ($this->execute_sql("INSERT INTO users (id, username, password, authorized, lname, fname, facility_id, calendar, cal_ui) VALUES (1,'$this->iuser','$password_hash',1,'$this->iuname','',3,1,3)") == FALSE) {
       $this->error_message = "ERROR. Unable to add initial user\n" .
         "<p>".mysql_error()." (#".mysql_errno().")\n";
@@ -227,7 +229,7 @@ class Installer
     }
     
     // Create the new style login credentials with blowfish and salt
-    if ($this->execute_sql("INSERT INTO users_secure (id, username, password, salt) VALUES (1,'$this->iuser','$hash','$salt')") == FALSE) {
+    if ($this->execute_sql("INSERT INTO users_secure (id, username, password, salt, salt_client_side) VALUES (1,'$this->iuser','$hash','$salt','$client_salt')") == FALSE) {
       $this->error_message = "ERROR. Unable to add initial user login credentials\n" .
         "<p>".mysql_error()." (#".mysql_errno().")\n";
       return FALSE;

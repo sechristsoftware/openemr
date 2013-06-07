@@ -52,11 +52,28 @@
         require_once("$srcdir/authentication/common_operations.php");        
         $password_update=isset($_SESSION['password_update']);
         unset($_SESSION['password_update']);
-        $pubKey=$_REQUEST['login_pk'];
-        error_log($pubKey);
-        $rsa=new rsa_key_manager();
-        $rsa->load_from_db($pubKey);
-        $plain_code= $rsa->decrypt($_POST['code']);
+
+        if (isset($_REQUEST['login_pk']) && !empty($_REQUEST['login_pk'])) {
+            // rsa is working, so get the clear text password
+            $pubKey=$_REQUEST['login_pk'];
+            $rsa=new rsa_key_manager();
+            $rsa->load_from_db($pubKey);
+            $plain_code= $rsa->decrypt($_POST['code']);
+            $Pass=$plain_code;
+        }
+        else {
+            // In this case, the value has already been hashed on the client side,
+            // so place in an array. Also will include the pertinent migration hash
+            // and client salt, if applicable.
+            $Pass=array('code' => $_POST['code']);
+            if (isset($_POST['code_salt']) && !empty($_POST['code_salt'])) {
+                $Pass['code_salt']=$_POST['code_salt'];
+            }
+            if (isset($_POST['code_extra']) && !empty($_POST['code_extra'])) {
+                $Pass['code_extra']=$_POST['code_extra'];
+            }
+        }
+
         // set the language
         if (!empty($_POST['languageChoice'])) {
                 $_SESSION['language_choice'] = $_POST['languageChoice'];
@@ -76,7 +93,8 @@
         DEFINE("COL_POR_USER","portal_username");
         DEFINE("COL_POR_SALT","portal_salt");
         DEFINE("COL_POR_PWD_STAT","portal_pwd_status");
-        $sql= "SELECT ".implode(",",array(COL_ID,COL_PID,COL_POR_PWD,COL_POR_SALT,COL_POR_PWD_STAT))
+        DEFINE("COL_POR_CLIENT_SALT","portal_salt_client_side");
+        $sql= "SELECT ".implode(",",array(COL_ID,COL_PID,COL_POR_PWD,COL_POR_SALT,COL_POR_PWD_STAT,COL_POR_CLIENT_SALT))
               ." FROM ".TBL_PAT_ACC_ON
               ." WHERE ".COL_POR_USER."=?";
                 $auth = privQuery($sql, array($_POST['uname']));
@@ -88,22 +106,58 @@
                 }
                 if(empty($auth[COL_POR_SALT]))
                 {
-                    if(SHA1($plain_code)!=$auth[COL_POR_PWD])
+                    // Check the old sha1 method hash and migrate if it checks to salted method
+                    // Exit if only accepting salted hashes
+                    if ((isset($GLOBALS['password_compatibility']) && !$GLOBALS['password_compatibility'])) {
+                        session_destroy();
+                        header('Location: '.$landingpage.'&w');
+                        exit;
+                    }
+                    if(is_array($Pass)) {
+                        // RSA not available, so password has already been hashed on client side with a new salt
+                        $client_side_salt=$Pass['code_salt'];
+                        $client_side_hash=$Pass['code'];
+                        $old_sha1_hash=$Pass['code_extra'];
+                    }
+                    else {
+                        // RSA is working, so have the clear text password in $Pass
+                        // Need to create a client side hash, mimick the client side hash and create the old sha1 hash
+                        $client_side_salt=password_salt(true);
+                        $client_side_hash=password_hash($Pass,$client_side_salt);
+                        $old_sha1_hash=SHA1($Pass);
+                    }
+
+                    if($old_sha1_hash!=$auth[COL_POR_PWD])
                     {
                         session_destroy();
                         header('Location: '.$landingpage.'&w');
                         exit;                        
                     }
+
+                    // Passed authentication, so now migrate to salted hash (server side; client side hash/salt already completed above)
                     $new_salt=password_salt();
-                    $new_hash=password_hash($plain_code,$new_salt);
+                    $new_hash=password_hash($client_side_hash,$new_salt);
                     $sqlUpdatePwd= " UPDATE " . TBL_PAT_ACC_ON
                                   ." SET " .COL_POR_PWD."=?, "
-                                  . COL_POR_SALT . "=? "
+                                  . COL_POR_SALT . "=?, "
+                                  . COL_POR_CLIENT_SALT . "=? "
                                   ." WHERE ".COL_ID."=?";
-                    privStatement($sqlUpdatePwd,array($new_hash,$new_salt,$auth[COL_ID]));   
+                    privStatement($sqlUpdatePwd,array($new_hash,$new_salt,$client_side_salt,$auth[COL_ID]));   
                 }
                 else {
-                    if(password_hash($plain_code,$auth[COL_POR_SALT])!=$auth[COL_POR_PWD])
+                    // Using new salt method
+                    if(is_array($Pass)) {
+                        // RSA not available, so password has already been hashed/salted on client side
+                        $client_side_hash=$Pass['code'];
+                    }
+                    else {
+                        // RSA is working, so have the clear text password in $Pass
+                        // Need to mimick the client side hash/salt before proceeding
+                        $client_side_salt=$auth[COL_POR_CLIENT_SALT];
+                        $client_side_hash=password_hash($Pass,$client_side_salt);
+                    }
+
+                    if(password_hash($Pass,$auth[COL_POR_SALT])!=$auth[COL_POR_PWD])
                     {
                         session_destroy();
                         header('Location: '.$landingpage.'&w');
@@ -139,17 +193,31 @@
 			}
 
                         if ( $password_update)
-                            {
-                                $code_new=$rsa->decrypt($_POST['code_new']);
-                                $code_new_confirm=$rsa->decrypt($_POST['code_new_confirm']);
-                                if(!(empty($_POST['code_new'])) && !(empty($_POST['code_new_confirm'])) && ($code_new == $code_new_confirm)) {
-                                $new_salt=password_salt();
-                                $new_hash=password_hash($code_new,$new_salt);
+                        {
+                            if (!(empty($_POST['code_new'])) && !(empty($_POST['code_new_confirm']))) {
+                                if (is_array($Pass)) {
+                                    // client side salt/hash already completed
+                                    $code_new_client_hash = $_POST['code_new'];
+                                    $code_new_confirm_client_hash = $POST['code_new_confirm'];
+                                }
+                                else {
+                                    // need to mimick the client side salt/hash
+                                    $code_new=$rsa->decrypt($_POST['code_new']);
+                                    $code_new_client_hash = password_hash($code_new,$client_side_salt);
+                                    $code_new_confirm=$rsa->decrypt($_POST['code_new_confirm']);
+                                    $code_new_confirm_client_hash = password_hash($code_new_confirm,$client_side_salt);
+                                }
 
-                                // Update the password and continue (patient is authorized)
-                                privStatement("UPDATE ".TBL_PAT_ACC_ON
-                                              ."  SET ".COL_POR_PWD."=?,".COL_POR_SALT."=?,".COL_POR_PWD_STAT."=1 WHERE id=?", array($new_hash,$new_salt,$auth['id']) );
-                                $authorizedPortal = true;
+                                if ($code_new_client_hash == $code_new_confirm_client_hash) {
+                                    // now need to create new server side salt/hash
+                                    $new_salt=password_salt();
+                                    $new_hash=password_hash($code_new_client_hash,$new_salt);
+
+                                    // Update the password and continue (patient is authorized)
+                                    privStatement("UPDATE ".TBL_PAT_ACC_ON
+                                                 ."  SET ".COL_POR_PWD."=?,".COL_POR_SALT."=?,".COL_POR_PWD_STAT."=1 WHERE id=?", array($new_hash,$new_salt,$auth['id']) );
+                                    $authorizedPortal = true;
+                                }
                             }
                         }
 			if ($auth['portal_pwd_status'] == 0) {

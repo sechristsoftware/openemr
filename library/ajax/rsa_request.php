@@ -38,26 +38,34 @@
  * @author  Kevin Yeh <kevin.y@integralemr.com>
  * @link    http://www.open-emr.org
  */
+
+    $ignoreAuth=true;  // A user needs to be able to get an RSA public key for transmission of password to the server before authentication.
+
+    //SANITIZE ALL ESCAPES
+    $sanitize_all_escapes=true;
+
+    //STOP FAKE REGISTER GLOBALS
+    $fake_register_globals=false;
+
+    require_once("../../interface/globals.php");
+    require_once("../authentication/rsa.php");
+    // This is only pertinent for users of php versions less than 5.2
+    //  (ie. this wrapper is only loaded when php version is less than
+    //   5.2; otherwise the native php json functions are used)
+    require_once("../jsonwrapper/jsonwrapper.php");
+
     try
     {
-        $ignoreAuth=true;  // A user needs to be able to get an RSA public key for transmission of password to the server before authentication.
-
-        //SANITIZE ALL ESCAPES
-        $sanitize_all_escapes=true;
-
-        //STOP FAKE REGISTER GLOBALS
-        $fake_register_globals=false;
-
-        require_once("../../interface/globals.php");
-        require_once("../authentication/rsa.php");
-
-
+        // Always try the rsa authentication method, since this is the most secure
         $key_manager=new rsa_key_manager;
         $key_manager->initialize();
-        echo $key_manager->get_pubKeyJS();
+        echo json_encode(array('method' => 'rsa', 'key' => $key_manager->get_pubKeyJS()));
     }
     catch(Exception $e)
     {
-        header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+        // rsa authentication method does not work, so now return the client authentication method
+        // blank user will return default method and a random salt
+        require_once("../authentication/login_operations.php");
+        echo json_encode(array('method' => client_authentication_method($_POST['user'],$_POST['portal']), 'salt' => client_authentication_salt($_POST['user'],$_POST['portal'])));
     }
 ?>

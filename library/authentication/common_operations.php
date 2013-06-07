@@ -36,27 +36,46 @@ define("COL_SALT_H1","salt_history1");
 define("COL_PWD_H2","password_history2");
 define("COL_SALT_H2","salt_history2");
 
+define("COL_SALT_CLIENT","salt_client_side");
+
+define("TBL_USERS_DUMMY","client_salt_dummy");
+
 
 /**
  * create a new password entry in the users_secure table
  * 
- * @param type $username
- * @param type $password  Passing by reference so additional copy is not created in memory
+ * @param type         $username
+ * @param string/array $password  Passing by reference so additional copy is not created in memory
+ *                                Note a string is for clear text.
+ *                                Note an array is used when client side hash has already happened
  */
 function initializePassword($username,$userid,&$password)
 {
-
+    
     $salt=password_salt();
+    if (is_array($password)) {
+        // No cleartext password is available. Client side salt has already been set and clear text has already been hashed on client side
+        $client_side_salt = $password['client_salt'];
+        $hash=password_hash($password['phash_client'],$salt);
+    }
+    else {
+        // Using cleartext password, so need to create a client side salt/hash and mimick the client side hash
+        $client_side_salt = password_salt(true);
+        $hash_client=password_hash($password,$client_side_salt);
+        $hash=password_hash($hash_client,$salt);
+    }
+
     $hash=password_hash($password,$salt);
     $passwordSQL= "INSERT INTO ".TBL_USERS_SECURE.
-                  " (".implode(",",array(COL_ID,COL_UNM,COL_PWD,COL_SALT,COL_LU)).")".
-                  " VALUES (?,?,?,?,NOW()) ";
+                  " (".implode(",",array(COL_ID,COL_UNM,COL_PWD,COL_SALT,COL_LU,COL_SALT_CLIENT)).")".
+                  " VALUES (?,?,?,?,NOW(),?) ";
                   
     $params=array(
                     $userid,
                     $username,
                     $hash,
-                    $salt
+                    $salt,
+                    $client_side_salt
     );
     privStatement($passwordSQL,$params); 
 }

@@ -50,7 +50,7 @@ function test_password_strength($pwd,&$errMsg)
         }
         if($features<3)
         {
-            $errMsg=xl("Password does not meet minimum requirements and should contain at least three of the four following items: A number, a lowercase letter, an uppercase letter, a special character (Not a leter or number).");
+            $errMsg=xl("Password does not meet minimum requirements and should contain at least three of the four following items: A number, a lowercase letter, an uppercase letter, a special character (Not a letter or number).");
             return false;
         }
     }

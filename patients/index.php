@@ -100,24 +100,55 @@
     <link rel="stylesheet" type="text/css" href="css/base.css" />
 
     <script type="text/javascript">
-        function process() {
+        function process(user) {
             
             if (!(validate())) {
-                alert ('<?php echo addslashes( xl('Field(s) are missing!') ); ?>');
+                alert ('<?php echo xls('Field(s) are missing!'); ?>');
                 return false;
             }
-                $.ajax({
-                    url: '<?php echo $webroot; ?>/library/ajax/rsa_request.php',
-                    async: false,
-                    success: function(public_key)
-                    {
-                        var key = RSA.getPublicKey(public_key);
+
+            var rsa_ajax='<?php echo $webroot;?>/library/ajax/rsa_request.php';
+            $.post(rsa_ajax,{user: user, portal: '1'},
+                function(data)
+                {
+                    var method = data.method;
+                    if (method == "rsa") {
+                        // Standard method when rsa is available
+                        var key = RSA.getPublicKey(data.key);
                         document.getElementById('code').value = RSA.encrypt(document.getElementById('pass').value, key);
+                        document.getElementById('code_salt').value='';
+                        document.getElementById('code_extra').value='';
                         document.getElementById('pass').value='';
-                        document.getElementById('login_pk').value=public_key;
-                        
+                        document.getElementById('login_pk').value=data.key;
                     }
-                    });
+                    else if (method == "sha1") {
+                        // Standard method when rsa is not available
+                        var salt = data.salt;
+                        var encryptedPass='$SHA1$' + SHA1(salt + document.getElementById('pass').value);
+                        document.getElementById('code').value = encryptedPass;
+                        document.getElementById('code_salt').value='';
+                        document.getElementById('code_extra').value='';
+                        document.getElementById('pass').value='';
+                        document.getElementById('login_pk').value='';
+                    }
+                    else if (method == "sha1upgrade") {
+                        // Method when rsa is not available and migrating patient to new salt method
+                        var salt = data.salt;
+                        var encryptedPass='$SHA1$' + SHA1(salt + document.getElementById('pass').value);
+                        var encryptedPassExtra=SHA1(document.getElementById('pass').value);
+                        document.getElementById('code').value = encryptedPass;
+                        document.getElementById('code_salt').value=salt;
+                        document.getElementById('code_extra').value=encryptedPassExtra;
+                        document.getElementById('pass').value='';
+                        document.getElementById('login_pk').value='';
+                    }
+                    else {
+                        alert("<?php echo xls("Server Configuration Error"); ?>");
+                        return false;
+                    }
+                }
+            , "json"
+            );
         }
 	function validate() {
             var pass=true;            
@@ -145,21 +176,65 @@
                 alert ('<?php echo addslashes( xl('The new password can not be the same as the current password.') ); ?>');
                 return false;
             }
-                $.ajax({
-                    url: '<?php echo $webroot; ?>/library/ajax/rsa_request.php',
-                    async: false,
-                    success: function(public_key)
-                    {
-                        var key = RSA.getPublicKey(public_key);
+            var rsa_ajax='<?php echo $webroot;?>/library/ajax/rsa_request.php';
+            $.post(rsa_ajax,{user: user, portal: '1'},
+                function(data)
+                {
+                    var method = data.method;
+                    if (method == "rsa") {
+                        // Standard method when rsa is available
+                        var key = RSA.getPublicKey(data.key);
                         document.getElementById('code').value = RSA.encrypt(document.getElementById('pass').value, key);
+                        document.getElementById('code_salt').value='';
+                        document.getElementById('code_extra').value='';
+                        document.getElementById('code_new').value = RSA.encrypt(document.getElementById('pass_new').value,data.key);
+                        document.getElementById('code_new_confirm').value = RSA.encrypt(document.getElementById('pass_new_confirm').value,data.key);
                         document.getElementById('pass').value='';
-                        document.getElementById('login_pk').value=public_key;
-                        document.getElementById('code_new').value = RSA.encrypt(document.getElementById('pass_new').value,key);
                         document.getElementById('pass_new').value='';
-                        document.getElementById('code_new_confirm').value = RSA.encrypt(document.getElementById('pass_new_confirm').value,key);
-                        document.getElementById('pass_new_confirm').value='';            
+                        document.getElementById('pass_new_confirm').value='';
+                        document.getElementById('login_pk').value=data.key;
                     }
-                    });
+                    else if (method == "sha1") {
+                        // Standard method when rsa is not available
+                        var salt = data.salt;
+                        var encryptedPass='$SHA1$' + SHA1(salt + document.getElementById('pass').value);
+                        var encryptedPass_new='$SHA1$' + SHA1(salt + document.getElementById('pass_new').value);
+                        var encryptedPass_new_confirm='$SHA1$' + SHA1(salt + document.getElementById('pass_new_confirm').value);
+                        document.getElementById('code').value = encryptedPass;
+                        document.getElementById('code_salt').value='';
+                        document.getElementById('code_extra').value='';
+                        document.getElementById('code_new').value = encryptedPass_new;
+                        document.getElementById('code_new_confirm').value = encryptedPass_new_confirm;
+                        document.getElementById('pass').value='';
+                        document.getElementById('pass_new').value='';
+                        document.getElementById('pass_new_confirm').value='';
+                        document.getElementById('login_pk').value='';
+                    }
+
+                    else if (method == "sha1upgrade") {
+                        // Method when rsa is not available and migrating patient to new salt method
+                        var salt = data.salt;
+                        var encryptedPass='$SHA1$' + SHA1(salt + document.getElementById('pass').value);
+                        var encryptedPass_new='$SHA1$' + SHA1(salt + document.getElementById('pass_new').value);
+                        var encryptedPass_new_confirm='$SHA1$' + SHA1(salt + document.getElementById('pass_new_confirm').value);
+                        var encryptedPassExtra=SHA1(document.getElementById('pass').value);
+                        document.getElementById('code').value = encryptedPass;
+                        document.getElementById('code_salt').value=salt;
+                        document.getElementById('code_extra').value=encryptedPassExtra;
+                        document.getElementById('code_new').value = encryptedPass_new;
+                        document.getElementById('code_new_confirm').value = encryptedPass_new_confirm;
+                        document.getElementById('pass').value='';
+                        document.getElementById('pass_new').value='';
+                        document.getElementById('pass_new_confirm').value='';
+                        document.getElementById('login_pk').value='';
+                    }
+                    else {
+                        alert("<?php echo xls("Server Configuration Error"); ?>");
+                        return false;
+                    }
+                }
+            , "json"
+            );
         }
 
         function validate_new_pass() {
@@ -205,7 +280,7 @@
         ?>
       <div id="wrapper" class="centerwrapper">
         <h2 class="title"><?php echo htmlspecialchars( xl('Please Enter a New Password'), ENT_NOQUOTES); ?></h2>
-        <form action="get_patient_info.php" method="POST" onsubmit="return process_new_pass()" >
+        <form action="get_patient_info.php" method="POST" onsubmit="return process_new_pass(document.getElementById('uname').value)" >
             <table>
                 <tr>
                     <td class="algnRight"><?php echo htmlspecialchars( xl('User Name'), ENT_NOQUOTES); ?></td>
@@ -216,6 +291,8 @@
                     <td>
                         <input name="pass" id="pass" type="password" autocomplete="off" />
                         <input type="hidden" id="code" name="code" type="hidden" />
+                        <input type="hidden" id="code_salt" name="code_salt" type="hidden" />
+                        <input type="hidden" id="code_extra" name="code_extra" type="hidden" />
                         <input type="hidden" id="login_pk" name="login_pk"/>                   
                     </td>
                 </tr>
@@ -224,6 +301,7 @@
                     <td>
                         <input name="pass_new" id="pass_new" type="password" />
                         <input type="hidden" id="code_new" name="code_new" type="hidden" />
+                        <input type="hidden" id="code_new_extra" name="code_new_extra" type="hidden" />
                     </td>
                 </tr>
                 <tr>
@@ -231,6 +309,7 @@
                     <td>
                         <input name="pass_new_confirm" id="pass_new_confirm" type="password" />
                         <input type="hidden" id="code_new_confirm" name="code_new_confirm"/>
+                        <input type="hidden" id="code_new_confirm_extra" name="code_new_confirm_extra"/>
                     </td>
                 </tr>
                 <tr>
@@ -244,7 +323,7 @@
     <?php } else { ?>
       <div id="wrapper" class="centerwrapper">
 	<h2 class="title"><?php echo htmlspecialchars( xl('Patient Portal Login'), ENT_NOQUOTES); ?></h2>
-	<form action="get_patient_info.php" method="POST" onsubmit="return process()" >
+	<form action="get_patient_info.php" method="POST" onsubmit="return process(document.getElementById('uname').value)" >
 	    <table>
 		<tr>
 		    <td class="algnRight"><?php echo htmlspecialchars( xl('User Name'), ENT_NOQUOTES); ?></td>
@@ -255,6 +334,8 @@
 		    <td>
 			<input name="pass" id="pass" type="password" autocomplete="off" />
 			<input type="hidden" id="code" name="code" />
+                        <input type="hidden" id="code_salt" name="code_salt" />
+                        <input type="hidden" id="code_extra" name="code_extra" />
                         <input type="hidden" id="login_pk" name="login_pk"/>                   
 		    </td>
 		</tr>
