@@ -1,30 +1,30 @@
 <?php
-// +-----------------------------------------------------------------------------+ 
-// Copyright (C) 2011 Z&H Consultancy Services Private Limited <sam@zhservices.com>
-//
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-//
-// A copy of the GNU General Public License is included along with this program:
-// openemr/interface/login/GnuGPL.html
-// For more information write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-// 
-// Author:   Eldho Chacko <eldho@zhservices.com>
-//           Jacob T Paul <jacob@zhservices.com>
-//           Paul Simon   <paul@zhservices.com>
-//
-// +------------------------------------------------------------------------------+
+/**
+ *
+ * Script to create/modify patient portal credentials.
+ *
+ * Copyright (C) 2011 Z&H Consultancy Services Private Limited <sam@zhservices.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Eldho Chacko <eldho@zhservices.com>
+ * @author  Jacob T Paul <jacob@zhservices.com>
+ * @author  Paul Simon   <paul@zhservices.com>
+ * @author  Brady Miller <brady@sparmy.com>
+ * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @link    http://www.open-emr.org
+ */
+
 
 //SANITIZE ALL ESCAPES
 $sanitize_all_escapes=true;
@@ -37,6 +37,8 @@ $fake_register_globals=false;
  require_once("$srcdir/sql.inc");
  require_once("$srcdir/formdata.inc.php");
  require_once("$srcdir/classes/postmaster.php");
+ require_once("$srcdir/authentication/rsa.php");
+ require_once("$srcdir/authentication/common_operations.php");
 
 // Collect portalsite parameter (either off for offsite or on for onsite); only allow off or on
 $portalsite = isset($_GET['portalsite']) ? $_GET['portalsite'] : $portalsite = "off";
@@ -138,28 +140,40 @@ function displayLogin($patient_id,$message,$emailFlag){
 }
 
 if(isset($_REQUEST['form_save']) && $_REQUEST['form_save']=='SUBMIT'){
-    require_once("$srcdir/authentication/rsa.php");
-    require_once("$srcdir/authentication/common_operations.php");    
-    $pubKey=$_REQUEST['pk'];
-    $rsa=new rsa_key_manager();
-    $rsa->load_from_db($pubKey);
 
-    $clear_pass=$rsa->decrypt($_REQUEST['rsa_pwd']);
+    if (isset($_REQUEST['pk']) && !empty($_REQUEST['pk'])) {
+        // RSA is supported, so need to decrypt the password
+        $pubKey=$_REQUEST['pk'];
+        $rsa=new rsa_key_manager();
+        $rsa->load_from_db($pubKey);
+        $clear_pass=$rsa->decrypt($_REQUEST['rsa_pwd']);
+    }
+    else {
+        // RSA is not supported, so passing the free text password
+        $clear_pass=$_REQUEST['pwd'];
+    }
     
     $res = sqlStatement("SELECT * FROM patient_access_" . add_escape_custom($portalsite) . "site WHERE pid=?",array($pid));
     $query_parameters=array($_REQUEST['uname']);
     $salt_clause="";
     if($portalsite=='on')
     {
-        // For onsite portal create a blowfish based hash and salt.
+        // For onsite portal create a hash and salt.
+        //  (Also need to create a client side salt and mimick it in the hash creation)
+        // 1. Create and mimick the client side hash
+        $new_salt_client = password_salt(true);
+        $client_hash = password_hash($clear_pass,$new_salt_client);
+        // 2. Create the server side hash
         $new_salt = password_salt();
-        $salt_clause = ",portal_salt=? ";
-        array_push($query_parameters,password_hash($clear_pass,$new_salt),$new_salt);
+        $main_hash = password_hash($client_hash,$new_salt);
+
+        $salt_clause = ",portal_salt=?,portal_salt_client_side=? ";
+        array_push($query_parameters,$main_hash,$new_salt,$new_salt_client);
     }
     else
     {
         // For offsite portal still create and SHA1 hashed password
-        // When offsite portal is updated to handle blowfish, then both portals can use the same execution path.
+        // When offsite portal is updated to handle salts, then both portals can use the same execution path.
         array_push($query_parameters,SHA1($clear_pass));
     }
     array_push($query_parameters,$pid);
@@ -193,23 +207,30 @@ if(isset($_REQUEST['form_save']) && $_REQUEST['form_save']=='SUBMIT'){
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/crypt/rsa.js"></script>
 <script type="text/javascript">
 function encryptPass(){
-    
-                // get a public key to encrypt the password info and send    
-                $.ajax({
-                    url: '<?php echo $webroot; ?>/library/ajax/rsa_request.php',
-                    async: false,
-                    success: function(public_key)
-                    {
-                        var key = RSA.getPublicKey(public_key);
-                        document.getElementById('form_save').value='SUBMIT';
-                        document.getElementById('rsa_pwd').value=RSA.encrypt(document.getElementById('pwd').value,key);
-                        document.getElementById('pwd').value='';
-                        document.getElementById('pk').value=public_key;
-    
-                        top.restoreSession();
-                        document.forms[0].submit();
-                    }
-                    });
+    // If RSA is available, then will use it to encrypt. Otherwise, will send the password as free text.
+    var rsa_ajax='<?php echo $webroot;?>/library/ajax/rsa_request.php';
+    $.post(rsa_ajax,{},
+        function(data)
+        {
+            var method = data.method;
+            if (method == "rsa") {
+                // If RSA is available, then send the password encrypted
+                var key = RSA.getPublicKey(data.key);
+                document.getElementById('form_save').value='SUBMIT';
+                document.getElementById('rsa_pwd').value=RSA.encrypt(document.getElementById('pwd').value,key);
+                document.getElementById('pwd').value='';
+                document.getElementById('pk').value=data.key;
+            }
+            else {
+                // RSA is not available, so send password as free text
+                document.getElementById('form_save').value='SUBMIT';
+                document.getElementById('pk').value='';
+            }
+            top.restoreSession();
+            document.forms[0].submit();
+        }
+    , "json"
+    );    
 }
 </script>
 </head>

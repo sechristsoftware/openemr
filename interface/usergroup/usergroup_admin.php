@@ -1,4 +1,25 @@
 <?php
+/**
+ *
+ * Script to manage users.
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Brady Miller <brady@sparmy.com>
+ * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @link    http://www.open-emr.org
+ */
+
 require_once("../globals.php");
 require_once("../../library/acl.inc");
 require_once("$srcdir/sql.inc");
@@ -6,6 +27,8 @@ require_once("$srcdir/auth.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once(dirname(__FILE__) . "/../../library/classes/WSProvider.class.php");
 require_once ($GLOBALS['srcdir'] . "/classes/postmaster.php");
+require_once("$srcdir/authentication/rsa.php");
+require_once("$srcdir/authentication/password_change.php");
 
 $alertmsg = '';
 $bg_msg = '';
@@ -131,17 +154,28 @@ if (isset($_GET["privatemode"]) && $_GET["privatemode"] =="user_admin") {
           "' WHERE id = '" . formData('id','G') . "'");
       }
 
-     if ($_GET["newauthPass"] && $_GET["pk"]) { 
-        require_once("$srcdir/authentication/rsa.php");
-        require_once("$srcdir/authentication/password_change.php");
-        $pubKey=$_GET['pk'];
-        $rsa=new rsa_key_manager();
-        $rsa->load_from_db($pubKey);
+     if ($_GET["newauthPass"]) {
 
-        $clearAdminPass=$rsa->decrypt($_GET['userPass']);
-        $clearUserPass=$rsa->decrypt($_GET['newauthPass']);
+        if (isset($_GET["pk"]) && !empty($_GET["pk"])) {
+            // The RSA method was used, so can decrypt to the cleartext passwords.
+            $pubKey=$_GET['pk'];
+            $rsa=new rsa_key_manager();
+            $rsa->load_from_db($pubKey);
+            $AdminPass=$rsa->decrypt($_GET['userPass']);
+            $UserPass=$rsa->decrypt($_GET['newauthPass']);
+        }
+        else {
+            // RSA method is not available, so the passwords were hashed on client side.
+            // Need to convert them into arrays which the update_password() will recognize.
+            $AdminPass=array('phash_client' => $_GET['userPass']);
+            $UserPass=array('phash_client' => $_GET['newauthPass']);
+            if (isset($_GET['target_client_salt']) && !empty($_GET['target_client_salt'])) {
+                $UserPass['client_salt']=$_GET['target_client_salt'];
+            }
+        }
+
         $password_err_msg="";
-        $success=update_password($_SESSION['authId'],$_GET['id'],$clearAdminPass,$clearUserPass,$password_err_msg);
+        $success=update_password($_SESSION['authId'],$_GET['id'],$AdminPass,$UserPass,$password_err_msg);
         if(!$success)
         {
             error_log($password_err_msg);    
@@ -214,11 +248,6 @@ if (isset($_POST["mode"])) {
     }
 
     if ($doit == true) {
-    require_once("$srcdir/authentication/rsa.php");
-    require_once("$srcdir/authentication/password_change.php");
-    $pubKey=$_POST['pk'];
-    $rsa=new rsa_key_manager();
-    $rsa->load_from_db($pubKey);
 
     //if password expiration option is enabled,  calculate the expiration date of the password
     if($GLOBALS['password_expiration_days'] != 0){
@@ -251,12 +280,28 @@ if (isset($_POST["mode"])) {
             "', calendar = '"      . $calvar                         .
             "', pwd_expiration_date = '" . trim("$exp_date") .
             "'";
+
+    if (isset($_POST["pk"]) && !empty($_POST["pk"])) {
+        // The RSA method was used, so can decrypt to the cleartext passwords.
+        $pubKey=$_POST['pk'];
+        $rsa=new rsa_key_manager();
+        $rsa->load_from_db($pubKey);
+        $AdminPass=$rsa->decrypt($_POST['userPass']);
+        $UserPass=$rsa->decrypt($_POST['newauthPass']);
+    }
+    else {
+        // RSA method is not available, so the passwords were hashed on client side.
+        // Need to convert them into arrays which the update_password() will recognize.
+        $AdminPass=array('phash_client' => $_POST['userPass']);
+        $UserPass=array('phash_client' => $_POST['newauthPass']);
+        if (isset($_POST['target_client_salt']) && !empty($_POST['target_client_salt'])) {
+            $UserPass['client_salt']=$_POST['target_client_salt'];
+        }
+    }
     
-    $clearAdminPass=$rsa->decrypt($_POST['userPass']);
-    $clearUserPass=$rsa->decrypt($_POST['newauthPass']);
     $password_err_msg="";
     $prov_id="";
-    $success=update_password($_SESSION['authId'],0,$clearAdminPass,$clearUserPass,$password_err_msg,true,$insertUserSQL,formData('rumple'),$prov_id);
+    $success=update_password($_SESSION['authId'],0,$AdminPass,$UserPass,$password_err_msg,true,$insertUserSQL,formData('rumple'),$prov_id);
     error_log($password_err_msg);
     $alertmsg .=$password_err_msg;
     if($success)

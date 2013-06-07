@@ -16,10 +16,14 @@
  *
  * @package OpenEMR
  * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @author  Brady Miller <brady@sparmy.com>
  * @link    http://www.open-emr.org
  */
 
-
+/**
+ *  This is a debug switch to test when rsa is not enabled.
+ */
+$GLOBALS['force_rsa_off_debug'] = false;
 
 /**
  * This class is used to create and store RSA key pair.
@@ -44,15 +48,20 @@ class rsa_key_manager
      */
     public function initialize()
     {
+        if ($GLOBALS['force_rsa_off_debug'])
+        {
+            error_log("RSA (openssl for php) has been turned off for debugging purposes.");
+            throw new Exception("RSA (openssl for php) has been turned off for debugging purposes.");
+        }
         if(!function_exists("openssl_pkey_new"))
         {
-            error_log("Server Configuration Problem:Function openssl_pkey_new does not exist!");
+            error_log("Server Configuration Problem: Recommend turning on openssl for php.");
         }
         $pair=openssl_pkey_new(); // Still call openssl_pkey_new even when it doesn't exist to generate exception.
         if($pair==false)
         {
-            error_log("Server Configuration Problem:Cannot Generate Key Pair!".openssl_error_string());
-            throw new Exception("Server Configuration Problem:Cannot Generate Key Pair!");
+            error_log("Server Configuration Improvement Recommendation: Recommend trying to configure openssl for php. Note that this may not be possible in some windows environments.");
+            throw new Exception("OpenSSL for php not set up.");
         }
         $keyDetails=openssl_pkey_get_details($pair);
         $this->pubKey=$keyDetails['key'];

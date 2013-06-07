@@ -25,6 +25,7 @@
  *
  * @package OpenEMR
  * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @author  Brady Miller <brady@sparmy.com)
  * @link    http://www.open-emr.org
  */
 
@@ -38,18 +39,32 @@ include_once("../globals.php");
 require_once("$srcdir/authentication/rsa.php");
 require_once("$srcdir/authentication/password_change.php");
 
-
-$rsa_manager = new rsa_key_manager();
-$rsa_manager->load_from_db($_REQUEST['pk']);
-$curPass=$rsa_manager->decrypt($_REQUEST['curPass']);
-$newPass=$rsa_manager->decrypt($_REQUEST['newPass']);
-$newPass2=$rsa_manager->decrypt($_REQUEST['newPass2']);
-
-if($newPass!=$newPass2)
-{
-    echo xlt("Passwords Don't match!");
-    exit;
+if (isset($_REQUEST['pk']) & !empty($_REQUEST['pk'])) {
+    // Use the rsa method to collect encrypted clear texts
+    $rsa_manager = new rsa_key_manager();
+    $rsa_manager->load_from_db($_REQUEST['pk']);
+    $curPass=$rsa_manager->decrypt($_REQUEST['curPass']);
+    $newPass=$rsa_manager->decrypt($_REQUEST['newPass']);
+    $newPass2=$rsa_manager->decrypt($_REQUEST['newPass2']);
+    if($newPass!=$newPass2)
+    {
+        echo xlt("Passwords Don't match!");
+        exit;
+    }
 }
+else {
+    // rsa method not available, so collect and organize the client side hashes
+    // by placing them in arrays; downstream functions will act accordingly.
+    $curPass = array('phash_client' => $_REQUEST['curPass']);
+    $newPass = array('phash_client' => $_REQUEST['newPass']);
+    $newPass2 = array('phash_client' => $_REQUEST['newPass2']);
+    if($newPass['phash_client']!=$newPass2['phash_client'])
+    {
+        echo xlt("Passwords Don't match!");
+        exit;
+    }
+}
+
 $errMsg='';
 $success=update_password($_SESSION['authId'],$_SESSION['authId'],$curPass,$newPass,$errMsg);
 if($success)

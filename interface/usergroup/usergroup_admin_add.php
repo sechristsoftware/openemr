@@ -1,4 +1,25 @@
 <?php
+/**
+ *
+ * Script to add a new user.
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Brady Miller <brady@sparmy.com>
+ * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @link    http://www.open-emr.org
+ */
+
 require_once("../globals.php");
 require_once("../../library/acl.inc");
 require_once("$srcdir/sha1.js");
@@ -40,7 +61,7 @@ function trimAll(sString)
 	return sString;
 } 
 
-function submitform() {
+function submitform(target,admin) {
     if (document.forms[0].rumple.value.length>0 && document.forms[0].stiltskin.value.length>0 && document.getElementById('fname').value.length >0 && document.getElementById('lname').value.length >0) {
        top.restoreSession();
 
@@ -102,22 +123,65 @@ function submitform() {
        }
        <?php } // End erx_enable only include block?>
 
-         // get a public key to encrypt the password info and send    
-         $.ajax({
-             url: '<?php echo $webroot; ?>/library/ajax/rsa_request.php',
-             async: false,
-             success: function(public_key)
+         // (If rsa is not working, then need to get client salt from the logged in user also)
+         // (If rsa is not working, only need to pass the client side salt of new users)
+         // This method will encrypt or hash the password (prefer encryption if rsa is available).
+         var rsa_ajax='<?php echo $webroot;?>/library/ajax/rsa_request.php';
+         $.post(rsa_ajax,{user: target},
+             function(data)
              {
-                 var key = RSA.getPublicKey(public_key);
-                 $("input[name='userPass']").val(RSA.encrypt($("input[name='adminPass']").val(), key));
-                 $("input[name='newauthPass']").val(RSA.encrypt($("input[name='stiltskin']").val(), key));
-                 $("input[name='pk']").val(public_key);
-                 $('input[name="adminPass"]').val('');
-                 $('input[name="stiltskin"]').val('');
-                 document.forms[0].submit();
-                 parent.$.fn.fancybox.close(); 
+                 var method = data.method;
+                 if (method == "rsa") {
+                     // If rsa is supported (this is the standard method)
+                     var key = RSA.getPublicKey(data.key);
+                     $("input[name='userPass']").val(RSA.encrypt($("input[name='adminPass']").val(), key));
+                     $("input[name='newauthPass']").val(RSA.encrypt($("input[name='stiltskin']").val(), key));
+                     $("input[name='pk']").val(data.key);
+                     $('input[name="adminPass"]').val('');
+                     $('input[name="stiltskin"]').val('');
+                     $('input[name="target_client_salt"]').val('');
+                     document.forms[0].submit();
+                     parent.$.fn.fancybox.close();
+                 }
+                 else if (method == "sha1" || method == "sha1upgrade" || method == "md5") {
+                     // rsa not supported so will do a hash on the client end
+
+                     // Store the target user client salt.
+                     var salt_target = data.salt;
+
+                     // request the admin client side salt and then process the form
+                     $.post(rsa_ajax,{user: admin},
+                         function(data_admin)
+                         {
+                             if (method == "sha1") {
+                                 // If rsa is not supported (this is the backup method)
+                                 var salt_admin = data_admin.salt;
+                                 var encryptedAdminPass='$SHA1$' + SHA1(salt_admin + $("input[name='adminPass']").val());
+                                 var encryptedUserPass='$SHA1$' + SHA1(salt_target + $("input[name='stiltskin']").val());
+                                 $("input[name='userPass']").val(encryptedAdminPass);
+                                 $("input[name='newauthPass']").val(encryptedUserPass);
+                                 $("input[name='pk']").val('');
+                                 $('input[name="adminPass"]').val('');
+                                 $('input[name="stiltskin"]').val('');
+                                 $('input[name="target_client_salt"]').val(salt_target);
+                             }
+                             else {
+                                 alert("<?php echo xls("Server Configuration Error"); ?>");
+                                 return false;
+                             }
+                             document.forms[0].submit();
+                             parent.$.fn.fancybox.close();
+                         }
+                     , "json"
+                     );
+                 }
+                 else {
+                     alert("<?php echo xls("Server Configuration Error"); ?>");
+                     return false;
+                 }
              }
-             });
+         , "json"
+         );
 
     } else {
        if (document.forms[0].rumple.value.length<=0)
@@ -161,7 +225,7 @@ function authorized_clicked() {
 <table><tr><td>
 <span class="title"><?php xl('Add User','e'); ?></span>&nbsp;</td>
 <td>
-<a class="css_button" name='form_save' id='form_save' href='#' onclick="return submitform()">
+<a class="css_button" name='form_save' id='form_save' href='#' onclick='return submitform(document.forms[0].rumple.value,"<?php echo attr(addslashes($_SESSION['authUser'])) ?>")'>
 	<span><?php xl('Save','e');?></span></a>
 <a class="css_button large_button" id='cancel' href='#'>
 	<span class='css_button_span large_button_span'><?php xl('Cancel','e');?></span>
@@ -180,6 +244,7 @@ function authorized_clicked() {
 <INPUT TYPE="HIDDEN" NAME="userPass" VALUE="">
 <INPUT TYPE="HIDDEN" NAME="newauthPass" VALUE="">
 <INPUT TYPE="HIDDEN" NAME="pk" VALUE="">
+<INPUT TYPE="HIDDEN" NAME="target_client_salt" VALUE="">
 <span class="bold">&nbsp;</span>
 </td><td>
 <table border=0 cellpadding=0 cellspacing=0 style="width:600px;">
