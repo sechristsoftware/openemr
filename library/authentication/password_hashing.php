@@ -26,6 +26,7 @@
  *
  * @package OpenEMR
  * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @author  Brady Miller <brady@sparmy.com>
  * @link    http://www.open-emr.org
  */
 
@@ -43,10 +44,10 @@ define("SALT_PREFIX_SHA1",'$SHA1$');
  * See php documentation on crypt() for more details.
  * </pre>
  * 
- * 
+ * @param  boolean  $force_sha  This will force a sha1 hash, which is used in the client side hash mimicking functionality. 
  * @return type     The algorithm prefix + random data for salt.
  */
-function password_salt()
+function password_salt($force_sha=false)
 {
     $Allowed_Chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./';
     $Chars_Len = 63;
@@ -61,7 +62,7 @@ function password_salt()
     }    
 
     // This is the preferred hashing mechanism
-    if(CRYPT_BLOWFISH===1)
+    if(CRYPT_BLOWFISH===1 && !$force_sha)
     {
         $rounds='05';
         //This string tells crypt to apply blowfish $rounds times.
@@ -70,15 +71,13 @@ function password_salt()
 
         return $Blowfish_Pre.$salt.$Blowfish_End;        
     }
-    error_log("Blowfish hashing algorithm not available.  Upgrading to PHP 5.3.x or newer is strongly recommended");
+    if (!$force_sha) error_log("Blowfish hashing algorithm not available.  Upgrading to PHP 5.3.x or newer is strongly recommended");
     
-    return SALT_PREFIX_SHA1.$salt;
-    
-    
+    return SALT_PREFIX_SHA1.$salt;    
 }
 
 /**
- * Hash a plaintext password for comparison or initial storage.
+ * Hash a input for comparison or initial storage.
  * 
  * <pre>
  * This function either uses the built in PHP crypt() function, or sha1() depending
@@ -86,20 +85,20 @@ function password_salt()
  * for crypt(), sha1() can be used as a fallback.
  * </pre>
  * 
- * @param type $plaintext
+ * @param type $input
  * @param type $salt
  * @return type
  */
-function password_hash($plaintext,$salt)
+function password_hash($input,$salt)
 {
     // if this is a SHA1 salt, the use prepended salt
     if(strpos($salt,SALT_PREFIX_SHA1)===0)
     {
-        return SALT_PREFIX_SHA1 . sha1($salt.$plaintext);
+        return SALT_PREFIX_SHA1 . sha1($salt.$input);
     }
     else { // Otherwise use PHP crypt()
         
-        return crypt($plaintext,$salt);
+        return crypt($input,$salt);
     }
 }
 ?>

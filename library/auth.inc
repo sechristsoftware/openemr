@@ -12,18 +12,34 @@ require_once("{$GLOBALS['srcdir']}/sql.inc");
 require_once("{$GLOBALS['srcdir']}/acl.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/authentication/login_operations.php");
+require_once("$srcdir/authentication/rsa.php");
 
 $incoming_site_id = '';
 
 
 if(isset($_POST['authPass']))
 {
-    require_once("authentication/rsa.php");
     $cp=$_POST['authPass'];
-    $rsa=new rsa_key_manager();
-    $pubKey=$_POST['pk'];
-    $rsa->load_from_db($pubKey);
-    $clearPass=$rsa->decrypt($cp);
+    if (isset($_POST['pk']) && !empty($_POST['pk'])) {
+        // In this case just place the clear password in a string variable
+        $rsa=new rsa_key_manager();
+        $pubKey=$_POST['pk'];
+        $rsa->load_from_db($pubKey);
+        $clearPass=$rsa->decrypt($cp);
+        $Pass=$clearPass;
+    }
+    else {
+        // In this case, the value has already been hashed on the client side,
+        // so place in an array. Also will include the pertinent migration hash
+        // and client salt, if applicable.
+        $Pass=array('phash_client' => $cp);
+        if (isset($_POST['client_salt']) && !empty($_POST['client_salt'])) {
+            $Pass['client_salt']=$_POST['client_salt'];
+        }
+        if (isset($_POST['authPassExtra']) && !empty($_POST['authPassExtra'])) {
+            $Pass['phash_client_extra']=$_POST['authPassExtra'];
+        }
+    }
 }
 if (isset($_GET['auth']) && ($_GET['auth'] == "login") && isset($_POST['authUser']) &&
     isset($_POST['authPass']) && isset($_POST['authProvider']))
@@ -36,7 +52,7 @@ if (isset($_GET['auth']) && ($_GET['auth'] == "login") && isset($_POST['authUser
         $_SESSION['language_choice'] = 1;
     }
     
-    if(!validate_user_password($_POST['authUser'],$clearPass,$_POST['authProvider']) ||  !verify_user_gacl_group($_POST['authUser']))
+    if(!validate_user_password($_POST['authUser'],$Pass,$_POST['authProvider']) ||  !verify_user_gacl_group($_POST['authUser']))
     {
         $_SESSION['loginfailure'] = 1;
         authLoginScreen();

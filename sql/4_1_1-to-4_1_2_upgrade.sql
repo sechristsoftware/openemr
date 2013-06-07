@@ -485,3 +485,20 @@ ALTER TABLE `procedure_order_code`
   ADD COLUMN `do_not_send` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0 = normal, 1 = do not transmit to lab';
 #EndIf
 
+#IfNotTable client_salt_dummy
+CREATE TABLE `client_salt_dummy` (
+  `username` varchar(255) DEFAULT NULL,
+  `salt_client_side` varchar(255),
+  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`username`)
+) ENGINE=InnoDb;
+#EndIf
+
+#IfMissingColumn patient_access_onsite portal_salt_client_side
+ALTER TABLE `patient_access_onsite` ADD COLUMN `portal_salt_client_side` VARCHAR(100);
+#EndIf
+
+#IfMissingColumn users_secure salt_client_side
+ALTER TABLE `users_secure` ADD COLUMN `salt_client_side` varchar(255);
+#EndIf
+
