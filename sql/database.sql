@@ -111,6 +111,8 @@ CREATE TABLE `background_services` (
 
 INSERT INTO `background_services` (`name`, `title`, `execute_interval`, `function`, `require_once`, `sort_order`) VALUES
 ('phimail', 'phiMail Direct Messaging Service', 5, 'phimail_check', '/library/direct_message_check.inc', 100);
+INSERT INTO `background_services` (`name`, `title`, `active`, `execute_interval`, `function`, `require_once`, `sort_order`) VALUES
+('token-cleanup', 'Token Cleanup Service', 1, 2, 'cleanup_all_user_tokens', '/library/authentication/user_tokens.php', 10);
 
 -- --------------------------------------------------------
 
@@ -5280,6 +5282,20 @@ CREATE TABLE `users_secure` (
   `salt_history2` varchar(255),
   PRIMARY KEY (`id`),
   UNIQUE KEY `USERNAME_ID` (`id`,`username`)
+) ENGINE=InnoDb;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users_secure_tokens_temp`
+--
+CREATE TABLE `users_secure_tokens_temp` (
+  `id` bigint(20) NOT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255),
+  `salt` varchar(255),
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `id` (`id`)
 ) ENGINE=InnoDb;
 
 -- --------------------------------------------------------

@@ -36,9 +36,9 @@ $incoming_site_id = '';
 
 
 if (isset($_GET['auth']) && ($_GET['auth'] == "login") && isset($_POST['authUser']) &&
-    isset($_POST['clearPass']) && isset($_POST['authProvider']))
+    (isset($_POST['clearPass']) || isset($_POST['tokenID'])) && isset($_POST['authProvider']))
 {
-    $clearPass=$_POST['clearPass'];    
+
     // set the language
     if (!empty($_POST['languageChoice'])) {
         $_SESSION['language_choice'] = $_POST['languageChoice'];
@@ -46,14 +46,33 @@ if (isset($_GET['auth']) && ($_GET['auth'] == "login") && isset($_POST['authUser
     else {
         $_SESSION['language_choice'] = 1;
     }
-    
-    if(!validate_user_password($_POST['authUser'],$clearPass,$_POST['authProvider']) ||  !verify_user_gacl_group($_POST['authUser']))
-    {
+
+    // authenticate
+    if (isset($_POST['clearPass'])) {
+        // Use the standard authentication
+        $clearPass=$_POST['clearPass'];
+        if(!validate_user_password($_POST['authUser'],$clearPass,$_POST['authProvider']) ||  !verify_user_gacl_group($_POST['authUser']))
+        {
+            $_SESSION['loginfailure'] = 1;
+            authLoginScreen();
+        }
+    }
+    else if(isset($_POST['tokenID'])) {
+        // Use the temporary user token authentication
+        $tokenID=$_POST['tokenID'];
+        if(!validate_user_password($_POST['authUser'],$tokenID,$_POST['authProvider'],true) ||  !verify_user_gacl_group($_POST['authUser']))
+        {
+            $_SESSION['loginfailure'] = 1;
+            authLoginScreen();
+        }
+    }
+    else {
+        // Should never be here since either clearPass or TokenID is required in above if statement, but to be safe will place exit code here
         $_SESSION['loginfailure'] = 1;
         authLoginScreen();
     }
-//If password expiration option is enabled call authCheckExpired() to check whether login user password is expired or not
-    
+
+    //If password expiration option is enabled call authCheckExpired() to check whether login user password is expired or not
     if($GLOBALS['password_expiration_days'] != 0){
     	if(authCheckExpired($_POST['authUser']))
         {

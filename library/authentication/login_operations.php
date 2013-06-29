@@ -21,7 +21,7 @@
  */
 
 require_once("$srcdir/authentication/common_operations.php");
-
+require_once("$srcdir/authentication/user_tokens.php");
 
 
 /**
@@ -30,31 +30,49 @@ require_once("$srcdir/authentication/common_operations.php");
  * @param type $password    password is passed by reference so that it can be "cleared out"
  *                          as soon as we are done with it.
  * @param type $provider
+ * @param type $token       Set to true if authenticating with a tempory user token
  */
-function validate_user_password($username,&$password,$provider)
+function validate_user_password($username,&$password,$provider,$token=false)
 {
     $ip=$_SERVER['REMOTE_ADDR'];
     
     $valid=false;
+
+    // Note that this query will do following:
+    //   -If $token is true it will pull authentication from the temp token authenticationtable.
+    //      (this mechanism allows opening of a new OpenEMR instance within OpenEMR
+    //       primarily to allow viewing of multiple patients).
+    //   -If $token is false (normal behavior) it will pull authentication from standard table.
+    if ($token) {
+        $table_secure = TBL_USERS_TOKEN_SECURE;
+    }
+    else {
+        $table_secure = TBL_USERS_SECURE;
+    }
     $getUserSecureSQL= " SELECT " . implode(",",array(COL_ID,COL_PWD,COL_SALT))
-                       ." FROM ".TBL_USERS_SECURE
+                       ." FROM ". $table_secure
                        ." WHERE BINARY ".COL_UNM."=?";
                        // Use binary keyword to require case sensitive username match
     $userSecure=privQuery($getUserSecureSQL,array($username));
-    if(is_array($userSecure))
-    {
+    if (is_array($userSecure))
+    {    
         $phash=password_hash($password,$userSecure[COL_SALT]);
         if($phash!=$userSecure[COL_PWD])
         {
-            
             return false;
         }
         $valid=true;
+        if ($token) {
+            // Need to clean up the tokens if using the temp token authentication
+            cleanup_all_user_tokens(); // Removes all outdated tokens
+            cleanup_user_tokens($userSecure[COL_ID]); // Removes all current user tokens
+        }
     }
     else
     {  
-        if((!isset($GLOBALS['password_compatibility'])||$GLOBALS['password_compatibility']))           // use old password scheme if allowed.
+        if((!isset($GLOBALS['password_compatibility']) || $GLOBALS['password_compatibility']) && !$token)
         {
+            // use old password scheme if allowed and not using the temporary user token authentication.
             $getUserSQL="select id, password from users where username = ?";
             $userInfo = privQuery($getUserSQL,array($username));            
             $dbPasswordLen=strlen($userInfo['password']);
@@ -78,8 +96,7 @@ function validate_user_password($username,&$password,$provider)
             {
                 return false;
             }
-    }
-        
+        } 
     }
     $getUserSQL="select id, authorized, see_auth".
                         ", cal_ui, active ".
@@ -100,7 +117,6 @@ function validate_user_password($username,&$password,$provider)
             $_SESSION['authUser'] = $username;
             $_SESSION['authGroup'] = $authGroup['name'];
             $_SESSION['authUserID'] = $userInfo['id'];
-            $_SESSION['authPass'] = $phash;
             $_SESSION['authProvider'] = $provider;
             $_SESSION['authId'] = $userInfo{'id'};
             $_SESSION['cal_ui'] = $userInfo['cal_ui'];

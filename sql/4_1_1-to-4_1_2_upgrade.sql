@@ -476,3 +476,23 @@ ALTER TABLE `procedure_order_code`
   ADD COLUMN `do_not_send` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0 = normal, 1 = do not transmit to lab';
 #EndIf
 
+#IfNotTable users_secure_tokens_temp
+CREATE TABLE `users_secure_tokens_temp` (
+  `id` bigint(20) NOT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255),
+  `salt` varchar(255),
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `id` (`id`)
+) ENGINE=InnoDb;
+#EndIf
+
+#IfNotRow background_services name token-cleanup
+INSERT INTO `background_services` (`name`, `title`, `active`, `execute_interval`, `function`, `require_once`, `sort_order`) VALUES
+('token-cleanup', 'Token Cleanup Service', 1, 2, 'cleanup_all_user_tokens', '/library/authentication/user_tokens.php', 10);
+#EndIf
+
+#IfNotRow users username token-cleanup
+INSERT INTO `users` (username,password,lname,authorized,active) VALUES ('token-cleanup','NoLogin','Token Cleanup',0,0);
+#EndIf
+

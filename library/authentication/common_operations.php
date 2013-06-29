@@ -24,6 +24,7 @@ require_once("$srcdir/authentication/privDB.php");
 require_once("$srcdir/authentication/password_hashing.php");
 define("TBL_USERS_SECURE","users_secure");
 define("TBL_USERS","users");
+define("TBL_USERS_TOKEN_SECURE","users_secure_tokens_temp");
 
 define("COL_PWD","password");
 define("COL_UNM","username");
