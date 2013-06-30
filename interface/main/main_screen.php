@@ -25,6 +25,8 @@ $sanitize_all_escapes=true;
 require_once('../globals.php');
 require_once("$srcdir/formdata.inc.php");
 
+session_regenerate_id();
+
 $_SESSION["encounter"] = '';
 
 // Fetch the password expiration date
