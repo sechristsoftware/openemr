@@ -45,6 +45,7 @@ function validate_user_password($username,&$password,$provider,$token=false)
     //   -If $token is false (normal behavior) it will pull authentication from standard table.
     if ($token) {
         $table_secure = TBL_USERS_TOKEN_SECURE;
+        cleanup_all_user_tokens(); // This will remove all outdated tokens
     }
     else {
         $table_secure = TBL_USERS_SECURE;
