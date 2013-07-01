@@ -32,7 +32,16 @@ require_once("$srcdir/formdata.inc.php");
 // session cookie for this specific OpenEMR instance that is then maintained
 // within the OpenEMR instance by calling top.restoreSession() whenever
 // refreshing or starting a new script.
-session_regenerate_id();
+if (isset($_POST['new_login_session_management'])) {
+  // This is a new login, so create a new session and remove the old one
+  session_regenerate_id(true);
+  error_log("DEBUG LOGIN: ".session_id(),0);
+}
+else {
+  // This is not a new login, so create a new session and do NOT remove the old one
+  session_regenerate_id(false);
+  error_log("DEBUG NOT LOGIN: ".session_id(),0);
+}
 
 $_SESSION["encounter"] = '';
 
