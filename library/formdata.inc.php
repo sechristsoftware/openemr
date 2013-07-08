@@ -163,14 +163,25 @@ function escape_table_name($s) {
 function escape_identifier($s,$whitelist_items,$die_if_no_match=FALSE) {
       if (is_array($whitelist_items)) {
             // Only return an item within the whitelist_items
-            if ( $die_if_no_match && !(in_array($s,$whitelist_items)) ) {
-                  // There is no match in the whitelist and the $die_if_no_match flag is set
-                  // so die() and send error messages to screen and log
-                  error_Log("ERROR: OpenEMR SQL Escaping ERROR of the following string: ".$s,0);
-                  die("<br><span style='color:red;font-weight:bold;'>".xlt("There was an OpenEMR SQL Escaping ERROR of the following string")." ".text($s)."</span><br>");
-            }
             $ok = $whitelist_items;
+            // First, search for case sensitive match
             $key = array_search($s,$ok);
+            if ($key === FALSE) {
+                // No match, so attempt a case insensitive match
+                $ok_UPPER = array_map("strtoupper",$ok);
+                $key = array_search(strtoupper($s),$ok_UPPER);
+                if ($key === FALSE) {
+                    if ($die_if_no_match) {
+                        // No match and $die_if_no_match is set, so die() and send error messages to screen and log
+                        error_Log("ERROR: OpenEMR SQL Escaping ERROR of the following string: ".$s,0);
+                        die("<br><span style='color:red;font-weight:bold;'>".xlt("There was an OpenEMR SQL Escaping ERROR of the following string")." ".text($s)."</span><br>");
+                    }
+                    else {
+                        // Return first token since no match
+                        $key = 0; 
+                    }
+                }
+            }
             return $ok[$key];
       }
       else {
