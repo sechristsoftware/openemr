@@ -458,18 +458,99 @@ class Document extends ORDataObject{
     return true;
   }
 
+  /**
+   * Create a new document and store its data.
+   * This is a mix of new code and code adapted from C_Document.class.php,
+   * which should eventually be changed to use this function (testing with
+   * CouchDB is an important part of that task).
+   *
+   * @param  string  $patient_id   Patient pid
+   * @param  integer $category_id  The desired document category ID
+   * @param  string  $filename     Desired filename, may be modified for uniqueness
+   * @param  string  $mimetype     MIME type
+   * @param  string  &$data        The actual data to store (not encoded)
+   * @return string                Empty string if success, otherwise error message text
+   */
+  function createDocument($patient_id, $category_id, $filename, $mimetype, &$data) {
+    // The original code used the encounter ID but never set it to anything.
+    // That was probably a mistake, but we reference it here for documentation
+    // and leave it empty. Logically, documents are not tied to encounters.
+    $encounter_id = '';
+    $this->storagemethod = $GLOBALS['document_storage_method'];
+    $this->mimetype = $mimetype;
+    if ($this->storagemethod == 1) {
+      // Store it using CouchDB.
+      $couch = new CouchDB();
+      $docname = $_SESSION['authId'] . $filename . $patient_id . $encounter_id . date("%Y-%m-%d H:i:s");
+      $docid = $couch->stringToId($docname);
+      $json = json_encode(base64_encode($data));
+      $db = $GLOBALS['couchdb_dbase'];
+      $couchdata = array($db, $docid, $patient_id, $encounter_id, $mimetype, $json);
+      $resp = $couch->check_saveDOC($couchdata);
+      if(!$resp->id || !$resp->_rev) {
+        // Not sure what this is supposed to do.  The references to id, rev,
+        // _id and _rev seem pretty weird.
+        $couchdata = array($db, $docid, $patient_id, $encounter_id);
+        $resp = $couch->retrieve_doc($couchdata);
+        $docid = $resp->_id;
+        $revid = $resp->_rev;
+      }
+      else {
+        $docid = $resp->id;
+        $revid = $resp->rev;
+      }
+      if(!$docid && !$revid) {
+        return xl('CouchDB save failed');
+      }
+      $this->url = $filename;
+      $this->couch_docid = $docid;
+      $this->couch_revid = $revid;
+    }
+    else {
+      // Storing document files locally.
+      $filepath = $GLOBALS['oer_config']['documents']['repository'] . $patient_id . '/';
+      if (!file_exists($filepath)) {
+        if (!mkdir($filepath, 0700)) {
+          return "Unable to create patient document subdirectory";
+        }
+      }
+      // Filename modification to force valid characters and uniqueness.
+      $filename = preg_replace("/[^a-zA-Z0-9_.]/", "_", $filename);
+      $fnsuffix = 0;
+      $fn1 = $filename;
+      $fn2 = '';
+      $fn3 = '';
+      $dotpos = strrpos($filename, '.');
+      if ($dotpos !== FALSE) {
+        $fn1 = substr($filename, 0, $dotpos);
+        $fn2 = '.';
+        $fn3 = substr($filename, $dotpos + 1);
+      }
+      while (file_exists($filepath . $filename)) {
+        if (++$fnsuffix > 10000) return "Failed to compute a unique filename";
+        $filename = $fn1 . '_' . $fnsuffix . $fn2 . $fn3;
+      }
+      $this->url = "file://" . $filepath . $filename;
+      // Store the file into its proper directory.
+      if (file_put_contents($filepath . $filename, $data) === FALSE) {
+        return "Failed to create $filepath$filename";
+      }
+    }
+    $this->size  = strlen($data);
+    $this->hash  = sha1($data);
+    $this->type  = $d->type_array['file_url'];
+    $this->owner = $_SESSION['authUserID'];			
+    $this->set_foreign_id($patient_id);
+    $this->persist();
+    $this->populate();
+    if (is_numeric($this->get_id()) && is_numeric($category_id)){
+      $sql = "REPLACE INTO categories_to_documents set " .
+        "category_id = '$category_id', " .
+        "document_id = '" . $this->get_id() . "'";
+      $this->_db->Execute($sql);
+    }
+    return '';
+  }
+
 } // end of Document
-
-/*
-$d = new Document(3);
-$d->type = $d->type_array[1];
-$d->url = "file:///tmp/test.gif";
-$d->pages = 0;
-$d->owner = 60;
-$d->size = 8000;
-$d->foreign_id = 25;
-$d->persist();
-$d->populate();
-
-echo $d->toString(true);*/
 ?>
