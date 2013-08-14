@@ -464,14 +464,18 @@ class Document extends ORDataObject{
    * which should eventually be changed to use this function (testing with
    * CouchDB is an important part of that task).
    *
-   * @param  string  $patient_id   Patient pid
+   * @param  string  $patient_id   Patient pid; if not known then this may be a simple directory name
    * @param  integer $category_id  The desired document category ID
    * @param  string  $filename     Desired filename, may be modified for uniqueness
    * @param  string  $mimetype     MIME type
    * @param  string  &$data        The actual data to store (not encoded)
+   * @param  string  $higher_level_path Optional subdirectory within the local document repository
+   * @param  string  $path_depth   Number of directory levels in $higher_level_path, if specified
+   * @param  integer $owner        Owner/user/service that is requesting this action
    * @return string                Empty string if success, otherwise error message text
    */
-  function createDocument($patient_id, $category_id, $filename, $mimetype, &$data) {
+  function createDocument($patient_id, $category_id, $filename, $mimetype, &$data,
+    $higher_level_path='', $path_depth=1, $owner=0) {
     // The original code used the encounter ID but never set it to anything.
     // That was probably a mistake, but we reference it here for documentation
     // and leave it empty. Logically, documents are not tied to encounters.
@@ -508,9 +512,32 @@ class Document extends ORDataObject{
     }
     else {
       // Storing document files locally.
-      $filepath = $GLOBALS['oer_config']['documents']['repository'] . $patient_id . '/';
+      $repository = $GLOBALS['oer_config']['documents']['repository'];
+      $higher_level_path = preg_replace("/[^A-Za-z0-9\/]/", "_", $higher_level_path);
+      if ((!empty($higher_level_path)) && (is_numeric($patient_id) && $patient_id > 0)) {
+        // Allow higher level directory structure in documents directory and a patient is mapped.
+        $filepath = $repository . $higher_level_path . "/";
+      }
+      else if (!empty($higher_level_path)) {
+        // Allow higher level directory structure in documents directory and there is no patient mapping
+        // (will create up to 10000 random directories and increment the path_depth by 1).
+        $filepath = $repository . $higher_level_path . '/' . rand(1,10000)  . '/';
+        ++$path_depth;
+      }
+      else if (!(is_numeric($patient_id)) || !($patient_id > 0)) {
+        // This is the default action except there is no patient mapping (when patient_id is 00 or direct)
+        // (will create up to 10000 random directories and set the path_depth to 2).
+        $filepath = $repository . $patient_id . '/' . rand(1,10000)  . '/';
+        $path_depth = 2;
+      }
+      else {
+        // This is the default action where the patient is used as one level directory structure in documents directory.
+        $this->file_path = $this->_config['repository'] . preg_replace("/[^A-Za-z0-9]/","_",$_GET['patient_id']) . "/";
+        $filepath = $repository . $patient_id . '/';
+        $path_depth = 1;
+      }
       if (!file_exists($filepath)) {
-        if (!mkdir($filepath, 0700)) {
+        if (!mkdir($filepath, 0700, true)) {
           return "Unable to create patient document subdirectory";
         }
       }
@@ -527,19 +554,23 @@ class Document extends ORDataObject{
         $fn3 = substr($filename, $dotpos + 1);
       }
       while (file_exists($filepath . $filename)) {
-        if (++$fnsuffix > 10000) return "Failed to compute a unique filename";
+        if (++$fnsuffix > 10000) return xl('Failed to compute a unique filename');
         $filename = $fn1 . '_' . $fnsuffix . $fn2 . $fn3;
       }
       $this->url = "file://" . $filepath . $filename;
+      if (is_numeric($path_depth)) {
+        // this is for when directory structure is more than one level
+        $this->path_depth = $path_depth;
+      }
       // Store the file into its proper directory.
       if (file_put_contents($filepath . $filename, $data) === FALSE) {
-        return "Failed to create $filepath$filename";
+        return xl('Failed to create') . " $filepath$filename";
       }
     }
     $this->size  = strlen($data);
     $this->hash  = sha1($data);
     $this->type  = $d->type_array['file_url'];
-    $this->owner = $_SESSION['authUserID'];			
+    $this->owner = $owner ? $owner : $_SESSION['authUserID'];			
     $this->set_foreign_id($patient_id);
     $this->persist();
     $this->populate();
