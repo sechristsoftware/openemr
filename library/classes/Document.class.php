@@ -460,9 +460,7 @@ class Document extends ORDataObject{
 
   /**
    * Create a new document and store its data.
-   * This is a mix of new code and code adapted from C_Document.class.php,
-   * which should eventually be changed to use this function (testing with
-   * CouchDB is an important part of that task).
+   * This is a mix of new code and code moved from C_Document.class.php.
    *
    * @param  string  $patient_id   Patient pid; if not known then this may be a simple directory name
    * @param  integer $category_id  The desired document category ID
@@ -532,13 +530,12 @@ class Document extends ORDataObject{
       }
       else {
         // This is the default action where the patient is used as one level directory structure in documents directory.
-        $this->file_path = $this->_config['repository'] . preg_replace("/[^A-Za-z0-9]/","_",$_GET['patient_id']) . "/";
         $filepath = $repository . $patient_id . '/';
         $path_depth = 1;
       }
       if (!file_exists($filepath)) {
         if (!mkdir($filepath, 0700, true)) {
-          return "Unable to create patient document subdirectory";
+          return xl('Unable to create patient document subdirectory');
         }
       }
       // Filename modification to force valid characters and uniqueness.
@@ -569,7 +566,7 @@ class Document extends ORDataObject{
     }
     $this->size  = strlen($data);
     $this->hash  = sha1($data);
-    $this->type  = $d->type_array['file_url'];
+    $this->type  = $this->type_array['file_url'];
     $this->owner = $owner ? $owner : $_SESSION['authUserID'];			
     $this->set_foreign_id($patient_id);
     $this->persist();
