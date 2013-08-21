@@ -209,7 +209,7 @@ function gen_hl7_order($orderid, &$out) {
       $d2 .
       $d2 . hl7Text($porow['city']) .
       $d2 . hl7Text($porow['state']) .
-      $d2 . hl7Zip($porow['zip']) .
+      $d2 . hl7Zip($porow['postal_code']) .
     $d1 .
     $d1 . hl7Phone($porow['phone_home']) .
     $d1 . hl7Phone($porow['phone_biz']) .
@@ -289,7 +289,7 @@ function gen_hl7_order($orderid, &$out) {
       $d2 .
       $d2 . hl7Text($porow['city']) .
       $d2 . hl7Text($porow['state']) .
-      $d2 . hl7Zip($porow['zip']) .
+      $d2 . hl7Zip($porow['postal_code']) .
     $d1 . hl7Phone($porow['phone_home']) .
     $d1 . hl7Phone($porow['phone_biz']) .
     $d1 . hl7Date($porow['DOB']) .   // DOB
