@@ -75,6 +75,50 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
 	return $events;
 }
 
+function fetchEventsMaster( $from_date, $to_date, $where_param = null, $orderby_param = null ) 
+{
+	$where =
+		"( (e.pc_endDate >= '$from_date' AND e.pc_eventDate <= '$to_date' AND e.pc_recurrtype = '1') OR " .
+  		  "(e.pc_eventDate >= '$from_date' AND e.pc_eventDate <= '$to_date') )";
+	if ( $where_param ) $where .= $where_param;
+	
+	$order_by = "e.pc_eventDate, e.pc_startTime";
+	if ( $orderby_param ) {
+		$order_by = $orderby_param;
+	}
+	
+	$query = "SELECT " .
+  	"e.pc_eventDate, e.pc_endDate, e.pc_startTime, e.pc_endTime, e.pc_duration, e.pc_recurrtype, e.pc_recurrspec, e.pc_recurrfreq, e.pc_catid, e.pc_eid, " .
+  	"e.pc_title, e.pc_hometext, " .
+  	"p.fname, p.mname, p.lname, p.pid, p.pubpid, p.phone_home, p.phone_cell, " .
+  	"u.fname AS ufname, u.mname AS umname, u.lname AS ulname, u.id AS uprovider_id, " .
+  	"c.pc_catname, c.pc_catid " .
+  	"FROM openemr_postcalendar_events AS e " .
+  	"LEFT OUTER JOIN patient_data AS p ON p.pid = e.pc_pid " .
+  	"LEFT OUTER JOIN users AS u ON u.id = e.pc_aid " .
+	"LEFT OUTER JOIN openemr_postcalendar_categories AS c ON c.pc_catid = e.pc_catid " .
+	"WHERE $where AND e.pc_title NOT LIKE 'canceled' " . 
+	"ORDER BY $order_by";
+
+	$res = sqlStatement( $query );
+	$events = array();
+	if ( $res )
+	{
+		while ( $row = sqlFetchArray($res) ) 
+		{
+			// if it's a repeating appointment, fetch all occurances in date range
+			if ( $row['pc_recurrtype'] ) {
+				$reccuringEvents = getRecurringEvents( $row, $from_date, $to_date );
+				$events = array_merge( $events, $reccuringEvents );
+			} else {
+				$events []= $row;
+			}
+		}
+	}
+	
+	return $events;
+}
+
 function fetchAllEvents( $from_date, $to_date, $provider_id = null, $facility_id = null )
 {
 	$where = "";
@@ -138,6 +182,28 @@ function fetchAppointments( $from_date, $to_date, $patient_id = null, $provider_
 	$where .= $filter_wofacility;
 	
 	$appointments = fetchEvents( $from_date, $to_date, $where );
+	return $appointments;
+}
+
+function fetchAppToCall( $from_date, $to_date, $patient_id = null, $provider_id = null, $facility_id = null )
+{
+	$where = "";
+	if ( $provider_id ) $where .= " AND e.pc_aid = '$provider_id'";
+	if ( $patient_id ) {
+		$where .= " AND e.pc_pid = '$patient_id'";
+	} else {
+		$where .= " AND e.pc_pid != ''";
+	}		
+
+	$facility_filter = '';
+	if ( $facility_id ) {
+		$event_facility_filter = " AND e.pc_facility = '$facility_id'";
+		$provider_facility_filter = " AND u.facility_id = '$facility_id'";
+		$facility_filter = $event_facility_filter . $provider_facility_filter;
+	}
+	
+	$where .= $facility_filter;
+	$appointments = fetchEventsMaster( $from_date, $to_date, $where );
 	return $appointments;
 }
 

@@ -996,6 +996,27 @@ $GLOBALS_METADATA = array(
       '',                               // default
       xl('URL for Phone Gateway. Automated VOIP service provided by Maviq. Please visit http://signup.maviq.com for more information.')
     ),
+	
+    'call_reminder_enable' => array(
+      xl('Enable Patient Appt Reminder'),
+      'bool',                           // data type
+      '0',
+      xl('Enable the OpenEMR Support Patient Appointment Reminder Service.')
+    ),
+	
+	 'callback_username' => array(
+      xl('IVR Username'),
+      'text',                           // data type
+      '',                               // default
+      xl('Please visit http://callback.openmedpractice.com/register-now to register for this service.')
+    ),
+    
+    'callback_password' => array(
+      xl('IVR Password'),
+      'pass',                           // data type
+      '',                               // default
+      xl('Please visit http://callback.openmedpractice.com/register-now to register for this service.')
+    ),
 
   ),
   
