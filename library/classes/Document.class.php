@@ -527,6 +527,7 @@ class Document extends ORDataObject{
         // (will create up to 10000 random directories and set the path_depth to 2).
         $filepath = $repository . $patient_id . '/' . rand(1,10000)  . '/';
         $path_depth = 2;
+        $patient_id = 0;
       }
       else {
         // This is the default action where the patient is used as one level directory structure in documents directory.

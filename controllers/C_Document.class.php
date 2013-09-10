@@ -75,7 +75,12 @@ class C_Document extends Controller {
         if (is_numeric($_POST['category_id'])) {	
             $category_id = $_POST['category_id'];
         }
-        if (is_numeric($_POST['patient_id'])) {
+
+        $patient_id = 0;
+        if (isset($_GET['patient_id'])) {
+            $patient_id = $_GET['patient_id'];
+        }
+        else if (is_numeric($_POST['patient_id'])) {
             $patient_id = $_POST['patient_id'];
         }
 
