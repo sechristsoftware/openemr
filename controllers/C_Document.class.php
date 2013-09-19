@@ -77,7 +77,7 @@ class C_Document extends Controller {
         }
 
         $patient_id = 0;
-        if (isset($_GET['patient_id'])) {
+        if (isset($_GET['patient_id']) && !$couchDB) {
             $patient_id = $_GET['patient_id'];
         }
         else if (is_numeric($_POST['patient_id'])) {
