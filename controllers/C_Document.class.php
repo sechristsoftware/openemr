@@ -114,7 +114,7 @@ class C_Document extends Controller {
                       $_FILES['file']['type'][$key], $filetext,
                       empty($_GET['higher_level_path']) ? '' : $_GET['higher_level_path'],
                       empty($_POST['path_depth']) ? 1 : $_POST['path_depth'],
-                      $non_HTTP_owner);
+                      $non_HTTP_owner ? $non_HTTP_owner : $_SESSION['authUserID']);
                     if ($rc) {
                       $error .= $rc . "\n";
                     }
@@ -132,7 +132,7 @@ class C_Document extends Controller {
         $_POST['process'] = "";
         //return $this->fetch($GLOBALS['template_dir'] . "documents/" . $this->template_mod . "_upload.html");
     }
-	
+
 	function note_action_process($patient_id) {
 		
 		if ($_POST['process'] != "true")
