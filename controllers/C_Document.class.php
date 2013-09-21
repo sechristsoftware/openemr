@@ -52,6 +52,10 @@ class C_Document extends Controller {
 	//2013-02-10 EMR Direct: added $non_HTTP_owner to allow storage of Direct Message attachments
 	//through this mechanism, and is set to the user_id for the background process adding the document
     function upload_action_process($non_HTTP_owner=false) {
+
+        // Temporary fix for bug introduced by EMR Direct support.
+        if (func_num_args() > 1) $non_HTTP_owner = false;
+
         $couchDB = false;
         $harddisk = false;
         if($GLOBALS['document_storage_method']==0){
