@@ -18,6 +18,7 @@ class C_Document extends Controller {
 	var $document_categories;
 	var $tree;
 	var $_config;
+        var $manual_set_owner; // allows manual setting of a document owner/service
 
 	function C_Document($template_mod = "general") {
 		parent::Controller();
@@ -49,9 +50,15 @@ class C_Document extends Controller {
 	}
 	
 	//Upload multiple files on single click
-	//2013-02-10 EMR Direct: added $non_HTTP_owner to allow storage of Direct Message attachments
-	//through this mechanism, and is set to the user_id for the background process adding the document
-    function upload_action_process($non_HTTP_owner=false) {
+    function upload_action_process() {
+
+        // Collect a manually set owner if this has been set
+        // Used when want to manually assign the owning user/service such as the Direct mechanism
+        $non_HTTP_owner=false;
+        if (isset($this->manual_set_owner) && !empty($this->manual_set_owner)) {
+            $non_HTTP_owner=$this->manual_set_owner;
+        }
+
         $couchDB = false;
         $harddisk = false;
         if($GLOBALS['document_storage_method']==0){
