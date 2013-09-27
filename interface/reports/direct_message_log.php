@@ -96,12 +96,12 @@ else $logtop = 0;
                </a>
                <a id='prev_button' href='#' class='css_button' onclick='top.restoreSession(); $("#lognext").val(-100); $("#theform").submit()'>
                <span>
-               <?php echo xlt('Prev 100'); ?>
+               <?php echo xlt('Older'); ?>
                </span>
                </a>
                <a id='next_button' href='#' class='css_button' onclick='top.restoreSession(); $("#lognext").val(100); $("#theform").submit()'>
                <span>
-               <?php echo xlt('Next 100'); ?>
+               <?php echo xlt('Newer'); ?>
                </span>
                </a>
              </div>
@@ -201,7 +201,7 @@ else
 </table>
 </div>  <!-- end of search results -->
 
-<input type='hidden' name='logstart' id='logstart' value='<?=$logstart?>'>
+<input type='hidden' name='logstart' id='logstart' value='<?php echo text($logstart); ?>'>
 </form>
 
 </body>

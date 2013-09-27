@@ -29,6 +29,7 @@ require_once(dirname(__FILE__) . "/pnotes.inc");
 require_once(dirname(__FILE__) . "/../controllers/C_Document.class.php");
 require_once(dirname(__FILE__) . "/documents.php");
 require_once(dirname(__FILE__) . "/gprelations.inc.php");
+require_once(dirname(__FILE__) . "/classes/class.phpmailer.php");
 
 /**
  * Connect to a phiMail Direct Messaging server 
@@ -45,7 +46,7 @@ function phimail_connect(&$phimail_error) {
    $phimail_username = $GLOBALS['phimail_username'];
    $phimail_password = $GLOBALS['phimail_password'];
    $phimail_cafile = dirname(__FILE__) . '/../sites/' . $_SESSION['site_id']
-      . '/phimail_server.pem';
+      . '/documents/phimail_server_pem/phimail_server.pem';
    if (!file_exists($phimail_cafile)) $phimail_cafile='';
    
    $phimail_secure = true;
@@ -107,6 +108,8 @@ function phimail_check() {
    $ret = phimail_write_expect_OK($fp,"AUTH $phimail_username $phimail_password\n");
    if($ret!==TRUE) return; //authentication error
 
+   if(!($notifyUsername = $GLOBALS['phimail_notify'])) $notifyUsername='admin'; //fallback
+
    while (1) {
       phimail_write($fp,"CHECK\n");
       $ret=fgets($fp,512);
@@ -158,8 +161,18 @@ function phimail_check() {
 	     return;
 	  }
 
-	  if(!$success) {
-	     phimail_notify( xl('Direct Messaging Send Failure.'), $ret);
+	  if (!$success) {
+             //notify local user of failure
+             $sql = "SELECT username FROM users WHERE id = ?";
+             $res2 = sqlStatementNoLog($sql, array($msg['user_id']));
+             $fail_user = ($res2 === FALSE || ($user_row = sqlFetchArray($res2)) === FALSE) ?
+                xl('unknown (see log)') : $user_row['username'];
+             $fail_notice = xl('Sent by: ') . $fail_user . '(' . $msg['user_id'] . xl(') on ') . $msg['create_ts']
+                . "\n" . xl('Sent to: ') . $msg['recipient'] . "\n" . xl('Server message: ') . $ret;
+	     phimail_notify( xl('Direct Messaging Send Failure.'), $fail_notice);
+             $pnote_id = addPnote($msg['patient_id'], 
+                xl("FAILURE NOTICE: Direct Message Send Failed.") . "\n\n$fail_notice\n",
+                0, 1, "Unassigned", $notifyUsername, "", "New", "phimail-service");
           }
 
 	  //done with this status message
@@ -293,8 +306,6 @@ function phimail_check() {
 
 	 phimail_logit(1,$ret);
 
-	 if(!($notifyUsername = $GLOBALS['phimail_notify'])) $notifyUsername='admin'; //fallback
-	 
 	 //alert appointed user about new message
 	 switch($mime_type_main) {
 
@@ -448,7 +459,7 @@ function phimail_store($name,$mime_type,$fn) {
 /**
  * Send an error notification or other alert to the notification address specified in globals.
  * (notification email function modified from interface/drugs/dispense_drug.php)
- * @return true if notificaiton successfully sent, false otherwise
+ * @return true if notification successfully sent, false otherwise
  */
 function phimail_notify($subj,$body) {
   $recipient = $GLOBALS['practice_return_email_path'];
