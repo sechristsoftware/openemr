@@ -167,8 +167,8 @@ function phimail_check() {
              $res2 = sqlStatementNoLog($sql, array($msg['user_id']));
              $fail_user = ($res2 === FALSE || ($user_row = sqlFetchArray($res2)) === FALSE) ?
                 xl('unknown (see log)') : $user_row['username'];
-             $fail_notice = xl('Sent by: ') . $fail_user . '(' . $msg['user_id'] . xl(') on ') . $msg['create_ts']
-                . "\n" . xl('Sent to: ') . $msg['recipient'] . "\n" . xl('Server message: ') . $ret;
+             $fail_notice = xl('Sent by:') . ' ' . $fail_user . '(' . $msg['user_id'] . ') ' . xl('on') . ' ' . $msg['create_ts']
+                . "\n" . xl('Sent to:') . ' ' . $msg['recipient'] . "\n" . xl('Server message:') . ' ' . $ret;
 	     phimail_notify( xl('Direct Messaging Send Failure.'), $fail_notice);
              $pnote_id = addPnote($msg['patient_id'], 
                 xl("FAILURE NOTICE: Direct Message Send Failed.") . "\n\n$fail_notice\n",
