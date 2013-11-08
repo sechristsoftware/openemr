@@ -272,16 +272,15 @@ if( !(empty($_POST['start']) || empty($_POST['end']))) {
 <?php
     }
 		$sqlBindArray = array();
-		array_push($sqlBindArray,$startdate,$enddate);
-		
 		$res_query = 	"select * from forms where " .
                         "form_name = 'New Patient Encounter' and " .
                         "date between ? and ? " ;
+                array_push($sqlBindArray,$startdate,$enddate);
 		if($form_pid) {
-		$res_query.= "and pid=?";	
+		$res_query.= " and pid=? ";	
 		array_push($sqlBindArray,$form_pid);
 		}
-        $res_query.=     "order by date DESC" ;
+        $res_query.=     " order by date DESC" ;
 		$res =sqlStatement($res_query,$sqlBindArray);
 	
     while($result = sqlFetchArray($res)) {
