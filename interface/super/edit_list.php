@@ -864,7 +864,15 @@ while ($row = sqlFetchArray($res)) {
 <?php } if ($GLOBALS['ippf_specific']) { ?>
   <td><b><?php xl('Global ID','e'); ?></b></td>
 <?php } ?>
-  <td><b><?php xl('Notes','e'); ?></b></td>
+  <td><b>
+  	<?php
+  		if ($list_id == 'language') { 
+  			xl('ISO 639-2','e');
+  		} else {
+			xl('Notes','e');
+		} 
+  	?>
+  </b></td>
   <td><b><?php xl('Code(s)','e'); ?></b></td>
 <?php } // end not fee sheet ?>
  </tr>
@@ -1007,6 +1015,7 @@ $(document).ready(function(){
         $('#newlistdetail > #newlistname').val("");
     };
 });
+
 
 </script>
 
