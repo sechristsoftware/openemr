@@ -16,8 +16,17 @@ function setpid($new_pid) {
     $_SESSION['encounter'] = $encounter = 0;
   }
 
-  $_SESSION['pid'] = $new_pid;
-  $pid = $new_pid;
+  // Escape $new_pid by forcing it to an integer to protect from sql injection
+  $new_pid_int = intval($new_pid);
+  // If the $new_pid was not an integer, then send an error to error log
+  if ((string)$new_pid != (string)$new_pid_int) {
+    error_log("Critical OpenEMR Error: Attempt to set pid to following non-integer value was denied: ".$new_pid,0);
+    error_log("Requested pid ".$new_pid,0);
+    error_log("Returned pid ".$new_pid_int,0);
+  }
+  // Set pid to the escaped pid
+  $_SESSION['pid'] = $new_pid_int;
+  $pid = $new_pid_int;
 
   newEvent("view", $_SESSION["authUser"], $_SESSION["authProvider"], 1, $pid);
 }
