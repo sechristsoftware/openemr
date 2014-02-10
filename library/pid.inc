@@ -11,6 +11,21 @@ require_once("$srcdir/log.inc");
 function setpid($new_pid) {
   global $pid, $encounter;
 
+  // Ensure $new_pid is 0 or is an existing patient pid
+  //  (this will prevent sql-injection)
+  if ($new_pid != "0") {
+    $result = sqlQuery("SELECT pid FROM patient_data WHERE pid=?",array($new_pid));
+    if ($result['pid']) {
+      $new_pid = $result['pid'];
+    }
+    else {
+      error_log("Critical OpenEMR Error: Attempt to set pid that does not exist.",0);
+      error_log("Requested pid: ".$new_pid,0);
+      error_log("Returned pid: 0",0);
+      $new_pid = "0";
+    }
+  }
+
   // Be careful not to clear the encounter unless the pid is really changing.
   if (!isset($_SESSION['pid']) || $pid != $new_pid || $pid != $_SESSION['pid']) {
     $_SESSION['encounter'] = $encounter = 0;
