@@ -24,6 +24,7 @@ $sanitize_all_escapes=true;
 /* Include our required headers */
 require_once('../globals.php');
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/patient.inc");
 
 // Creates a new session id when load this outer frame
 // (allows creations of separate OpenEMR frames to view patients concurrently
@@ -71,8 +72,15 @@ if ($is_expired) {
   //display the php file containing the password expiration message.
   $frame1url = "pwd_expires_alert.php";
 }
-else if (!empty($_POST['patientID'])) {
+else if (!empty($_POST['patientID']) && patient_pid_exist($_POST['patientID']) ) {
+  // Directly link to the patient screen with the pid
   $patientID = 0 + $_POST['patientID'];
+  $frame1url = "../patient_file/summary/demographics.php?set_pid=".attr($patientID);
+}
+else if (!empty($_POST['external_patientID']) && convert_pubpid_pid($_POST['external_patientID']) ) {
+  // Directly link to the patient screen with the pubpid
+  $patientID = convert_pubpid_pid($_POST['external_patientID']);
+  $patientID = 0 + $patientID;
   $frame1url = "../patient_file/summary/demographics.php?set_pid=".attr($patientID);
 }
 else if ($GLOBALS['athletic_team']) {
