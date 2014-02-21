@@ -67,6 +67,22 @@ function imsubmitted() {
 
 <input type='hidden' name='new_login_session_management' value='1' />
 
+
+<?php
+ // This will capture a patient id (or external patient id) to allow direct
+ // link to a patient after a successful authentication.
+ //  Note that only one id will be used (it will only use patient id parameter
+ //  if both are provided) 
+ //  Note that these parameters are passed from the interface/login/login_frame.php
+ //  script.
+?>
+<?php if ( isset($_GET['patientID']) && !(empty($_GET['patientID'])) ) { ?>
+ <input type='hidden' name='patientID' value='<?php echo attr($_GET['patientID']) ?>' />
+<?php } ?>
+<?php if ( isset($_GET['external_patientID']) && !(empty($_GET['external_patientID'])) ) { ?>
+ <input type='hidden' name='external_patientID' value='<?php echo attr($_GET['external_patientID']) ?>' />
+<?php } ?>
+
 <?php
 // collect groups
 $res = sqlStatement("select distinct name from groups");

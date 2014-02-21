@@ -154,9 +154,24 @@ function authCloseSession ()
 
 function authLoginScreen()
 {
-  // See comment in authCloseSession().
+  // See comment in authCloseSession() regarding site_id.
+  // If patient id links were included on a login fail, then also include
+  // them on the refreshed login screen.
+
   global $incoming_site_id;
-  header("Location: {$GLOBALS['login_screen']}?error=1&site=$incoming_site_id");
+
+  // Process patient id links
+  $patientID_param='';
+  if ( isset($_POST['patientID']) && !(empty($_POST['patientID'])) ) {
+    $patientID_param="&patientID=" . attr($_POST['patientID']);
+  }
+  $external_patientID_param='';
+  if ( isset($_POST['external_patientID']) && !(empty($_POST['external_patientID'])) && (empty($patientID_param)) ) {
+    $external_patientID_param="&external_patientID=" . attr($_POST['external_patientID']);
+  }
+
+  // Link out to the login page
+  header("Location: {$GLOBALS['login_screen']}?error=1&site=".$incoming_site_id.$patientID_param.$external_patientID_param);
   exit;
 }
 

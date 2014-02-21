@@ -1724,4 +1724,38 @@ function is_patient_deceased($pid,$date='') {
   }
 }
 
+/**
+ * Check if a patient does exist with a selected pid.
+ *
+ * @param   int      $pid  The PID of the patient.
+ * @return  boolean 
+ */
+function patient_pid_exist($pid) {
+  $result = sqlQuery("SELECT `pid` FROM `patient_data` WHERE `pid`=?", array($pid));
+  if ($result['pid']) {
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+/**
+ * Convert a pubpid to a pid. If there is more than one,
+ * then the first is selected. If there are none, then false
+ * is returned.
+ *
+ * @param   int          $pubpid  The pubpid of the patient.
+ * @return  boolean/int           The pid of the patient (false if there is none).
+ */
+function convert_pubpid_pid ($pubpid) {
+  $result = sqlQuery("SELECT `pid` FROM `patient_data` WHERE `pubpid`=?", array($pubpid));
+  if ($result['pid']) {
+    return $result['pid'];
+  }
+  else {
+    return false;
+  }
+}
+
 ?>
