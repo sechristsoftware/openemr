@@ -67,6 +67,10 @@ function imsubmitted() {
 
 <input type='hidden' name='new_login_session_management' value='1' />
 
+<?php if ( isset($_GET['patientID']) && !(empty($_GET['patientID'])) ) { ?>
+ <input type='hidden' name='patientID' value='<?php echo attr($_GET['patientID']) ?>' />
+<?php } ?>
+
 <?php
 // collect groups
 $res = sqlStatement("select distinct name from groups");
