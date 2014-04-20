@@ -22,47 +22,6 @@
 
 include_once($GLOBALS["srcdir"] . "/api.inc");
 
-echo "<html><head>";
-// bring the stylesheets
-// Some Javascript support and Javascript-functions
-//******* **********************************
-?> 
-<link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
-<link rel="stylesheet" href="<?php echo $web_root; ?>/interface/forms/track_anything/style.css" type="text/css"> 
-<script type="text/javascript" src="<?php echo $web_root; ?>/library/openflashchart/js/json/json2.js"></script>
-<script type="text/javascript" src="<?php echo $web_root; ?>/library/openflashchart/js/swfobject.js"></script>
-<script type="text/javascript">
-//-------------- checkboxes checked checker --------------------
-// Pass the checkbox name to the function
-function getCheckedBoxes(chkboxName) {
-  var checkboxes = document.getElementsByName(chkboxName);
-  var checkedValue = [];
-  // loop over them all
-  for (var i=0; i<checkboxes.length; i++) {
-     // And stick the checked ones onto an array...
-     if (checkboxes[i].checked) {
-        checkedValue.push(checkboxes[i].value);
-     }
-  }
-  return checkedValue; 
-}
-//---------------------------------------------------------------
-
-// set up flashvars for ofc
-var flashvars = {};
-var data;
-
-// -------------------------
-// this is automatically called by swfobject.embedSWF()
-//------------------------------------------------------
-function open_flash_chart_data(){
-	return JSON.stringify(data);
-}
-//------------------------------------------------------
-</script>
-<?php  
-echo "</head><body class='body_top'>";
-
 function track_anything_report( $pid, $encounter, $cols, $id){
 	#$patient_report_flag = 'no';
 	echo "<div id='track_anything'>";
@@ -107,9 +66,9 @@ function track_anything_report( $pid, $encounter, $cols, $id){
 		
 		// is this the <tbale>-head?
 		if ($shownameflag==1){
-			echo "<tr><th class='time'>" . xlt('Time') . "</td>";
+			echo "<tr><th class='time'>" . xlt('Time') . "</th>";
 			while($myrow2 = sqlFetchArray($query2)){
-				echo "<th class='item'>&nbsp;" . text($myrow2['the_name']) . "&nbsp;</td>";		
+				echo "<th class='item'>&nbsp;" . text($myrow2['the_name']) . "&nbsp;</th>";		
 				$ofc_name[$col] = $myrow2['the_name']; // save for openflashchart-form
 				$col++;
 			}
@@ -164,8 +123,8 @@ function track_anything_report( $pid, $encounter, $cols, $id){
 			echo "<tr><td></td>";
 			echo "<td colspan='" . attr($col) . "'><div class='navigateLink'>";
 			echo "<input type='button' class='graph_button' ";
-			echo " onclick='plot_graph" . attr($formid) ."()' ";
-			echo "name='' value='" . xla('Plot selected Items') . "'>";
+			echo " onclick='ta_report_plot_graph(\"" . attr($formid) . "\"," . json_encode($ofc_name) . ",\"" . attr($the_track_name)  . "\"," . json_encode($ofc_date) . "," . json_encode($ofc_value) . ")'";
+			echo " name='' value='" . xla('Plot selected Items') . "'>";
 			echo "</div></td></tr>";
 		}
 	//---/end graph button------------------
@@ -177,50 +136,6 @@ function track_anything_report( $pid, $encounter, $cols, $id){
 		echo "<input type='submit' name='history' value='" . xla('Show track history') . "' />";
 		echo "</form>";
 	echo "</div>"; // end hide for report
-?>
-<script>
-// plot the current graph
-// this function is located here, as now all data-arrays are ready
-//-----------------------------------------------------------------
-function plot_graph<?php echo $formid ?>(){
-	//alert("get graph");
-	top.restoreSession();
-	var checkedBoxes = JSON.stringify(getCheckedBoxes("check_col<?php echo $formid; ?>"));
-	var theitems = JSON.stringify(<?php echo json_encode($ofc_name) ?>);
-	var thetrack = JSON.stringify("<?php echo $the_track_name . " [Track " . $formid . "]" ?>");
-	var thedates = JSON.stringify(<?php echo json_encode($ofc_date) ?>);
-	var thevalues = JSON.stringify(<?php echo json_encode($ofc_value) ?>);
-	
-	$.ajax({ url: '<?php echo $web_root; ?>/library/openflashchart/graph_track_anything.php',
-		     type: 'POST',
-		     data: { dates:  thedates, 
-				     values: thevalues, 
-				     items:  theitems, 
-				     track:  thetrack, 
-				     thecheckboxes: checkedBoxes
-				   },
-			 dataType: "json",  
-			 success: function(returnData){
-				 // ofc will look after a variable named "ofc"
-				 // inside of the flashvars
-				 // However, we need to set both
-				 // data and flashvars.ofc 
-				 data=returnData;
-				 flashvars.ofc = returnData;
-				 // call ofc with proper falshchart
-					swfobject.embedSWF('<?php echo $web_root; ?>/library/openflashchart/open-flash-chart.swf', 
-					"graph<?php echo $formid ?>", "650", "200", "9.0.0","",flashvars);  
-			},
-			error: function (XMLHttpRequest, textStatus, errorThrown) {
-				alert(XMLHttpRequest.responseText);
-				//alert("XMLHttpRequest="+XMLHttpRequest.responseText+"\ntextStatus="+textStatus+"\nerrorThrown="+errorThrown);
-			}
-	
-	}); // end ajax query	
-}
-//------------------------------------------------------
-</script>
-</div>
-<?php
+        echo "</div>";
 }// end function track_anything_report
 ?>

@@ -46,6 +46,13 @@ echo "<html><head>";
 ?> 
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
 <link rel="stylesheet" href="<?php echo $web_root; ?>/interface/forms/track_anything/style.css" type="text/css">  
+<style type="text/css">@import url(../../../library/dynarch_calendar.css);</style>
+<script type="text/javascript" src="../../../library/textformat.js"></script>
+<script type="text/javascript" src="../../../library/dynarch_calendar.js"></script>
+<?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
+<script type="text/javascript" src="../../../library/dynarch_calendar_setup.js"></script>
+<script type="text/javascript" src="../../../library/dialog.js"></script>
+
 <?php  
 echo "</head><body class='body_top'>";
 echo "<div id='track_anything'>";
@@ -184,9 +191,20 @@ if ($formid){
 	echo "<table>";
 	echo "<tr><th class='item'>" . xlt('Item') . "</th>";
 	echo "<th class='value'>" . xlt('Value') . "</th></tr>";
-	echo "<tr><td>" . xlt('Date Time') . "</td>  <td><input size='12' name='datetime' value='" . attr(date('Y-m-d H:i:s', time())) . "'></td></tr>";
-	
-	
+
+
+	echo "<tr><td>" . xlt('Date Time') . "</td>";
+	echo "<td><input type='text' size='16' name='datetime' id='datetime'" .
+             "value='" . attr(date('Y-m-d H:i:s', time())) . "'" .
+             "onkeyup='datekeyup(this,mypcc,true)' onblur='dateblur(this,mypcc,true)' />" .
+             "<img src='" . $rootdir . "/pic/show_calendar.gif' id='img_date' align='absbottom'" .
+             "width='24' height='22' border='0' alt='[?]' style='cursor:pointer' /></td></tr>";
+        ?>
+        <script language="javascript">
+        Calendar.setup({inputField:"datetime", ifFormat:"%Y-%m-%d %H:%M:%S", button:"img_date", showsTime:true});
+        </script>
+
+	<?php
 	// get items to track
 	$liste = array();
 	$spell = "SELECT * FROM form_track_anything_type WHERE parent = ? AND active = 1 ORDER BY position ASC, name ASC ";

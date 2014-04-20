@@ -308,7 +308,7 @@ while($myrow = sqlFetchArray($result)){
 		echo "<input type='submit' class='ta_button' name='act' value='" . xla('Enable') . "'>\n";
 	}
 	if(acl_check('admin', 'super')){
-		echo "<input type='submit' class='delete_button' name='delete' value='" . xla('Del') . "'>\n";
+		echo "<input type='submit' class='delete_button' name='delete' value='" . xla('Delete') . "'>\n";
 	}
 	echo "<input type='hidden' name='typeid' value='" . attr($type_id) . "'>";
 	echo "</td></tr>\n";
@@ -342,7 +342,7 @@ while($myrow = sqlFetchArray($result)){
 			echo "<input type='submit' class='ta_button' name='act' value='" . xla('Enable') . "'>\n";
 		}
 		if(acl_check('admin', 'super')){
-			echo "<input type='submit' class='delete_button' name='delete' value='" . xla('Del') . "'>\n";
+			echo "<input type='submit' class='delete_button' name='delete' value='" . xla('Delete') . "'>\n";
 		}
 		echo "<input type='hidden' name='typeid' value='" . attr($item_id) . "'>\n";
 		echo "</td></tr>\n";
