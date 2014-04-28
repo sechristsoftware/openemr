@@ -62,11 +62,17 @@ if (IS_WINDOWS) {
 }
 // Auto collect the relative html path, i.e. what you would type into the web
 // browser after the server address to get to OpenEMR.
-$web_root = substr($webserver_root, strlen($_SERVER['DOCUMENT_ROOT']));
+$web_root = substr($webserver_root, strspn($webserver_root ^ $_SERVER['DOCUMENT_ROOT'], "\0"));
 // Ensure web_root starts with a path separator
 if (preg_match("/^[^\/]/",$web_root)) {
  $web_root = "/".$web_root;
 }
+
+// DEBUGGING
+error_log("DEBUG_webserver_root: ".$webserver_root,0);
+error_log("DEBUG_server_document_root: ".$_SERVER['DOCUMENT_ROOT'],0);
+error_log("DEBUG_web_root: ".$web_root,0);
+
 // The webserver_root and web_root are now automatically collected in
 //  real time per above code. If above is not working, can uncomment and
 //  set manually here:
