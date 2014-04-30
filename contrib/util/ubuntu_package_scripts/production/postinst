@@ -5,7 +5,7 @@
 #the Free Software Foundation; either version 2 of the License, or
 #(at your option) any later version.
 #
-# Copyright 2012
+# Copyright 2011-2014
 # authors: Amalu Obinna <amaluobinna@aol.com>
 #          Brady Miller <brady@sparmy.com>
 #
@@ -65,7 +65,6 @@ case "$1" in
       INSTTEMP=$OPENEMR/contrib/util/installScripts/InstallerAutoTemp.php
       #php and apache files
       PHP=/etc/php5/apache2/php.ini
-      APACHE=/etc/apache2/httpd.conf
       #web user and group
       WEB_GROUP=www-data
       WEB_USER=www-data
@@ -392,59 +391,6 @@ case "$1" in
          log_only "Done configuring OpenEMR"
       fi
 
-      #This section configures Apache for OpenEMR
-      log_only "Configuring Apache for OpenEMR"
-
-      #Check to ensure the apache configuration files exists
-      if [ -f $APACHE ]; then
-
-         # First, backup the httpd.conf file before modifying
-         cp -f $APACHE $APACHE.BAK
-
-         # Second, append information to secure selected directories in OpenEMR
-         echo "#This is the start of the Apache configuration for OpenEMR." >> $APACHE
-         echo "#Below will secure directories with patient information." >> $APACHE
-         echo "<Directory \"$SITEDIR/*/documents\">" >> $APACHE
-         echo " order deny,allow" >> $APACHE
-         echo " Deny from all" >> $APACHE
-         echo "</Directory>" >> $APACHE
-         echo "<Directory \"$SITEDIR/*/edi\">" >> $APACHE
-         echo " order deny,allow" >> $APACHE
-         echo " Deny from all" >> $APACHE
-         echo "</Directory>" >> $APACHE
-         echo "<Directory \"$SITEDIR/*/era\">" >> $APACHE
-         echo " order deny,allow" >> $APACHE
-         echo " Deny from all" >> $APACHE
-         echo "</Directory>" >> $APACHE
-         echo "#This is the end of the Apache configuration for OpenEMR." >> $APACHE
-
-         #let user know the plan
-         prompt_input openemr/apache_configure high ret_result
-         log_only "Added entries to apache configuration to secure directories with patient information."
-         log_only "Placed backup of your original apache configuration file to $APACHE.BAK"
-
-      else
-         #can't find apache config file, so just echo instructions
-         log_only "We recommend placing below lines into your apache configuration file:"
-         log_only "#This is the start of the Apache configuration for OpenEMR."
-         log_only "#Below will secure directories with patient information."
-         log_only "<Directory \"$SITEDIR/*/documents\">"
-         log_only " order deny,allow"
-         log_only " Deny from all"
-         log_only "</Directory>"
-         log_only "<Directory \"$SITEDIR/*/edi\">"
-         log_only " order deny,allow"
-         log_only " Deny from all"
-         log_only "</Directory>"
-         log_only "<Directory \"$SITEDIR/*/era\">"
-         log_only " order deny,allow"
-         log_only " Deny from all"
-         log_only "</Directory>"
-         log_only "#This is the end of the Apache configuration for OpenEMR."
-      fi
-
-      log_only "Done configuring Apache"
-
       #This Section edits the php.ini file to accomodate the proper functioning of OpenEMR using php
       log_only "Configuring PHP for OpenEMR"
 
@@ -562,6 +508,10 @@ case "$1" in
       fi
 
       log_only "Done configuring PHP"
+
+      # Activate the OpenEMR conf file for apache
+      log_only "Activate OpenEMR config file for Apache"
+      a2ensite openemr.conf
 
       log_only "Restarting Apache service"
       invoke-rc.d apache2 restart >> $LOG 2>&1
