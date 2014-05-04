@@ -155,6 +155,10 @@ case "$1" in
       mysql -f -u root -h "$SQLLOCATION" --password="$MPASS" -e "DELETE FROM mysql.user WHERE User = '$SQLUSER';FLUSH PRIVILEGES;" >> $LOG 2>&1
       log_only "Removed OpenEMR MySQL user"
 
+      #remove OpenEMR apache set up as active config
+      log_only "Turn off apache conf for OpenEMR"
+      a2dissite git-openemr
+
       #stop db
       db_stop
 

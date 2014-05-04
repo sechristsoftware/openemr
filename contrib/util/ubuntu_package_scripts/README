@@ -19,8 +19,7 @@ Directory structure of package.
 /DEBIAN/postrm
 /DEBIAN/config
 /DEBIAN/templates
-/etc/apache2/conf-enabled/openemr-apache.conf
-/etc/apache2/conf-available/openemr-apache.conf
+/etc/apache2/sites-available/openemr.conf
 
 
 DEVELOPMENT CVS PACKAGE
@@ -40,5 +39,4 @@ Directory structure of package:
 /DEBIAN/postrm
 /DEBIAN/config
 /DEBIAN/templates
-/etc/apache2/conf-enabled/git-openemr-apache.conf
-/etc/apache2/conf-available/git-openemr-apache.conf
+/etc/apache2/sites-available/git-openemr.conf
