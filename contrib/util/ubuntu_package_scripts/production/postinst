@@ -5,7 +5,7 @@
 #the Free Software Foundation; either version 2 of the License, or
 #(at your option) any later version.
 #
-# Copyright 2014
+# Copyright 2011-2014
 # authors: Amalu Obinna <amaluobinna@aol.com>
 #          Brady Miller <brady@sparmy.com>
 #
@@ -16,7 +16,7 @@
 #      a) Collect the MySQL root password (if possible)
 #      b) Ensure OpenEMR MySQL database and user do not exist. (if applicable)
 #      c) Configure OpenEMR (if applicable)
-#      d) Configure Apache (this is done via the package itself)
+#      d) Configure Apache
 #      e) Configure PHP
 #    -Upgrade
 #      a) Modify new OpenEMR version configuration files
@@ -508,6 +508,10 @@ case "$1" in
       fi
 
       log_only "Done configuring PHP"
+
+      # Activate the OpenEMR conf file for apache
+      log_only "Activate OpenEMR config file for Apache"
+      a2ensite openemr.conf
 
       log_only "Restarting Apache service"
       invoke-rc.d apache2 restart >> $LOG 2>&1
