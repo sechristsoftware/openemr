@@ -260,7 +260,7 @@ case "$1" in
 
       # Activate the OpenEMR conf file for apache
       log_only "Activate OpenEMR config file for Apache"
-      a2ensite git-openemr
+      a2ensite git-openemr.conf
 
       log_only "Restarting Apache service..."
       invoke-rc.d apache2 restart >> $LOG 2>&1
