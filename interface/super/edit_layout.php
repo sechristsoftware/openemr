@@ -130,7 +130,7 @@ else if ($_POST['formaction'] == "addfield" && $layout_id) {
       ",'" . formTrim($_POST['newdesc']        ) . "'" .
       ",'"    . formTrim($_POST['newmaxSize'])    . "'"                                 .
       ",'" . $listval . "'" .
-      ",'" . formTrim($_POST['list_backup_id']) . "'" .
+      ",'" . formTrim($_POST['newbackuplistid']) . "'" .
       " )");
 
     if (substr($layout_id,0,3) != 'LBF' && $layout_id != "FACUSR") {
@@ -233,7 +233,7 @@ else if ($_POST['formaction'] == "addgroup" && $layout_id) {
       ",'" . formTrim($_POST['gnewdesc']        ) . "'" .
       ",'"    . formTrim($_POST['gnewmaxSize'])    . "'"                                  .
       ",'" . $listval       . "'" .
-      ",'" . formTrim($_POST['list_backup_id']        ) . "'" .
+      ",'" . formTrim($_POST['gnewbackuplistid']        ) . "'" .
       " )");
 
     if (substr($layout_id,0,3) != 'LBF' && $layout_id != "FACUSR") {
@@ -478,29 +478,25 @@ function writeFieldLine($linedata) {
 
     //Backup List Begin
     echo "  <td align='center' class='optcell'>";
-    
-    $type = "";
-    if($linedata['data_type'] !=  1 && $linedata['data_type'] != 21 &&
-	      $linedata['data_type'] != 22 && $linedata['data_type'] != 23 &&
-	      $linedata['data_type'] != 25 && $linedata['data_type'] != 26 &&
-	      $linedata['data_type'] != 27 && $linedata['data_type'] != 32 &&
-	      $linedata['data_type'] != 33 && $linedata['data_type'] != 34 &&
-	      $linedata['data_type'] != 36)
+    if ($linedata['data_type'] ==  1 || $linedata['data_type'] == 26 ||
+        $linedata['data_type'] == 33 || $linedata['data_type'] == 36)
     {
-    	$type = "style='display:none'";
-    } 
     
-    echo "<input type='text' name='fld[$fld_line_no][list_backup_id]' value='" .
-    	htmlspecialchars($linedata['list_backup_id'], ENT_QUOTES) . "'" . $type .
-    	"' size='3' maxlength='10' class='optin listid' style='cursor: pointer' />";
+        echo "<input type='text' name='fld[$fld_line_no][list_backup_id]' value='" .
+    	    htmlspecialchars($linedata['list_backup_id'], ENT_QUOTES) .
+    	    "' size='3' maxlength='10' class='optin listid' style='cursor: pointer' />";
+    }
+    else {
+        echo "<input type='hidden' name='fld[$fld_line_no][list_backup_id]' value=''>";
+    }
     echo "</td>\n";
+    //Backup List End
     
     echo "  <td align='center' class='optcell'>";
     echo "<input type='text' name='fld[$fld_line_no][titlecols]' value='" .
          htmlspecialchars($linedata['titlecols'], ENT_QUOTES) . "' size='3' maxlength='10' class='optin' />";
-    
+
     echo "</td>\n";
-    //Backup List End
   
     echo "  <td align='center' class='optcell'>";
     echo "<input type='text' name='fld[$fld_line_no][datacols]' value='" .
@@ -810,6 +806,7 @@ foreach ($datatypes as $key=>$value) {
         ?>
     </select>
 </td>
+<td><input type="textbox" name="gnewbackuplistid" id="gnewbackuplistid" value="" size="8" maxlength="31" class="listid"></td>
 <td><input type="textbox" name="gnewtitlecols" id="gnewtitlecols" value="" size="3" maxlength="3"> </td>
 <td><input type="textbox" name="gnewdatacols" id="gnewdatacols" value="" size="3" maxlength="3"> </td>
 <td><input type="textbox" name="gnewedit_options" id="gnewedit_options" value="" size="3" maxlength="36">
@@ -881,6 +878,7 @@ foreach ($datatypes as $key=>$value) {
         ?>
        </select>
    </td>
+   <td><input type="textbox" name="newbackuplistid" id="newbackuplistid" value="" size="8" maxlength="31" class="listid"></td>
    <td><input type="textbox" name="newtitlecols" id="newtitlecols" value="" size="3" maxlength="3"> </td>
    <td><input type="textbox" name="newdatacols" id="newdatacols" value="" size="3" maxlength="3"> </td>
    <td><input type="textbox" name="newedit_options" id="newedit_options" value="" size="3" maxlength="36">
@@ -1019,6 +1017,10 @@ $(document).ready(function(){
         // similarly with the listid field
         validid = $("#gnewlistid").val().replace(/(\s|\W)/g, "_");
         $("#gnewlistid").val(validid);
+        // similarly with the backuplistid field
+        validid = $("#gnewbackuplistid").val().replace(/(\s|\W)/g, "_");
+        $("#gnewbackuplistid").val(validid);
+
 
         // submit the form to add a new field to a specific group
         $("#formaction").val("addgroup");
@@ -1166,6 +1168,9 @@ $(document).ready(function(){
         // similarly with the listid field
         validid = $("#newlistid").val().replace(/(\s|\W)/g, "_");
         $("#newlistid").val(validid);
+        // similarly with the backuplistid field
+        validid = $("#newbackuplistid").val().replace(/(\s|\W)/g, "_");
+        $("#newbackuplistid").val(validid);
     
         // submit the form to add a new field to a specific group
         $("#formaction").val("addfield");
@@ -1263,6 +1268,7 @@ function ResetNewFieldValues () {
     $("#newmaxSize").val("");
     $("#newdatatype").val("");
     $("#newlistid").val("");
+    $("#newbackuplistid").val("");
     $("#newtitlecols").val("");
     $("#newdatacols").val("");
     $("#newedit_options").val("");
