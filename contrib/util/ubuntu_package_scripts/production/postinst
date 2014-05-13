@@ -360,40 +360,40 @@ case "$1" in
             fi
          }
          for i in `seq 1 2`; do
-            if [ "$TAG" != "" -a "$TAG" != "On" ]; then
+            if [ ! -z "$TAG" ] && [ "$TAG" != "On" ]; then
                process_php "$TAG_TEXT" "On" $i
             fi
-            if [ "$EXEC" != "" -a "$EXEC" -lt "60" ]; then
+            if [ ! -z "$EXEC" ] && [ "$EXEC" -lt "60" ]; then
                process_php "$EXEC_TEXT" "60" $i
             fi
-            if [ "$INPUT" != "" -a "$INPUT" -lt "90" ]; then
+            if [ ! -z "$INPUT" ] && [ "$INPUT" -lt "90" ]; then
                process_php "$INPUT_TEXT" "90" $i
             fi
-            if [ "$MEM" != "" -a "$MEM" -lt "128" ]; then
+            if [ ! -z "$MEM" ] && [ "$MEM" -lt "128" ]; then
                process_php "$MEM_TEXT" "128M" $i
             fi
-            if [ "$DISP" != "" -a "$DISP" != "Off" ]; then
+            if [ ! -z "$DISP" ] && [ "$DISP" != "Off" ]; then
                process_php "$DISP_TEXT" "Off" $i
             fi
-            if [ "$LOGG" != "" -a "$LOGG" != "On" ]; then
+            if [ ! -z "$LOGG" ] && [ "$LOGG" != "On" ]; then
                process_php "$LOGG_TEXT" "On" $i
             fi
-            if [ "$GLOB" != "" -a "$GLOB" != "Off" ]; then
+            if [ ! -z "$GLOB" ] && [ "$GLOB" != "Off" ]; then
                process_php "$GLOB_TEXT" "Off" $i
             fi
-            if [ "$POST" != "" -a "$POST" -lt "30" ]; then
+            if [ ! -z "$POST" ] && [ "$POST" -lt "30" ]; then
                process_php "$POST_TEXT" "30M" $i
             fi
-            if [ "$UPLOAD" != "" -a "$UPLOAD" != "On" ]; then
+            if [ ! -z "$UPLOAD" ] && [ "$UPLOAD" != "On" ]; then
                process_php "$UPLOAD_TEXT" "On" $i
             fi
-            if [ "$FILESIZE" != "" -a "$FILESIZE" -lt "30" ]; then
+            if [ ! -z "$FILESIZE" ] && [ "$FILESIZE" -lt "30" ]; then
                process_php "$FILESIZE_TEXT" "30M" $i
             fi
-            if [ "$MAXINPUTVARS" != "" -a "$MAXINPUTVARS" -lt "3000" ]; then
+            if [ ! -z "$MAXINPUTVARS" ] && [ "$MAXINPUTVARS" -lt "3000" ]; then
                process_php "$MAXINPUTVARS_TEXT" "3000" $i
             fi
-            if [ "$MAXINPUTVARS_IF_COMMENTED" != "" -a "$MAXINPUTVARS_IF_COMMENTED" -lt "3000" ]; then
+            if [ ! -z "$MAXINPUTVARS_IF_COMMENTED" ] && [ "$MAXINPUTVARS_IF_COMMENTED" -lt "3000" ]; then
                process_php_commented_out "$MAXINPUTVARS_TEXT" "3000" $i
             fi
             if [ "$FLAG_ON" -eq "0" ]; then
