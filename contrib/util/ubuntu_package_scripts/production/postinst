@@ -298,6 +298,9 @@ case "$1" in
          collect_php () {
             echo `grep -i "^[[:space:]]*$1[[:space:]=]" $PHP | cut -d \= -f 2 | cut -d \; -f 1 | sed 's/[ 	M]//gi'`
          }
+         collect_php_commented_out () {
+            echo `grep -i "^;[[:space:]]*$1[[:space:]=]" $PHP | cut -d \= -f 2 | cut -d \; -f 1 | sed 's/[       M]//gi'`
+         }
          TAG_TEXT="short_open_tag"
          TAG=$(collect_php "$TAG_TEXT")
          EXEC_TEXT="max_execution_time"
@@ -320,6 +323,7 @@ case "$1" in
          FILESIZE=$(collect_php "$FILESIZE_TEXT")
          MAXINPUTVARS_TEXT="max_input_vars"
          MAXINPUTVARS=$(collect_php "$MAXINPUTVARS_TEXT")
+         MAXINPUTVARS_IF_COMMENTED=$(collect_php_commented_out "$MAXINPUTVARS_TEXT")
 
          # Second, backup the php.ini file before modifying
          cp $PHP $PHP.BAK
@@ -340,6 +344,19 @@ case "$1" in
                # modify php.ini
                sed -i "s/^[ 	]*$1[ 	=].*$/$1 = $2/" $PHP
                log_only "Successfully set $1 = $2"  
+            fi
+         }
+         process_php_commented_out () {
+            if [ "$3" -eq "1" ]; then
+               # make rec to php.ini
+               if [ "$FLAG_ON" -eq "0" ]; then
+                  log_only "We changed the following setting(s) in your php configuration file at $PHP :"
+               fi
+               FLAG_ON=1
+            else
+               # modify php.ini
+               sed -i "s/^;[     ]*$1[   =].*$/$1 = $2/" $PHP
+               log_only "Successfully set $1 = $2"
             fi
          }
          for i in `seq 1 2`; do
@@ -375,6 +392,9 @@ case "$1" in
             fi
             if [ "$MAXINPUTVARS" -lt "3000" ]; then
                process_php "$MAXINPUTVARS_TEXT" "3000" $i
+            fi
+            if [ "$MAXINPUTVARS_IF_COMMENTED" -lt "3000" ]; then
+               process_php_commented_out "$MAXINPUTVARS_TEXT" "3000" $i
             fi
             if [ "$FLAG_ON" -eq "0" ]; then
               log_only "Your PHP configuration is perfect for OpenEMR."
