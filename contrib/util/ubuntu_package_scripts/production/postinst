@@ -289,114 +289,6 @@ case "$1" in
          unable_exit "Error reading plan variable in configuration file."
       fi      
 
-      #collect the mysql root password (if applicable)
-      MPASS=""
-      if check_mysql "$MPASS" "mysql"; then
-         log_only "Passed the mysql check loop"
-      else
-         #the blank initial mysql password didn't work, so prompt for password
-         # (will give 3 chances to provide correct password)
-         COUNTDOWN=1
-         while true; do
-            prompt_input openemr/mysql_p_install_${COUNTDOWN} critical ret_result
-            MPASS="$ret_result"
-            if check_mysql "$MPASS" "mysql"; then
-               #the mysql root password works, so can exit loop
-               log_only "Passed the mysql check loop"
-               break
-            else
-               #the mysql root password did not work
-               if [ "$COUNTDOWN" -ge "3" ]; then
-                  prompt_input openemr/no_configure_mysql_root high ret_result
-                  log_only "Will install OpenEMR, however will not configure OpenEMR. (unable to provide root password)"
-                  break
-               fi
-            fi
-            let "COUNTDOWN += 1"
-         done
-      fi
-
-      #decide whether to configure OpenEMR after it is installed
-      configure_flag=true 
-      if check_mysql "$MPASS" "mysql"; then
-         #before auto configuration, ensure the openemr user and database do not exist
-         # Check for openemr database in mysql, if exist then will not configure
-         if check_mysql "$MPASS" "$INSTALL_DATABASE"; then
-            prompt_input openemr/no_configure_mysql_database high ret_result
-            log_only "Will install OpenEMR, however will not automatically configure OpenEMR. (MySQL database already exists)"
-            configure_flag=false;
-         fi
-         # Check for OpenEMR user in mysql.user, if exist then will not configure
-         USER=$(mysql -s -u root -h localhost --password="$MPASS" -e "SELECT User from mysql.user where User='$INSTALL_USER'")
-         if [ "$USER" == "$INSTALL_USER" ]; then
-            prompt_input openemr/no_configure_mysql_user high ret_result
-            log_only "Will install OpenEMR, however will not automatically configure OpenEMR. (MySQL user already exists)"
-            configure_flag=false;
-         fi
-      else
-         #the mysql root password didn't work, so do not configure OpenEMR
-         log_only "Will install OpenEMR, however will not automatically configure OpenEMR. (root password did not work)"
-         configure_flag=false;
-      fi
-
-      #go to openemr directory
-      cd $OPENEMR
-
-      #secure openemr
-      chown -Rf root:root $OPENEMR
-
-      #INSTALL/CONFIGURE OPENEMR
-      # Install openemr
-      if $configure_flag; then
-         log_only "Installing/Configuring OpenEMR..."
-      else
-         log_only "Installing OpenEMR ..."
-      fi
-
-      # Set file and directory permissions (note use default site directory for new install)
-      chmod 666 $SITEDIR/default/sqlconf.php
-      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/documents
-      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/edi
-      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/era
-      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/library/freeb
-      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/letter_templates
-      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/interface/main/calendar/modules/PostCalendar/pntemplates/cache
-      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/interface/main/calendar/modules/PostCalendar/pntemplates/compiled
-      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/gacl/admin/templates_c
-
-      if $configure_flag; then
-         # Create a random password for the openemr mysql user
-         password=$(makepasswd --char=12)
-
-         # openemr installation VARIABLES
-         if [ "$MPASS" == "" ] ; then
-           rootpass="rootpass=BLANK" #MySQL server root password
-         else
-           rootpass="rootpass=$MPASS" #MySQL server root password
-         fi
-         login="login=$INSTALL_USER" #username to MySQL openemr database
-         pass="pass=$password" #password to MySQL openemr database
-         dbname="dbname=$INSTALL_DATABASE" #MySQL openemr database name
- 
-         # 
-         # Run Auto Installer 
-         #
-         sed -e 's@^exit;@ @' <$INST >$INSTTEMP
-         php -f $INSTTEMP $rootpass $login $pass $dbname >> $LOG 2>&1
-         rm -f $INSTTEMP
-
-         #remove global permission to all setup scripts
-         chmod 600 $OPENEMR/acl_setup.php
-         chmod 600 $OPENEMR/acl_upgrade.php
-         chmod 600 $OPENEMR/sl_convert.php
-         chmod 600 $OPENEMR/setup.php
-         chmod 600 $OPENEMR/sql_upgrade.php
-         chmod 600 $OPENEMR/ippf_upgrade.php
-         chmod 600 $OPENEMR/gacl/setup.php
-
-         log_only "Done configuring OpenEMR"
-      fi
-
       #This Section edits the php.ini file to accomodate the proper functioning of OpenEMR using php
       log_only "Configuring PHP for OpenEMR"
 
@@ -522,6 +414,114 @@ case "$1" in
       # Restart apache
       log_only "Restarting Apache service"
       invoke-rc.d apache2 restart >> $LOG 2>&1
+
+      #collect the mysql root password (if applicable)
+      MPASS=""
+      if check_mysql "$MPASS" "mysql"; then
+         log_only "Passed the mysql check loop"
+      else
+         #the blank initial mysql password didn't work, so prompt for password
+         # (will give 3 chances to provide correct password)
+         COUNTDOWN=1
+         while true; do
+            prompt_input openemr/mysql_p_install_${COUNTDOWN} critical ret_result
+            MPASS="$ret_result"
+            if check_mysql "$MPASS" "mysql"; then
+               #the mysql root password works, so can exit loop
+               log_only "Passed the mysql check loop"
+               break
+            else
+               #the mysql root password did not work
+               if [ "$COUNTDOWN" -ge "3" ]; then
+                  prompt_input openemr/no_configure_mysql_root high ret_result
+                  log_only "Will install OpenEMR, however will not configure OpenEMR. (unable to provide root password)"
+                  break
+               fi
+            fi
+            let "COUNTDOWN += 1"
+         done
+      fi
+
+      #decide whether to configure OpenEMR after it is installed
+      configure_flag=true 
+      if check_mysql "$MPASS" "mysql"; then
+         #before auto configuration, ensure the openemr user and database do not exist
+         # Check for openemr database in mysql, if exist then will not configure
+         if check_mysql "$MPASS" "$INSTALL_DATABASE"; then
+            prompt_input openemr/no_configure_mysql_database high ret_result
+            log_only "Will install OpenEMR, however will not automatically configure OpenEMR. (MySQL database already exists)"
+            configure_flag=false;
+         fi
+         # Check for OpenEMR user in mysql.user, if exist then will not configure
+         USER=$(mysql -s -u root -h localhost --password="$MPASS" -e "SELECT User from mysql.user where User='$INSTALL_USER'")
+         if [ "$USER" == "$INSTALL_USER" ]; then
+            prompt_input openemr/no_configure_mysql_user high ret_result
+            log_only "Will install OpenEMR, however will not automatically configure OpenEMR. (MySQL user already exists)"
+            configure_flag=false;
+         fi
+      else
+         #the mysql root password didn't work, so do not configure OpenEMR
+         log_only "Will install OpenEMR, however will not automatically configure OpenEMR. (root password did not work)"
+         configure_flag=false;
+      fi
+
+      #go to openemr directory
+      cd $OPENEMR
+
+      #secure openemr
+      chown -Rf root:root $OPENEMR
+
+      #INSTALL/CONFIGURE OPENEMR
+      # Install openemr
+      if $configure_flag; then
+         log_only "Installing/Configuring OpenEMR..."
+      else
+         log_only "Installing OpenEMR ..."
+      fi
+
+      # Set file and directory permissions (note use default site directory for new install)
+      chmod 666 $SITEDIR/default/sqlconf.php
+      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/documents
+      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/edi
+      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/era
+      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/library/freeb
+      chown -R $WEB_GROUP.$WEB_USER $SITEDIR/default/letter_templates
+      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/interface/main/calendar/modules/PostCalendar/pntemplates/cache
+      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/interface/main/calendar/modules/PostCalendar/pntemplates/compiled
+      chown -R $WEB_GROUP.$WEB_USER $OPENEMR/gacl/admin/templates_c
+
+      if $configure_flag; then
+         # Create a random password for the openemr mysql user
+         password=$(makepasswd --char=12)
+
+         # openemr installation VARIABLES
+         if [ "$MPASS" == "" ] ; then
+           rootpass="rootpass=BLANK" #MySQL server root password
+         else
+           rootpass="rootpass=$MPASS" #MySQL server root password
+         fi
+         login="login=$INSTALL_USER" #username to MySQL openemr database
+         pass="pass=$password" #password to MySQL openemr database
+         dbname="dbname=$INSTALL_DATABASE" #MySQL openemr database name
+ 
+         # 
+         # Run Auto Installer 
+         #
+         sed -e 's@^exit;@ @' <$INST >$INSTTEMP
+         php -f $INSTTEMP $rootpass $login $pass $dbname >> $LOG 2>&1
+         rm -f $INSTTEMP
+
+         #remove global permission to all setup scripts
+         chmod 600 $OPENEMR/acl_setup.php
+         chmod 600 $OPENEMR/acl_upgrade.php
+         chmod 600 $OPENEMR/sl_convert.php
+         chmod 600 $OPENEMR/setup.php
+         chmod 600 $OPENEMR/sql_upgrade.php
+         chmod 600 $OPENEMR/ippf_upgrade.php
+         chmod 600 $OPENEMR/gacl/setup.php
+
+         log_only "Done configuring OpenEMR"
+      fi
 
       if $configure_flag; then
          prompt_input openemr/success_install_config high ret_result
