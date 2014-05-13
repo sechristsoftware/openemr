@@ -334,29 +334,35 @@ case "$1" in
          #   Second iteration will make the changes (if user request this)
          FLAG_ON=0
          process_php () {
-            if [ "$3" -eq "1" ]; then
-               # make rec to php.ini
-               if [ "$FLAG_ON" -eq "0" ]; then
-                  log_only "We changed the following setting(s) in your php configuration file at $PHP :"
-               fi      
-               FLAG_ON=1
-            else
-               # modify php.ini
-               sed -i "s/^[ 	]*$1[ 	=].*$/$1 = $2/" $PHP
-               log_only "Successfully set $1 = $2"  
+            #first, ensure the variable is not blank
+            if [ "$2" != "" ]; then
+               if [ "$3" -eq "1" ]; then
+                  # make rec to php.ini
+                  if [ "$FLAG_ON" -eq "0" ]; then
+                     log_only "We changed the following setting(s) in your php configuration file at $PHP :"
+                  fi      
+                  FLAG_ON=1
+               else
+                  # modify php.ini
+                  sed -i "s/^[ 	]*$1[ 	=].*$/$1 = $2/" $PHP
+                  log_only "Successfully set $1 = $2"  
+               fi
             fi
          }
          process_php_commented_out () {
-            if [ "$3" -eq "1" ]; then
-               # make rec to php.ini
-               if [ "$FLAG_ON" -eq "0" ]; then
-                  log_only "We changed the following setting(s) in your php configuration file at $PHP :"
+            #first, ensure the variable is not blank
+            if [ "$2" != "" ]; then
+               if [ "$3" -eq "1" ]; then
+                  # make rec to php.ini
+                  if [ "$FLAG_ON" -eq "0" ]; then
+                     log_only "We changed the following setting(s) in your php configuration file at $PHP :"
+                  fi
+                  FLAG_ON=1
+               else
+                  # modify php.ini
+                  sed -i "s/^;[     ]*$1[   =].*$/$1 = $2/" $PHP
+                  log_only "Successfully set $1 = $2"
                fi
-               FLAG_ON=1
-            else
-               # modify php.ini
-               sed -i "s/^;[     ]*$1[   =].*$/$1 = $2/" $PHP
-               log_only "Successfully set $1 = $2"
             fi
          }
          for i in `seq 1 2`; do
