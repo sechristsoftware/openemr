@@ -280,6 +280,9 @@ case "$1" in
          log_only "(We recommend you copy this somewhere protected since it"
          log_only "contains confidential patient information)"
 
+         #stop db
+         db_stop
+
          exit 0
 
       elif [ "$PLAN" == "install" ] ; then
