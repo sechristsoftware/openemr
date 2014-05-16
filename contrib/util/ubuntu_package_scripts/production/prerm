@@ -171,7 +171,7 @@ case "$1" in
       log_only "Finished removing OpenEMR web directory"
 
       #remove tmp directory
-      sudo rm -fr $TMPDIR
+      rm -fr $TMPDIR
       log_only "Removed OpenEMR tmp directory"
 
       #removes the configuration section for OpenEMR in Apache config file (deprecated, but keeping for older packages)
