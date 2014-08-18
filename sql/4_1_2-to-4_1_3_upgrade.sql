@@ -270,23 +270,23 @@ ALTER TABLE `procedure_order` CHANGE `control_id`
 #EndIf
 
 #IfNotRow2D list_options list_id language option_id declne_to_specfy
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'declne_to_specfy', 'Declined To Specify', 0, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'declne_to_specfy', 'Declined To Specify', 0, 0, 0);
 #EndIf
 
 #IfNotRow2D list_options list_id ethrace option_id declne_to_specfy
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('ethrace', 'declne_to_specfy', 'Declined To Specify', 0, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('ethrace', 'declne_to_specfy', 'Declined To Specify', 0, 0, 0);
 #EndIf
 
 #IfNotRow2D list_options list_id race option_id declne_to_specfy
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('race', 'declne_to_specfy', 'Declined To Specify', 0, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('race', 'declne_to_specfy', 'Declined To Specify', 0, 0, 0);
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id abkhazian title Abkhazian
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'abkhazian', 'Abkhazian', 10, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'abkhazian', 'Abkhazian', 10, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id abkhazian
-UPDATE 'list_options' SET 'list_options'.'notes' = 'abk' WHERE 'list_options'.'option_id' = 'abkhazian' AND 'list_options'.'list_id' = 'language';
+UPDATE `list_options` SET `notes` = 'abk' WHERE `option_id` = 'abkhazian' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Abkhazian
