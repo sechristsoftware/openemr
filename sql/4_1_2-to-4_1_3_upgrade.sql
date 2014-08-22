@@ -290,31 +290,31 @@ UPDATE `list_options` SET `notes` = 'abk' WHERE `option_id` = 'abkhazian' AND `l
 #EndIf
 
 #IfRow2D list_options list_id language title Abkhazian
-UPDATE 'list_options' SET 'list_options'.'notes' = 'abk' WHERE 'list_options'.'title' = 'Abkhazian';
+UPDATE `list_options` SET `notes` = 'abk' WHERE `title` = 'Abkhazian' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id afar title Afar
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'afar', 'Afar', 20, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'afar', 'Afar', 20, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id afar
-UPDATE 'list_options' SET 'list_options'.'notes' = 'aar' WHERE 'list_options'.'option_id' = 'afar';
+UPDATE `list_options` SET `notes` = 'aar' WHERE `option_id` = 'afar' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Afar
-UPDATE 'list_options' SET 'list_options'.'notes' = 'aar' WHERE 'list_options'.'title' = 'Afar';
+UPDATE `list_options` SET `notes` = 'aar' WHERE `title` = 'Afar' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id afrikaans title Afrikaans
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'afrikaans', 'Afrikaans', 30, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'afrikaans', 'Afrikaans', 30, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id afrikaans
-UPDATE 'list_options' SET 'list_options'.'notes' = 'afr' WHERE 'list_options'.'option_id' = 'afrikaans';
+UPDATE `list_options` SET `notes` = 'afr' WHERE `option_id` = 'afrikaans' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Afrikaans
-UPDATE 'list_options' SET 'list_options'.'notes' = 'afr' WHERE 'list_options'.'title' = 'Afrikaans';
+UPDATE `list_options` SET `notes` = 'afr' WHERE `title` = 'Afrikaans' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id akan title Akan
