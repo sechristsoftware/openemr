@@ -602,63 +602,63 @@ UPDATE `list_options` SET `notes` = 'bur(B)|mya(T)' WHERE `title` = 'Burmese' AN
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id catalan_valencian title Catalan; Valencian
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'catalan_valencian', 'Catalan; Valencian', 270, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, option_value ) VALUES ('language', 'catalan_valencian', 'Catalan; Valencian', 270, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id catalan_valencian
-UPDATE 'list_options' SET 'list_options'.'notes' = 'cat' WHERE 'list_options'.'option_id' = 'catalan_valencian';
+UPDATE `list_options` SET `notes` = 'cat' WHERE `option_id` = 'catalan_valencian' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Catalan; Valencian
-UPDATE 'list_options' SET 'list_options'.'notes' = 'cat' WHERE 'list_options'.'title' = 'Catalan; Valencian';
+UPDATE `list_options` SET `notes` = 'cat' WHERE `title` = 'Catalan; Valencian' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id central_khmer title Central Khmer
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'central_khmer', 'Central Khmer', 280, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'central_khmer', 'Central Khmer', 280, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id central_khmer
-UPDATE 'list_options' SET 'list_options'.'notes' = 'khm' WHERE 'list_options'.'option_id' = 'central_khmer';
+UPDATE `list_options` SET `notes` = 'khm' WHERE `option_id` = 'central_khmer' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Central Khmer
-UPDATE 'list_options' SET 'list_options'.'notes' = 'khm' WHERE 'list_options'.'title' = 'Central Khmer';
+UPDATE `list_options` SET `notes` = 'khm' WHERE `title` = 'Central Khmer' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id chamorro title Chamorro
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'chamorro', 'Chamorro', 290, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'chamorro', 'Chamorro', 290, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id chamorro
-UPDATE 'list_options' SET 'list_options'.'notes' = 'cha' WHERE 'list_options'.'option_id' = 'chamorro';
+UPDATE `list_options` SET `notes` = 'cha' WHERE `option_id` = 'chamorro' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Chamorro
-UPDATE 'list_options' SET 'list_options'.'notes' = 'cha' WHERE 'list_options'.'title' = 'Chamorro';
+UPDATE `list_options` SET `notes` = 'cha' WHERE `title` = 'Chamorro' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id chechen title Chechen
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'chechen', 'Chechen', 300, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'chechen', 'Chechen', 300, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id chechen
-UPDATE 'list_options' SET 'list_options'.'notes' = 'che' WHERE 'list_options'.'option_id' = 'chechen';
+UPDATE `list_options` SET `notes` = 'che' WHERE `option_id` = 'chechen' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Chechen
-UPDATE 'list_options' SET 'list_options'.'notes' = 'che' WHERE 'list_options'.'title' = 'Chechen';
+UPDATE `list_options` SET `notes` = 'che' WHERE `title` = 'Chechen' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id chichewa_chewa_nyanja title Chichewa; Chewa; Nyanja
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'chichewa_chewa_nyanja', 'Chichewa; Chewa; Nyanja', 310, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'chichewa_chewa_nyanja', 'Chichewa; Chewa; Nyanja', 310, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id chichewa_chewa_nyanja
-UPDATE 'list_options' SET 'list_options'.'notes' = 'nya' WHERE 'list_options'.'option_id' = 'chichewa_chewa_nyanja';
+UPDATE `list_options` SET `notes` = 'nya' WHERE `option_id` = 'chichewa_chewa_nyanja' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Chichewa; Chewa; Nyanja
-UPDATE 'list_options' SET 'list_options'.'notes' = 'nya' WHERE 'list_options'.'title' = 'Chichewa; Chewa; Nyanja';
+UPDATE `list_options` SET `notes` = 'nya' WHERE `title` = 'Chichewa; Chewa; Nyanja' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id chinese title Chinese
