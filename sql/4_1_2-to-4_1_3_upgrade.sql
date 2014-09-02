@@ -2159,107 +2159,107 @@ UPDATE `list_options` SET `notes` = 'sna' WHERE `title` = 'Shona' AND `list_id` 
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id sichuan_yi_nuosu title Sichuan Yi; Nuosu
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'sichuan_yi_nuosu', 'Sichuan Yi; Nuosu', 1420, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'sichuan_yi_nuosu', 'Sichuan Yi; Nuosu', 1420, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id sichuan_yi_nuosu
-UPDATE 'list_options' SET 'list_options'.'notes' = 'iii' WHERE 'list_options'.'option_id' = 'sichuan_yi_nuosu';
+UPDATE `list_options` SET `notes` = 'iii' WHERE `option_id` = 'sichuan_yi_nuosu' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Sichuan Yi; Nuosu
-UPDATE 'list_options' SET 'list_options'.'notes' = 'iii' WHERE 'list_options'.'title' = 'Sichuan Yi; Nuosu';
+UPDATE `list_options` SET `notes` = 'iii' WHERE `title` = 'Sichuan Yi; Nuosu' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id sindhi title Sindhi
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'sindhi', 'Sindhi', 1430, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'sindhi', 'Sindhi', 1430, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id sindhi
-UPDATE 'list_options' SET 'list_options'.'notes' = 'snd' WHERE 'list_options'.'option_id' = 'sindhi';
+UPDATE `list_options` SET `notes` = 'snd' WHERE `option_id` = 'sindhi' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Sindhi
-UPDATE 'list_options' SET 'list_options'.'notes' = 'snd' WHERE 'list_options'.'title' = 'Sindhi';
+UPDATE `list_options` SET `notes` = 'snd' WHERE `title` = 'Sindhi' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id sinhala_sinhalese title Sinhala; Sinhalese
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'sinhala_sinhalese', 'Sinhala; Sinhalese', 1440, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'sinhala_sinhalese', 'Sinhala; Sinhalese', 1440, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id sinhala_sinhalese
-UPDATE 'list_options' SET 'list_options'.'notes' = 'sin' WHERE 'list_options'.'option_id' = 'sinhala_sinhalese';
+UPDATE `list_options` SET `notes` = 'sin' WHERE `option_id` = 'sinhala_sinhalese' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Sinhala; Sinhalese
-UPDATE 'list_options' SET 'list_options'.'notes' = 'sin' WHERE 'list_options'.'title' = 'Sinhala; Sinhalese';
+UPDATE `list_options` SET `notes` = 'sin' WHERE `title` = 'Sinhala; Sinhalese' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id slovak title Slovak
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'slovak', 'Slovak', 1450, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'slovak', 'Slovak', 1450, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id slovak
-UPDATE 'list_options' SET 'list_options'.'notes' = 'slo(B)|slk(T)' WHERE 'list_options'.'option_id' = 'slovak';
+UPDATE `list_options` SET `notes` = 'slo(B)|slk(T)' WHERE `option_id` = 'slovak' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Slovak
-UPDATE 'list_options' SET 'list_options'.'notes' = 'slo(B)|slk(T)' WHERE 'list_options'.'title' = 'Slovak';
+UPDATE `list_options` SET `notes` = 'slo(B)|slk(T)' WHERE `title` = 'Slovak' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id slovenian title Slovenian
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'slovenian', 'Slovenian', 1460, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'slovenian', 'Slovenian', 1460, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id slovenian
-UPDATE 'list_options' SET 'list_options'.'notes' = 'slv' WHERE 'list_options'.'option_id' = 'slovenian';
+UPDATE `list_options` SET `notes` = 'slv' WHERE `option_id` = 'slovenian' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Slovenian
-UPDATE 'list_options' SET 'list_options'.'notes' = 'slv' WHERE 'list_options'.'title' = 'Slovenian';
+UPDATE `list_options` SET `notes` = 'slv' WHERE `title` = 'Slovenian' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id somali title Somali
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'somali', 'Somali', 1470, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'somali', 'Somali', 1470, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id somali
-UPDATE 'list_options' SET 'list_options'.'notes' = 'som' WHERE 'list_options'.'option_id' = 'somali';
+UPDATE `list_options` SET `notes` = 'som' WHERE `option_id` = 'somali' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Somali
-UPDATE 'list_options' SET 'list_options'.'notes' = 'som' WHERE 'list_options'.'title' = 'Somali';
+UPDATE `list_options` SET `notes` = 'som' WHERE `title` = 'Somali' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id sotho_southern title Sotho, Southern
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'sotho_southern', 'Sotho, Southern', 1480, 0, 0);
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'sotho_southern', 'Sotho, Southern', 1480, 0, 0);
 #EndIf
 
 #IfRow2D list_options list_id language option_id sotho_southern
-UPDATE 'list_options' SET 'list_options'.'notes' = 'sot' WHERE 'list_options'.'option_id' = 'sotho_southern';
+UPDATE `list_options` SET `notes` = 'sot' WHERE `option_id` = 'sotho_southern' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Sotho, Southern
-UPDATE 'list_options' SET 'list_options'.'notes' = 'sot' WHERE 'list_options'.'title' = 'Sotho, Southern';
+UPDATE `list_options` SET `notes` = 'sot' WHERE `title` = 'Sotho, Southern' AND `list_id` = 'language';
 #EndIf
 
-#IfNotRow2Dx2 list_options list_id language option_id spanish title Spanish
-INSERT INTO 'list_options' ( list_id, option_id, title, seq, is_default, option_value ) VALUES ('language', 'spanish', 'Spanish', 1490, 0, 0);
+#IfNotRow2Dx2 list_options list_id language option_id Spanish title Spanish
+INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value` ) VALUES ('language', 'Spanish', 'Spanish', 1490, 0, 0);
 #EndIf
 
-#IfRow2D list_options list_id language option_id spanish
-UPDATE 'list_options' SET 'list_options'.'notes' = 'spa' WHERE 'list_options'.'option_id' = 'spanish';
+#IfRow2D list_options list_id language option_id Spanish
+UPDATE `list_options` SET `notes` = 'spa' WHERE `option_id` = 'Spanish' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Spanish
-UPDATE 'list_options' SET 'list_options'.'notes' = 'spa' WHERE 'list_options'.'title' = 'Spanish';
+UPDATE `list_options` SET `notes` = 'spa' WHERE `title` = 'Spanish' AND `list_id` = 'language';
 #EndIf
 
-#IfRow3D list_options list_id language seq 210 option_id spanish
-UPDATE 'list_options' SET 'list_options'.'seq' = 1490 WHERE 'list_options'.'option_id' = 'spanish';
+#IfRow3D list_options list_id language seq 210 option_id Spanish
+UPDATE `list_options` SET `seq` = 1490 WHERE `option_id` = 'Spanish' AND `list_id` = 'language';
 #EndIf
 
 #IfRow3D list_options list_id language seq 210 title Spanish
-UPDATE 'list_options' SET 'list_options'.'seq' = 1490 WHERE 'list_options'.'title' = 'Spanish';
+UPDATE `list_options` SET `seq` = 1490 WHERE `title` = 'Spanish' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id sundanese title Sundanese
