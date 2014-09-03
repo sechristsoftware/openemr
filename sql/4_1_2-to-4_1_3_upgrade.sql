@@ -395,11 +395,11 @@ INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default
 #EndIf
 
 #IfRow2D list_options list_id language option_id armenian
-UPDATE `list_options` SET `notes` = 'arm(B)|hye(T)' WHERE `option_id` = 'armenian';
+UPDATE `list_options` SET `notes` = 'arm(B)|hye(T)' WHERE `option_id` = 'armenian' AND `list_id` = 'language';
 #EndIf
 
 #IfRow2D list_options list_id language title Armenian
-UPDATE `list_options` SET `notes` = 'arm(B)|hye(T)' WHERE `title` = 'Armenian';
+UPDATE `list_options` SET `notes` = 'arm(B)|hye(T)' WHERE `title` = 'Armenian' AND `list_id` = 'language';
 #EndIf
 
 #IfRow3D list_options list_id language seq 10 option_id armenian
@@ -1054,7 +1054,7 @@ UPDATE `list_options` SET `notes` = 'gre(B)|ell(T)' WHERE `option_id` = 'greek' 
 UPDATE `list_options` SET `notes` = 'gre(B)|ell(T)' WHERE `title` = 'Greek, Modern (1453-)' AND `list_id` = 'language';
 #EndIf
 
-fRow2D list_options list_id language title Greek
+#IfRow2D list_options list_id language title Greek
 UPDATE `list_options` SET `notes` = 'gre(B)|ell(T)' WHERE `title` = 'Greek' AND `list_id` = 'language';
 #EndIf
 
@@ -1908,7 +1908,7 @@ UPDATE `list_options` SET `notes` = 'ori' WHERE `option_id` = 'oriya' AND `list_
 #EndIf
 
 #IfRow2D list_options list_id language title Oriya
-UPDATE `list_options` SET `notes` = 'ori' WHERE `title = 'Oriya' AND `list_id` = 'language';
+UPDATE `list_options` SET `notes` = 'ori' WHERE `title` = 'Oriya' AND `list_id` = 'language';
 #EndIf
 
 #IfNotRow2Dx2 list_options list_id language option_id oromo title Oromo
