@@ -2861,7 +2861,7 @@ INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_va
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'uzbek', 'Uzbek', 1720, 0, 0, 'uzb');
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'venda', 'Venda', 1730, 0, 0, 'ven');
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'vietnamese', 'Vietnamese', 1740, 0, 0, 'vie');
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'volapük', 'Volapük', 1750, 0, 0, 'vol');
+INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'volapuk', 'Volapük', 1750, 0, 0, 'vol');
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'walloon', 'Walloon', 1760, 0, 0, 'wln');
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'welsh', 'Welsh', 1770, 0, 0, 'wel(B)|cym(T)');
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default, option_value, notes ) VALUES ('language', 'western_frisian', 'Western Frisian', 1780, 0, 0, 'fry');
