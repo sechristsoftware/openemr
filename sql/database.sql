@@ -2306,7 +2306,7 @@ CREATE TABLE `immunizations` (
   `update_date` timestamp NOT NULL,
   `created_by` bigint(20) default NULL,
   `updated_by` bigint(20) default NULL,
-  `amount_administered` float DEFAULT NULL,			
+  `amount_administered` decimal(12,2) DEFAULT NULL,			
   `amount_administered_unit` varchar(50) DEFAULT NULL,			
   `expiration_date` date DEFAULT NULL,			
   `route` varchar(100) DEFAULT NULL,			

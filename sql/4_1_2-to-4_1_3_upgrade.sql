@@ -2941,3 +2941,7 @@ UPDATE `clinical_rules` SET `amc_2014_flag` = 1 , `amc_code_2014` = '170.314(g)(
 	INSERT INTO `list_options` ( `list_id`, `option_id`, `title`, `seq`, `is_default` ) VALUES ('clinical_rules', 'family_health_history', 'Family Health History', 3000, 0);
 #EndIf
 
+#IfNotColumnType immunizations amount_administered decimal(12,2)
+ALTER TABLE  `immunizations` CHANGE  `amount_administered`  `amount_administered` DECIMAL( 12, 2 ) NULL DEFAULT NULL;
+#EndIf
+
