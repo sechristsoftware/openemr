@@ -280,7 +280,7 @@ function genPopupsList($style='') {
  <option value='../patient_file/letter.php'><?php xl('Letter','e'); ?></option>
 <?php } ?>
 <!-- added code for allowing Chart Labels in the popup 8-19-2014 Terry Hill !-->
-<?php if ($GLOBALS['label_type'] != '0') { ?>
+<?php if ($GLOBALS['chart_label_type'] != '0') { ?>
 <option value='../patient_file/label.php'><?php xl('Chart Label','e'); ?></option>
 <?php } ?>
 <!-- added code for allowing Chart Labels in the popup 8-19-2014 Terry Hill !-->

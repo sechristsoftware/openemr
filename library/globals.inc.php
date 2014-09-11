@@ -695,18 +695,6 @@ $GLOBALS_METADATA = array(
       xl('This specifies whether to include date in Box 31.')
     ),
 
-	'label_type' => array(
-        xl('Patient Label Type'),
-        array(
-            '0' => xl('None'),
-			'1' => xl('5160'),
-            '2' => xl('5161'),
-            '3' => xl('5162')
-		),
-        '0',                              // default	
-		xl('Avery Label type for printing patient labels from popups in left nav screen'),
-	),
-
   ),
     // E-Sign Tab
     //
@@ -2168,16 +2156,16 @@ $GLOBALS_METADATA = array(
        xl("Choose Download or Display Inline"),
     ),
    	
-	'label_type' => array(
+    'chart_label_type' => array(
         xl('Patient Label Type'),
         array(
             '0' => xl('None'),
-			'1' => xl('5160'),
+            '1' => xl('5160'),
             '2' => xl('5161'),
             '3' => xl('5162')
-		),
-        '1',                              // default	
-		xl('Avery Label type for printing patient labels from popups in left nav screen'),
+        ),
+        '1', // default	
+        xl('Avery Label type for printing patient labels from popups in left nav screen'),
     ),   
    ),
 );
