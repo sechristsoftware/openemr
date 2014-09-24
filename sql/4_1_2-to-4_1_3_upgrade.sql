@@ -2782,3 +2782,25 @@ INSERT INTO `supported_external_dataloads` (`load_type`, `load_source`, `load_re
 INSERT INTO `supported_external_dataloads` (`load_type`, `load_source`, `load_release_date`, `load_filename`, `load_checksum`) VALUES ('ICD10', 'CMS', '2014-10-01', 'Reimbursement_Mapping_pr_2015.zip', '493c022db17a70fcdcbb41bf0ad61a47');
 #EndIf
 
+#IfMissingColumn clinical_rules amc_2011_flag
+ALTER TABLE `clinical_rules` ADD COLUMN `amc_2011_flag` tinyint(1) COMMENT '2011 Automated Measure Calculation flag for (unable to customize per patient)';
+UPDATE `clinical_rules` SET `amc_2011_flag` = 1 WHERE `amc_flag` = 1;
+#EndIf
+
+#IfMissingColumn clinical_rules amc_2014_flag
+ALTER TABLE `clinical_rules` ADD COLUMN `amc_2014_flag` tinyint(1) COMMENT '2014 Automated Measure Calculation flag for (unable to customize per patient)';
+#EndIf
+
+#IfMissingColumn clinical_rules amc_code_2014
+ALTER TABLE `clinical_rules` ADD COLUMN `amc_code_2014` varchar(30) NOT NULL default '' COMMENT 'Automated Measure Calculation 2014 indentifier (MU rule)';
+#EndIf
+
+#IfMissingColumn clinical_rules cqm_2011_flag
+ALTER TABLE `clinical_rules` ADD COLUMN `cqm_2011_flag` tinyint(1) COMMENT '2011 Clinical Quality Measure flag (unable to customize per patient)';
+UPDATE `clinical_rules` SET `cqm_2011_flag` = 1 WHERE `cqm_flag` = 1;
+#EndIf
+
+#IfMissingColumn clinical_rules cqm_2014_flag
+ALTER TABLE `clinical_rules` ADD COLUMN `cqm_2014_flag` tinyint(1) COMMENT '2014 Clinical Quality Measure flag (unable to customize per patient)';
+#EndIf
+
