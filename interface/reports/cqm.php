@@ -38,9 +38,10 @@ if (!empty($report_id)) {
   $report_view = collectReportDatabase($report_id);
   $date_report = $report_view['date_report'];
   $type_report = $report_view['type'];
-  $type_report = (($type_report == "amc") || ($type_report == "cqm")) ? $type_report : "standard";
+  $type_report = (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014") ||
+                  ($type_report == "cqm") || ($type_report == "cqm_2011") || ($type_report == "cqm_2014")) ? $type_report : "standard";
   $rule_filter = $report_view['type'];
-  if ($type_report == "amc") {
+  if (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014")) {
     $begin_date = $report_view['date_begin'];
     $labs_manual = $report_view['labs_manual'];
   }
@@ -52,7 +53,9 @@ if (!empty($report_id)) {
   $dataSheet = json_decode($report_view['data'],TRUE);
 }
 else {
-  // Collect report type parameter (standard, amc, or cqm)
+  // Collect report type parameter (standard, amc, cqm)
+  // Note this does not need to deal with the amc_2011,amc_2014,cqm_2011,cqm_2014 stuff, since
+  // this only pertains to submitting for a report to start.
   $type_report = (isset($_GET['type'])) ? trim($_GET['type']) : "standard";
   // Collect form parameters (set defaults if empty)
   if ($type_report == "amc") {
@@ -76,14 +79,29 @@ else {
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
 
 <?php if ($type_report == "standard") { ?>
-  <title><?php echo htmlspecialchars( xl('Standard Measures'), ENT_NOQUOTES); ?></title>
+  <title><?php echo xlt('Standard Measures'); ?></title>
 <?php } ?>
+
 <?php if ($type_report == "cqm") { ?>
-  <title><?php echo htmlspecialchars( xl('Clinical Quality Measures (CQM)'), ENT_NOQUOTES); ?></title>
+  <title><?php echo xlt('Clinical Quality Measures (CQM)'); ?></title>
 <?php } ?>
+<?php if ($type_report == "cqm_2011") { ?>
+  <title><?php echo xlt('Clinical Quality Measures (CQM) - 2011'); ?></title>
+<?php } ?>
+<?php if ($type_report == "cqm_2014") { ?>
+  <title><?php echo xlt('Clinical Quality Measures (CQM) - 2014'); ?></title>
+<?php } ?>
+
 <?php if ($type_report == "amc") { ?>
-  <title><?php echo htmlspecialchars( xl('Automated Measure Calculations (AMC)'), ENT_NOQUOTES); ?></title>
+  <title><?php echo xlt('Automated Measure Calculations (AMC)'); ?></title>
 <?php } ?>
+<?php if ($type_report == "amc_2011") { ?>
+  <title><?php echo xlt('Automated Measure Calculations (AMC) - 2011'); ?></title>
+<?php } ?>
+<?php if ($type_report == "amc_2014") { ?>
+  <title><?php echo xlt('Automated Measure Calculations (AMC) - 2014'); ?></title>
+<?php } ?>
+
 
 <script type="text/javascript" src="../../library/overlib_mini.js"></script>
 <script type="text/javascript" src="../../library/textformat.js"></script>
@@ -92,7 +110,7 @@ else {
 
 <script LANGUAGE="JavaScript">
 
- var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+ var mypcc = '<?php echo text($GLOBALS['phone_country_code']) ?>';
 
  function runReport() {
    // Showing processing wheel
@@ -201,16 +219,30 @@ else {
 <!-- Required for the popup date selectors -->
 <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
 
-<span class='title'><?php echo htmlspecialchars( xl('Report'), ENT_NOQUOTES); ?> - 
+<span class='title'><?php echo xlt('Report'); ?> - 
 
 <?php if ($type_report == "standard") { ?>
-  <?php echo htmlspecialchars( xl('Standard Measures'), ENT_NOQUOTES); ?>
+  <?php echo xlt('Standard Measures'); ?>
 <?php } ?>
+
 <?php if ($type_report == "cqm") { ?>
-  <?php echo htmlspecialchars( xl('Clinical Quality Measures (CQM)'), ENT_NOQUOTES); ?>
+  <?php echo xlt('Clinical Quality Measures (CQM)'); ?>
 <?php } ?>
+<?php if ($type_report == "cqm_2011") { ?>
+  <?php echo xlt('Clinical Quality Measures (CQM) - 2011'); ?>
+<?php } ?>
+<?php if ($type_report == "cqm_2014") { ?>
+  <?php echo xlt('Clinical Quality Measures (CQM) - 2014'); ?>
+<?php } ?>
+
 <?php if ($type_report == "amc") { ?>
-  <?php echo htmlspecialchars( xl('Automated Measure Calculations (AMC)'), ENT_NOQUOTES); ?>
+  <?php echo xlt('Automated Measure Calculations (AMC)'); ?>
+<?php } ?>
+<?php if ($type_report == "amc_2011") { ?>
+  <?php echo xlt('Automated Measure Calculations (AMC) - 2011'); ?>
+<?php } ?>
+<?php if ($type_report == "amc_2014") { ?>
+  <?php echo xlt('Automated Measure Calculations (AMC) - 2014'); ?>
 <?php } ?>
 
 <?php if (!empty($report_id)) { ?>
@@ -222,7 +254,7 @@ else {
 
 </span>
 
-<form method='post' name='theform' id='theform' action='cqm.php?type=<?php echo htmlspecialchars($type_report,ENT_QUOTES) ;?>' onsubmit='return top.restoreSession()'>
+<form method='post' name='theform' id='theform' action='cqm.php?type=<?php echo attr($type_report) ;?>' onsubmit='return top.restoreSession()'>
 
 <div id="report_parameters">
 
@@ -233,7 +265,7 @@ else {
 
 	<table class='text'>
 
-		<?php if ($type_report == "amc") { ?>
+		<?php if (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014")) { ?>
                    <tr>
                       <td class='label'>
                          <?php echo htmlspecialchars( xl('Begin Date'), ENT_NOQUOTES); ?>:
@@ -252,7 +284,7 @@ else {
 
                 <tr>
                         <td class='label'>
-                           <?php if ($type_report == "amc") { ?>
+                           <?php if (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014")) { ?>
                               <?php echo htmlspecialchars( xl('End Date'), ENT_NOQUOTES); ?>:
                            <?php } else { ?>
                               <?php echo htmlspecialchars( xl('Target Date'), ENT_NOQUOTES); ?>:
@@ -269,31 +301,61 @@ else {
                         </td>
                 </tr>
 
-                <?php if ($type_report == "cqm") { ?>
-                    <input type='hidden' id='form_rule_filter' name='form_rule_filter' value='cqm'>
-                <?php } ?>
-                <?php if ($type_report == "amc") { ?>
-                    <input type='hidden' id='form_rule_filter' name='form_rule_filter' value='amc'>
-                <?php } ?>
-                <?php if ($type_report == "standard") { ?>
+                <?php if (($type_report == "cqm") || ($type_report == "cqm_2011") || ($type_report == "cqm_2014")) { ?>
                     <tr>
                         <td class='label'>
-                            <?php echo htmlspecialchars( xl('Rule Set'), ENT_NOQUOTES); ?>:
+                            <?php echo xlt('Rule Set'); ?>:
                         </td>
                         <td>
                             <select <?php echo $dis_text; ?> id='form_rule_filter' name='form_rule_filter'>
-                            <option value='passive_alert' <?php if ($rule_filter == "passive_alert") echo "selected"; ?>>
-                            <?php echo htmlspecialchars( xl('Passive Alert Rules'), ENT_NOQUOTES); ?></option>
-                            <option value='active_alert' <?php if ($rule_filter == "active_alert") echo "selected"; ?>>
-                            <?php echo htmlspecialchars( xl('Active Alert Rules'), ENT_NOQUOTES); ?></option>
-                            <option value='patient_reminder' <?php if ($rule_filter == "patient_reminder") echo "selected"; ?>>
-                            <?php echo htmlspecialchars( xl('Patient Reminder Rules'), ENT_NOQUOTES); ?></option>
+                            <option value='cqm' <?php if ($rule_filter == "cqm") echo "selected"; ?>>
+                            <?php echo xlt('All Clinical Quality Measures (CQM)'); ?></option>
+                            <option value='cqm_2011' <?php if ($rule_filter == "cqm_2011") echo "selected"; ?>>
+                            <?php echo xlt('2011 Clinical Quality Measures (CQM)'); ?></option>
+                            <option value='cqm_2014' <?php if ($rule_filter == "cqm_2014") echo "selected"; ?>>
+                            <?php echo xlt('2014 Clinical Quality Measures (CQM)'); ?></option>
                             </select>
                         </td>
                     </tr>
                 <?php } ?>
 
-                <?php if ($type_report == "amc") { ?>
+                <?php if (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014")) { ?>
+                    <tr>
+                        <td class='label'>
+                            <?php echo xlt('Rule Set'); ?>:
+                        </td>
+                        <td>
+                            <select <?php echo $dis_text; ?> id='form_rule_filter' name='form_rule_filter'>
+                            <option value='amc' <?php if ($rule_filter == "amc") echo "selected"; ?>>
+                            <?php echo xlt('Automated Measure Calculations (AMC)'); ?></option>
+                            <option value='amc_2011' <?php if ($rule_filter == "cqm_2011") echo "selected"; ?>>
+                            <?php echo xlt('2011 Automated Measure Calculations (AMC)'); ?></option>
+                            <option value='amc_2014' <?php if ($rule_filter == "cqm_2014") echo "selected"; ?>>
+                            <?php echo xlt('2014 Automated Measure Calculations (AMC)'); ?></option>
+                            </select>
+                        </td>
+                    </tr>
+                <?php } ?>
+
+                <?php if ($type_report == "standard") { ?>
+                    <tr>
+                        <td class='label'>
+                            <?php echo xlt('Rule Set'); ?>:
+                        </td>
+                        <td>
+                            <select <?php echo $dis_text; ?> id='form_rule_filter' name='form_rule_filter'>
+                            <option value='passive_alert' <?php if ($rule_filter == "passive_alert") echo "selected"; ?>>
+                            <?php echo xlt('Passive Alert Rules'); ?></option>
+                            <option value='active_alert' <?php if ($rule_filter == "active_alert") echo "selected"; ?>>
+                            <?php echo xlt('Active Alert Rules'); ?></option>
+                            <option value='patient_reminder' <?php if ($rule_filter == "patient_reminder") echo "selected"; ?>>
+                            <?php echo xlt('Patient Reminder Rules'); ?></option>
+                            </select>
+                        </td>
+                    </tr>
+                <?php } ?>
+
+                <?php if (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014")) { ?>
                     <input type='hidden' id='form_plan_filter' name='form_plan_filter' value=''>
                 <?php } else { ?>
                     <tr>
@@ -305,7 +367,15 @@ else {
                                  <option value=''>-- <?php echo htmlspecialchars( xl('Ignore'), ENT_NOQUOTES); ?> --</option>
                                  <?php if ($type_report == "cqm") { ?>
                                    <option value='cqm' <?php if ($plan_filter == "cqm") echo "selected"; ?>>
-                                   <?php echo htmlspecialchars( xl('Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
+                                   <?php echo htmlspecialchars( xl('All Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
+                                 <?php } ?>
+                                 <?php if ($type_report == "cqm_2011") { ?>
+                                   <option value='cqm_2011' <?php if ($plan_filter == "cqm_2011") echo "selected"; ?>>
+                                   <?php echo htmlspecialchars( xl('2011 Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
+                                 <?php } ?>
+                                 <?php if ($type_report == "cqm_2014") { ?>
+                                   <option value='cqm_2014' <?php if ($plan_filter == "cqm_2014") echo "selected"; ?>>
+                                   <?php echo htmlspecialchars( xl('2014 Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
                                  <?php } ?>
                                  <?php if ($type_report == "standard") { ?>
                                    <option value='normal' <?php if ($plan_filter == "normal") echo "selected"; ?>>
@@ -375,7 +445,7 @@ else {
                         </td>
                 </tr>
 
-                <?php if ($type_report == "amc") { ?>
+                <?php if (($type_report == "amc") || ($type_report == "amc_2011") || ($type_report == "amc_2014")) { ?>
                   <tr>
                         <td>
                                <?php echo htmlspecialchars( xl('Number labs'), ENT_NOQUOTES); ?>:<br>
@@ -405,7 +475,7 @@ else {
 					</a>
                                         <span id='status_span'></span>
                                         <div id='processing' style='margin:10px;display:none;'><img src='../pic/ajax-loader.gif'/></div>
-					<?php if ($type_report == "cqm") { ?>
+					<?php if ($type_report == "cqm") // only cqm (not cqm_2011 and cqm_2015) used here since before submit { ?>
 						<a id='xmla_button' href='#' class='css_button' onclick='return GenXml("false")'>
 							<span>
 								<?php echo htmlspecialchars( xl('Generate PQRI report (Method A)'), ENT_NOQUOTES); ?>

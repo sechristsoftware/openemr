@@ -2804,3 +2804,13 @@ UPDATE `clinical_rules` SET `cqm_2011_flag` = 1 WHERE `cqm_flag` = 1;
 ALTER TABLE `clinical_rules` ADD COLUMN `cqm_2014_flag` tinyint(1) COMMENT '2014 Clinical Quality Measure flag (unable to customize per patient)';
 #EndIf
 
+#IfMissingColumn clinical_plans cqm_2011_flag
+ALTER TABLE `clinical_plans` ADD COLUMN `cqm_2011_flag` tinyint(1) COMMENT '2011 Clinical Quality Measure flag (unable to customize per patient)';
+UPDATE `clinical_plans` SET `cqm_2011_flag` = 1 WHERE `cqm_flag` = 1;
+#EndIf
+
+#IfMissingColumn clinical_plans cqm_2014_flag
+ALTER TABLE `clinical_plans` ADD COLUMN `cqm_2014_flag` tinyint(1) COMMENT '2014 Clinical Quality Measure flag (unable to customize per patient)';
+#EndIf
+
+
