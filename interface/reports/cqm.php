@@ -327,7 +327,7 @@ else {
                         <td>
                             <select <?php echo $dis_text; ?> id='form_rule_filter' name='form_rule_filter'>
                             <option value='amc' <?php if ($rule_filter == "amc") echo "selected"; ?>>
-                            <?php echo xlt('Automated Measure Calculations (AMC)'); ?></option>
+                            <?php echo xlt('All Automated Measure Calculations (AMC)'); ?></option>
                             <option value='amc_2011' <?php if ($rule_filter == "cqm_2011") echo "selected"; ?>>
                             <?php echo xlt('2011 Automated Measure Calculations (AMC)'); ?></option>
                             <option value='amc_2014' <?php if ($rule_filter == "cqm_2014") echo "selected"; ?>>
@@ -583,7 +583,7 @@ else {
            $tempCqmAmcString .= " " . htmlspecialchars( xl('NQF') . ":" . $row['cqm_nqf_code'], ENT_NOQUOTES) . " ";
          }
        }
-       if ($type_report == "amc")) {
+       if ($type_report == "amc") {
          if (!empty($row['amc_code'])) {
            $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2011') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
          }
@@ -591,12 +591,12 @@ else {
            $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2014') . ":" . $row['amc_code_2014'], ENT_NOQUOTES) . " ";
          }
        }
-       if ($type_report == "amc_2011")) {
+       if ($type_report == "amc_2011") {
          if (!empty($row['amc_code'])) {
            $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2011') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
          }
        }
-       if ($type_report == "amc_2014")) {
+       if ($type_report == "amc_2014") {
          if (!empty($row['amc_code_2014'])) {
            $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2014') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
          }
