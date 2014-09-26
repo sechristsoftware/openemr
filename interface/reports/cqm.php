@@ -475,15 +475,15 @@ else {
 					</a>
                                         <span id='status_span'></span>
                                         <div id='processing' style='margin:10px;display:none;'><img src='../pic/ajax-loader.gif'/></div>
-					<?php if ($type_report == "cqm") // only cqm (not cqm_2011 and cqm_2015) used here since before submit { ?>
+					<?php if ($type_report == "cqm") { ?>
 						<a id='xmla_button' href='#' class='css_button' onclick='return GenXml("false")'>
 							<span>
-								<?php echo htmlspecialchars( xl('Generate PQRI report (Method A)'), ENT_NOQUOTES); ?>
+								<?php echo htmlspecialchars( xl('Generate PQRI report (Method A) - 2011'), ENT_NOQUOTES); ?>
 							</span>
 						</a>
                                         	<a id='xmlb_button' href='#' class='css_button' onclick='return GenXml("true")'>
                                                 	<span>
-                                                        	<?php echo htmlspecialchars( xl('Generate PQRI report (Method E)'), ENT_NOQUOTES); ?>
+                                                        	<?php echo htmlspecialchars( xl('Generate PQRI report (Method E) - 2011'), ENT_NOQUOTES); ?>
                                                 	</span>
                                         	</a>
 					<?php } ?>
@@ -573,18 +573,37 @@ else {
      echo "<td class='detail'>";
      if (isset($row['is_main'])) {
        echo "<b>".generate_display_field(array('data_type'=>'1','list_id'=>'clinical_rules'),$row['id'])."</b>";
-       if (!empty($row['cqm_pqri_code']) || !empty($row['cqm_nqf_code']) || !empty($row['amc_code'])) {
-         echo " (";
+
+       $tempCqmAmcString = "";
+       if (($type_report == "cqm") || ($type_report == "cqm_2011") || ($type_report == "cqm_2014")) {
          if (!empty($row['cqm_pqri_code'])) {
-         echo " " . htmlspecialchars( xl('PQRI') . ":" . $row['cqm_pqri_code'], ENT_NOQUOTES) . " ";
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('PQRI') . ":" . $row['cqm_pqri_code'], ENT_NOQUOTES) . " ";
          }
          if (!empty($row['cqm_nqf_code'])) {
-         echo " " . htmlspecialchars( xl('NQF') . ":" . $row['cqm_nqf_code'], ENT_NOQUOTES) . " ";
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('NQF') . ":" . $row['cqm_nqf_code'], ENT_NOQUOTES) . " ";
          }
+       }
+       if ($type_report == "amc")) {
          if (!empty($row['amc_code'])) {
-         echo " " . htmlspecialchars( xl('AMC') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2011') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
          }
-         echo ")";
+         if (!empty($row['amc_code_2014'])) {
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2014') . ":" . $row['amc_code_2014'], ENT_NOQUOTES) . " ";
+         }
+       }
+       if ($type_report == "amc_2011")) {
+         if (!empty($row['amc_code'])) {
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2011') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
+         }
+       }
+       if ($type_report == "amc_2014")) {
+         if (!empty($row['amc_code_2014'])) {
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2014') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
+         }
+       }
+
+       if (!empty($tempCqmAmcString)) {
+         echo "(".$tempCqmAmcString.")";
        }
 
        if ( !(empty($row['concatenated_label'])) ) {
