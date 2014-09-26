@@ -54,9 +54,15 @@ if (!empty($report_id)) {
 }
 else {
   // Collect report type parameter (standard, amc, cqm)
-  // Note this does not need to deal with the amc_2011,amc_2014,cqm_2011,cqm_2014 stuff, since
-  // this only pertains to submitting for a report to start.
+  // Note that need to convert amc_2011 and amc_2014 to amc and cqm_2011 and cqm_2014 to cqm
+  // to simplify for when submitting for a new report.
   $type_report = (isset($_GET['type'])) ? trim($_GET['type']) : "standard";
+  if ( ($type_report == "cqm_2011") || ($type_report == "cqm_2014") ) {
+    $type_report = "cqm";
+  }
+  if ( ($type_report == "amc_2011") || ($type_report == "amc_2014") ) {
+    $type_report = "amc";
+  }
   // Collect form parameters (set defaults if empty)
   if ($type_report == "amc") {
     $begin_date = (isset($_POST['form_begin_date'])) ? trim($_POST['form_begin_date']) : "";
@@ -113,6 +119,13 @@ else {
  var mypcc = '<?php echo text($GLOBALS['phone_country_code']) ?>';
 
  function runReport() {
+
+   // Validate first
+   if (!(validateForm())) {
+     alert("<?php echo xls("Rule Set and Plan Set selections are not consistent. Please fix and Submit again."); ?>");
+     return false;
+   }
+
    // Showing processing wheel
    $("#processing").show();
 
@@ -182,6 +195,24 @@ else {
 	  var sLoc = '../../custom/export_registry_xml.php?&target_date=' + theform.form_target_date.value + '&nested=' + sNested;
 	  dlgopen(sLoc, '_blank', 600, 500);
 	  return false;
+ }
+
+ function validateForm() {
+   <?php if ( (empty($report_id)) && ($type_report == "cqm") ) { ?>
+     // If this is a cqm and plan set not set to ignore, then need to ensure consistent with the rules set
+     if ($("#form_plan_filter").val() != '') {
+       if ($("#form_rule_filter").val() == $("#form_plan_filter").val()) {
+         return true;
+       } else {
+         return false;
+       }
+     }
+     else {
+       return true;
+     }
+   <?php } else { ?>
+     return true;
+   <?php } ?>
  }
 
 </script>
@@ -254,7 +285,7 @@ else {
 
 </span>
 
-<form method='post' name='theform' id='theform' action='cqm.php?type=<?php echo attr($type_report) ;?>' onsubmit='return top.restoreSession()'>
+<form method='post' name='theform' id='theform' action='cqm.php?type=<?php echo attr($type_report) ;?>' onsubmit='return validateForm()'>
 
 <div id="report_parameters">
 
@@ -368,12 +399,8 @@ else {
                                  <?php if ($type_report == "cqm") { ?>
                                    <option value='cqm' <?php if ($plan_filter == "cqm") echo "selected"; ?>>
                                    <?php echo htmlspecialchars( xl('All Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
-                                 <?php } ?>
-                                 <?php if ($type_report == "cqm_2011") { ?>
                                    <option value='cqm_2011' <?php if ($plan_filter == "cqm_2011") echo "selected"; ?>>
                                    <?php echo htmlspecialchars( xl('2011 Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
-                                 <?php } ?>
-                                 <?php if ($type_report == "cqm_2014") { ?>
                                    <option value='cqm_2014' <?php if ($plan_filter == "cqm_2014") echo "selected"; ?>>
                                    <?php echo htmlspecialchars( xl('2014 Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
                                  <?php } ?>
