@@ -396,7 +396,7 @@ else {
                         <td>
                                  <select <?php echo $dis_text; ?> id='form_plan_filter' name='form_plan_filter'>
                                  <option value=''>-- <?php echo htmlspecialchars( xl('Ignore'), ENT_NOQUOTES); ?> --</option>
-                                 <?php if ($type_report == "cqm") { ?>
+                                 <?php if (($type_report == "cqm") || ($type_report == "cqm_2011") || ($type_report == "cqm_2014")) { ?>
                                    <option value='cqm' <?php if ($plan_filter == "cqm") echo "selected"; ?>>
                                    <?php echo htmlspecialchars( xl('All Official Clinical Quality Measures (CQM) Measure Groups'), ENT_NOQUOTES); ?></option>
                                    <option value='cqm_2011' <?php if ($plan_filter == "cqm_2011") echo "selected"; ?>>
