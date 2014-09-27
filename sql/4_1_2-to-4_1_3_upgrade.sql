@@ -2813,4 +2813,7 @@ UPDATE `clinical_plans` SET `cqm_2011_flag` = 1 WHERE `cqm_flag` = 1;
 ALTER TABLE `clinical_plans` ADD COLUMN `cqm_2014_flag` tinyint(1) COMMENT '2014 Clinical Quality Measure flag (unable to customize per patient)';
 #EndIf
 
+#IfNotRow2D clinical_rules id problem_list_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–4' WHERE `id` = 'problem_list_amc';
+#EndIf
 

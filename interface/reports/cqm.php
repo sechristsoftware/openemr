@@ -625,7 +625,7 @@ else {
        }
        if ($type_report == "amc_2014") {
          if (!empty($row['amc_code_2014'])) {
-           $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2014') . ":" . $row['amc_code'], ENT_NOQUOTES) . " ";
+           $tempCqmAmcString .= " " . htmlspecialchars( xl('AMC-2014') . ":" . $row['amc_code_2014'], ENT_NOQUOTES) . " ";
          }
        }
 
