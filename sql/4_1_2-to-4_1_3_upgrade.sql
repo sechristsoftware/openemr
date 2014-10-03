@@ -2817,3 +2817,23 @@ ALTER TABLE `clinical_plans` ADD COLUMN `cqm_2014_flag` tinyint(1) COMMENT '2014
 UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–4' WHERE `id` = 'problem_list_amc';
 #EndIf
 
+#IfNotRow2D clinical_rules id med_list_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–5' WHERE `id` = 'med_list_amc';
+#EndIf
+
+#IfNotRow2D clinical_rules id med_allergy_list_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–6' WHERE `id` = 'med_allergy_list_amc';
+#EndIf
+
+#IfNotRow2D clinical_rules id record_dem_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–9' WHERE `id` = 'record_dem_amc';
+#EndIf
+
+#IfNotRow2D clinical_rules id record_smoke_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–11' WHERE `id` = 'record_smoke_amc';
+#EndIf
+
+#IfNotRow2D clinical_rules id lab_result_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–12' WHERE `id` = 'lab_result_amc';
+#EndIf
+
