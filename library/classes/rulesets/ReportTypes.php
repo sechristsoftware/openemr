@@ -44,7 +44,7 @@ class ReportTypes
     	"record_vitals_amc" => array( ReportTypes::AMC, "AMC_302f" ),
     	"record_smoke_amc" => array( ReportTypes::AMC, "AMC_302g" ), // MU-2014-AMC: 170.314(g)(1)/(2)–11
     	"lab_result_amc" => array( ReportTypes::AMC, "AMC_302h" ), // MU-2014-AMC: 170.314(g)(1)/(2)–12
-    	"med_reconc_amc" => array( ReportTypes::AMC, "AMC_302j" ),
+    	"med_reconc_amc" => array( ReportTypes::AMC, "AMC_302j" ), // MU-2014-AMC: 170.314(g)(1)/(2)–17
         "patient_edu_amc" => array( ReportTypes::AMC, "AMC_302m" ),
         "cpoe_med_amc" => array( ReportTypes::AMC, "AMC_304a" ),
         "e_prescribe_amc" => array( ReportTypes::AMC, "AMC_304b" ),

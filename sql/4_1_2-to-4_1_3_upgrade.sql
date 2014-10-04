@@ -2837,3 +2837,7 @@ UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g
 UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–12' WHERE `id` = 'lab_result_amc';
 #EndIf
 
+#IfNotRow2D cinical_rules id med_reconc_amc amc_2014_flag 1
+UPDATE `clinical_rules` SET `amc_2014_flag` = 1 AND `amc_code_2014` = '170.314(g)(1)/(2)–17' WHERE `id` = 'med_reconc_amc';
+#EndIf
+
