@@ -4,7 +4,7 @@
  *
  * Supports generic tracking, storing and viewing of reports by utilizing a vertical
  * table entitled report_results. This allows flexible placement of tokens for report
- * setting etc.
+ * setting etc. Also supports itemization of results (per patient tracking).
  * <pre>Tokens that are reserved include:
  *   'bookmark'          - Allows bookmarking of a new report id (used to allow tracking
  *                         progress via ajax calls). If exist, value is always set to '1'.
@@ -259,4 +259,26 @@ function getStatusReportDatabase($report_id) {
     return $final_array['progress_items'] . " / " . $final_array['total_items'] . " " . xl("Patients");
   }
 }
+
+/**
+ * Insert itemization item into database.
+ *
+ * @param   integer  $report_id         Report id
+ * @param   integer  $itemized_test_id  Itemized test id
+ * @param   integer  $pass              0 is fail, 1 is pass, 2 is exclude
+ * @param   integer  $patient_id        Patient pid
+ * @param   integer  $$numerator_label  Numerator label (if applicable)
+ */
+function insertItemReportTracker($report_id, $itemized_test_id, $pass, $patient_id, $numerator_label='') {
+
+  error_log("DEBUG: ".$pass,0);
+  error_log("DEBUG: ".$report_id,0);
+  error_log("DEBUG: ".$itemized_test_id,0);
+  error_log("DEBUG: ".$numerator_label,0);
+  error_log("DEBUG: ".$patient_id,0);
+  
+  $sqlParameters = array($report_id,$itemized_test_id,$numerator_label,$pass,$patient_id);
+  sqlStatementCdrEngine("INSERT INTO `report_itemized` (`report_id`,`itemized_test_id`,`numerator_label`,`pass`,`pid`) VALUES (?,?,?,?,?)", $sqlParameters);  
+}
+
 ?>

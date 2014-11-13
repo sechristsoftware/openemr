@@ -203,7 +203,7 @@ function active_alert_summary($patient_id,$mode,$dateTarget='',$organize_mode='d
  * </pre>
  *
  * @param  integer      $provider      id of a selected provider. If blank, then will test entire clinic. If 'collate_outer' or 'collate_inner', then will test each provider in entire clinic; outer will nest plans  inside collated providers, while inner will nest the providers inside the plans (note inner and outer are only different if organize_mode is set to plans).
- * @param  string       $type          rule filter (active_alert,passive_alert,cqm,cqm_2011,cqm_2014,amc_2011,amc_2014,patient_reminder). If blank then will test all rules.
+ * @param  string       $type          rule filter (active_alert,passive_alert,cqm,cqm_2011,cqm_2014,amc,amc_2011,amc_2014,patient_reminder). If blank then will test all rules.
  * @param  string/array $dateTarget    target date (format Y-m-d H:i:s). If blank then will test with current date as target. If an array, then is holding two dates ('dateBegin' and 'dateTarget').
  * @param  string       $mode          choose either 'report' or 'reminders-all' or 'reminders-due' (required)
  * @param  string       $plan          test for specific plan only
@@ -265,7 +265,23 @@ function test_rules_clinic_batch_method($provider='',$type='',$dateTarget='',$mo
   $report_id = beginReportDatabase($type,$fields,$report_id);
   setTotalItemsReportDatabase($report_id,$totalNumPatients);
 
+  // Set ability to itemize report if this feature is turned on
+  if ( ( ($type == "active_alert" || $type == "passive_alert")          && ($GLOBALS['report_itemizing_standard']) ) ||
+       ( ($type == "cqm" || $type == "cqm_2011" || $type == "cqm_2014") && ($GLOBALS['report_itemizing_cqm'])      ) ||
+       ( ($type == "amc" || $type == "amc_2011" || $type == "amc_2014") && ($GLOBALS['report_itemizing_amc'])      ) ) {
+    $GLOBALS['report_itemizing_temp_flag_and_id'] = $report_id;
+  }
+  else {
+    $GLOBALS['report_itemizing_temp_flag_and_id'] = 0;
+  }
+
   for ($i=0;$i<$totalNumberBatches;$i++) {
+
+    // If itemization is turned on, then reset the rule id iterator
+    if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+      $GLOBALS['report_itemized_test_id_iterator'] = 1;
+    }
+
     $dataSheet_batch = test_rules_clinic($provider,$type,$dateTarget,$mode,'',$plan,$organize_mode,$options_modified,$pat_prov_rel,(($batchSize*$i)+1),$batchSize);
     if ($i == 0) {
       // For first cycle, simply copy it to dataSheet
