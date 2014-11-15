@@ -629,8 +629,14 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
     // Calculate and save the data for the rule
     $percentage = calculate_percentage($pass_filter,$exclude_filter,$pass_target);
     if ($mode == "report") {
-      $newRow=array('is_main'=>TRUE,'total_patients'=>$total_patients,'excluded'=>$exclude_filter,'pass_filter'=>$pass_filter,'pass_target'=>$pass_target,'percentage'=>$percentage,'itemized_test_id'=>$GLOBALS['report_itemized_test_id_iterator']);
+      $newRow=array('is_main'=>TRUE,'total_patients'=>$total_patients,'excluded'=>$exclude_filter,'pass_filter'=>$pass_filter,'pass_target'=>$pass_target,'percentage'=>$percentage);
       $newRow=array_merge($newRow,$rowRule);
+
+      // If itemization is turned on, then record the itemized_test_id 
+      if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+        $newRow=array_merge($newRow,array('itemized_test_id'=>$GLOBALS['report_itemized_test_id_iterator']));
+      }
+
       array_push($results, $newRow);
     }
 
@@ -748,7 +754,13 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
         $actionArray = resolve_action_sql($rowRule['id'],$i);
         $action = $actionArray[0];
         if ($mode == "report") {
-          $newRow=array('is_sub'=>TRUE,'action_category'=>$action['category'],'action_item'=>$action['item'],'total_patients'=>'','excluded'=>'','pass_filter'=>'','pass_target'=>$pass_target,'percentage'=>$percentage,'itemized_test_id'=>$GLOBALS['report_itemized_test_id_iterator']);
+          $newRow=array('is_sub'=>TRUE,'action_category'=>$action['category'],'action_item'=>$action['item'],'total_patients'=>'','excluded'=>'','pass_filter'=>'','pass_target'=>$pass_target,'percentage'=>$percentage);
+
+        // If itemization is turned on, then record the itemized_test_id 
+        if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+          $newRow=array_merge($newRow,array('itemized_test_id'=>$GLOBALS['report_itemized_test_id_iterator']));
+        }
+
           array_push($results, $newRow);
         }
       }
