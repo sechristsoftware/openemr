@@ -271,11 +271,11 @@ function getStatusReportDatabase($report_id) {
  */
 function insertItemReportTracker($report_id, $itemized_test_id, $pass, $patient_id, $numerator_label='') {
 
-  error_log("DEBUG: ".$pass,0);
-  error_log("DEBUG: ".$report_id,0);
-  error_log("DEBUG: ".$itemized_test_id,0);
-  error_log("DEBUG: ".$numerator_label,0);
-  error_log("DEBUG: ".$patient_id,0);
+  //error_log("DEBUG: ".$pass,0);
+  //error_log("DEBUG: ".$report_id,0);
+  //error_log("DEBUG: ".$itemized_test_id,0);
+  //error_log("DEBUG: ".$numerator_label,0);
+  //error_log("DEBUG: ".$patient_id,0);
   
   $sqlParameters = array($report_id,$itemized_test_id,$numerator_label,$pass,$patient_id);
   sqlStatementCdrEngine("INSERT INTO `report_itemized` (`report_id`,`itemized_test_id`,`numerator_label`,`pass`,`pid`) VALUES (?,?,?,?,?)", $sqlParameters);  

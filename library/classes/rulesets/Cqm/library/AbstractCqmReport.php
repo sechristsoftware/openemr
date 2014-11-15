@@ -74,7 +74,6 @@ abstract class AbstractCqmReport implements RsReportIF
             // If itemization is turned on, then iterate the rule id iterator
             if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
                 $GLOBALS['report_itemized_test_id_iterator']++;
-                $baseline_test_id_iterator = $GLOBALS['report_itemized_test_id_iterator'];
             }
 
             if ( $populationCriteria instanceof CqmPopulationCrtiteriaFactory )

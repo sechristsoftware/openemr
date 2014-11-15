@@ -514,13 +514,32 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
     $targetGroups = returnTargetGroups($rowRule['id']);
 
     if ( (count($targetGroups) == 1) || ($mode == "report") ) {
+
+      // If report itemization is turned on, then iterate the rule id iterator
+      if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+        $GLOBALS['report_itemized_test_id_iterator']++;
+      }
+
       //skip this section if not report and more than one target group
       foreach( $patientData as $rowPatient ) {
+
+        // First, deal with deceased patients
+        //  (for now will simply skip the patient)
+        // If want to support rules for deceased patients then will need to migrate this below
+        // in target_dates foreach(guessing won't ever need to do this, though).
+        // Note using the dateTarget rather than dateFocus
+        if (is_patient_deceased($rowPatient['pid'],$dateTarget)) {
+          continue;
+        }
 
         // Count the total patients
         $total_patients++;
 
         $dateCounter = 1; // for reminder mode to keep track of which date checking
+        // If report itemization is turned on, reset flag.
+        if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+          $temp_track_pass = 1;
+        }
         foreach ( $target_dates as $dateFocus ) {
 
           //Skip if date is set to SKIP
@@ -540,16 +559,6 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
             $reminder_due = "past_due";
           }
 
-          // First, deal with deceased patients
-          //  (for now will simply not pass the filter, but can add a database item
-          //   if ever want to create rules for dead people)
-          // Could also place this function at the total_patients level if wanted.
-          //  (But then would lose the option of making rules for dead people)
-          // Note using the dateTarget rather than dateFocus
-          if (is_patient_deceased($rowPatient['pid'],$dateTarget)) {
-            continue;
-          }
-
           // Check if pass filter
           $passFilter = test_filter($rowPatient['pid'],$rowRule['id'],$dateFocus);
           if ($passFilter === "EXCLUDED") {
@@ -562,6 +571,10 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
           if ($passFilter) {
             // increment pass filter counter
             $pass_filter++;
+            // If report itemization is turned on, trigger flag.
+            if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+              $temp_track_pass = 0; 
+            }
           }
           else {
             $dateCounter++;
@@ -573,6 +586,11 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
           if ($passTarget) {
             // increment pass target counter
             $pass_target++;
+            // If report itemization is turned on, then record the "passed" item and set the flag
+            if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+              insertItemReportTracker($GLOBALS['report_itemizing_temp_flag_and_id'], $GLOBALS['report_itemized_test_id_iterator'], 1, $rowPatient['pid']); 
+              $temp_track_pass = 1;
+            }
             // send to reminder results
             if ($mode == "reminders-all") {
               // place the completed actions into the reminder return array
@@ -601,13 +619,17 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
           }
           $dateCounter++;
         }
+        // If report itemization is turned on, then record the "failed" item if it did not pass
+        if ($GLOBALS['report_itemizing_temp_flag_and_id'] && !($temp_track_pass)) {
+          insertItemReportTracker($GLOBALS['report_itemizing_temp_flag_and_id'], $GLOBALS['report_itemized_test_id_iterator'], 0, $rowPatient['pid']);
+        } 
       }
     }
 
     // Calculate and save the data for the rule
     $percentage = calculate_percentage($pass_filter,$exclude_filter,$pass_target);
     if ($mode == "report") {
-      $newRow=array('is_main'=>TRUE,'total_patients'=>$total_patients,'excluded'=>$exclude_filter,'pass_filter'=>$pass_filter,'pass_target'=>$pass_target,'percentage'=>$percentage);
+      $newRow=array('is_main'=>TRUE,'total_patients'=>$total_patients,'excluded'=>$exclude_filter,'pass_filter'=>$pass_filter,'pass_target'=>$pass_target,'percentage'=>$percentage,'itemized_test_id'=>$GLOBALS['report_itemized_test_id_iterator']);
       $newRow=array_merge($newRow,$rowRule);
       array_push($results, $newRow);
     }
@@ -616,12 +638,30 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
     if (count($targetGroups) > 1) {
       foreach ($targetGroups as $i) {
 
+        // If report itemization is turned on, then iterate the rule id iterator
+        if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+          $GLOBALS['report_itemized_test_id_iterator']++;
+        }
+
         //Reset the target counter
         $pass_target = 0;
 
         foreach( $patientData as $rowPatient ) {
 
+          // First, deal with deceased patients
+          //  (for now will simply skip the patient)
+          // If want to support rules for deceased patients then will need to migrate this below
+          // in target_dates foreach(guessing won't ever need to do this, though).
+          // Note using the dateTarget rather than dateFocus
+          if (is_patient_deceased($rowPatient['pid'],$dateTarget)) {
+            continue;
+          }
+
           $dateCounter = 1; // for reminder mode to keep track of which date checking
+          // If report itemization is turned on, reset flag.
+          if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+            $temp_track_pass = 1;
+          }
           foreach ( $target_dates as $dateFocus ) {
 
             //Skip if date is set to SKIP
@@ -641,25 +681,20 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
               $reminder_due = "past_due";
             }    
 
-            // First, deal with deceased patients
-            //  (for now will simply not pass the filter, but can add a database item
-            //   if ever want to create rules for dead people)
-            // Could also place this function at the total_patients level if wanted.
-            //  (But then would lose the option of making rules for dead people)
-            // Note using the dateTarget rather than dateFocus
-            if (is_patient_deceased($rowPatient['pid'],$dateTarget)) {
-              continue;
-            }
-
             // Check if pass filter
             $passFilter = test_filter($rowPatient['pid'],$rowRule['id'],$dateFocus);
             if ($passFilter === "EXCLUDED") {
               $passFilter = FALSE;
             }
             if (!$passFilter) {
-              // increment pass filter counter
               $dateCounter++;
               continue;
+            }
+            else {
+              // If report itemization is turned on, trigger flag.
+              if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+                $temp_track_pass = 0;
+              }
             }
 
             //Check if pass target
@@ -667,6 +702,11 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
             if ($passTarget) {
               // increment pass target counter
               $pass_target++;
+              // If report itemization is turned on, then record the "passed" item and set the flag
+              if ($GLOBALS['report_itemizing_temp_flag_and_id']) {
+                insertItemReportTracker($GLOBALS['report_itemizing_temp_flag_and_id'], $GLOBALS['report_itemized_test_id_iterator'], 1, $rowPatient['pid']);
+                $temp_track_pass = 1;
+              }
               // send to reminder results
               if ($mode == "reminders-all") {
                 // place the completed actions into the reminder return array
@@ -695,6 +735,10 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
             }
             $dateCounter++;
           }
+          // If report itemization is turned on, then record the "failed" item if it did not pass
+          if ($GLOBALS['report_itemizing_temp_flag_and_id'] && !($temp_track_pass)) {
+            insertItemReportTracker($GLOBALS['report_itemizing_temp_flag_and_id'], $GLOBALS['report_itemized_test_id_iterator'], 0, $rowPatient['pid']);
+          }
         }
 
         // Calculate and save the data for the rule
@@ -704,7 +748,7 @@ function test_rules_clinic($provider='',$type='',$dateTarget='',$mode='',$patien
         $actionArray = resolve_action_sql($rowRule['id'],$i);
         $action = $actionArray[0];
         if ($mode == "report") {
-          $newRow=array('is_sub'=>TRUE,'action_category'=>$action['category'],'action_item'=>$action['item'],'total_patients'=>'','excluded'=>'','pass_filter'=>'','pass_target'=>$pass_target,'percentage'=>$percentage);
+          $newRow=array('is_sub'=>TRUE,'action_category'=>$action['category'],'action_item'=>$action['item'],'total_patients'=>'','excluded'=>'','pass_filter'=>'','pass_target'=>$pass_target,'percentage'=>$percentage,'itemized_test_id'=>$GLOBALS['report_itemized_test_id_iterator']);
           array_push($results, $newRow);
         }
       }
