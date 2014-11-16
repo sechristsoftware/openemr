@@ -30,10 +30,13 @@ require_once("../../globals.php");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/options.inc.php");
+require_once("$srcdir/report_database.inc");
 
 $fstart = isset($_REQUEST['fstart']) ? $_REQUEST['fstart'] : 0;
 $popup  = empty($_REQUEST['popup']) ? 0 : 1;
 $message = isset($_GET['message']) ? $_GET['message'] : "";
+$from_page = isset($_REQUEST['from_page']) ? $_REQUEST['from_page'] : "";
+
 ?>
 
 <html>
@@ -192,6 +195,21 @@ if ($popup) {
   while ($row = sqlFetchArray($rez)) $result[] = $row;
   _set_patient_inc_count($sqllimit, count($result), $where, $sqlBindArray);
 }
+else if ($from_page == "cdr_report") {
+  // Collect setting from cdr report
+  echo "<input type='hidden' name='from_page' value='$from_page' />\n";
+  $report_id = isset($_REQUEST['report_id']) ? $_REQUEST['report_id'] : 0;
+  echo "<input type='hidden' name='report_id' value='".$report_id."' />\n";
+  $itemized_test_id = isset($_REQUEST['itemized_test_id']) ? $_REQUEST['itemized_test_id'] : 0;
+  echo "<input type='hidden' name='itemized_test_id' value='".$itemized_test_id."' />\n";
+  $numerator_label = isset($_REQUEST['numerator_label']) ? $_REQUEST['numerator_label'] : '';
+  echo "<input type='hidden' name='numerator_label' value='".$numerator_label."' />\n";
+  $pass_id = isset($_REQUEST['pass_id']) ? $_REQUEST['pass_id'] : "all";
+  echo "<input type='hidden' name='pass_id' value='".$pass_id."' />\n";
+
+  // Collect patient listing from cdr report
+  $result = collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass_id,$numerator_label,$given,$orderby,$sqllimit,$fstart);
+}
 else {
   $patient = $_REQUEST['patient'];
   $findBy  = $_REQUEST['findBy'];
@@ -224,7 +242,11 @@ else {
 <table border='0' cellpadding='5' cellspacing='0' width='100%'>
  <tr>
   <td class='text'>
+  <?php if ($report_id) { ?>
+   <a href='../../reports/cqm.php?report_id=<?php echo attr($report_id) ?>' class='css_button' onclick='top.restoreSession()'><span><?php echo xlt("Return To Report Results"); ?></span></a>
+  <?php } else { ?>
    <a href="./patient_select_help.php" target=_new onclick='top.restoreSession()'>[<?php echo htmlspecialchars( xl('Help'), ENT_NOQUOTES); ?>]&nbsp</a>
+  <?php } ?>
   </td>
   <td class='text' align='center'>
 <?php if ($message) echo "<font color='red'><b>".htmlspecialchars( $message, ENT_NOQUOTES)."</b></font>\n"; ?>
