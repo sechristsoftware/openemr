@@ -275,23 +275,87 @@ function insertItemReportTracker($report_id, $itemized_test_id, $pass, $patient_
 }
 
 /**
- * Insert itemization item into database.
+ * Collect a rules display title for itemized report.
+ *
+ * @param   integer  $report_id         Report id
+ * @param   integer  $itemized_test_id  Itemized test id
+ * @param   integer  $numerator_label   Numerator label (if applicable)
+ * @return  string/boolean              Rule title for itemization display (false if nothing found)
+ */
+function collectItemizedRuleDisplayTitle($report_id, $itemized_test_id, $numerator_label='') {
+  $dispTitle = "";
+  $report_view = collectReportDatabase($report_id);
+  $type_report = $report_view['type'];
+  $dataSheet = json_decode($report_view['data'],TRUE);
+  foreach ($dataSheet as $row) {
+    if (isset($row['is_main']) || isset($row['is_sub'])) {
+      if (isset($row['is_main'])) {
+        // Store this
+        $dispTitle = generate_display_field(array('data_type'=>'1','list_id'=>'clinical_rules'),$row['id']);
+      }
+      if ( ($row['itemized_test_id'] == $itemized_test_id) && ($row['numerator_label'] == $numerator_label) ) {
+        // We have a hit, build on the $dispTitle created above
+        if (isset($row['is_main'])) {
+          $tempCqmAmcString = "";
+          if (($type_report == "cqm") || ($type_report == "cqm_2011") || ($type_report == "cqm_2014")) {
+            if (!empty($row['cqm_pqri_code'])) {
+              $tempCqmAmcString .= " " . xlt('PQRI') . ":" . text($row['cqm_pqri_code']) . " ";
+            }
+            if (!empty($row['cqm_nqf_code'])) {
+              $tempCqmAmcString .= " " . xlt('NQF') . ":" . text($row['cqm_nqf_code']) . " ";
+            }
+          }
+          if ($type_report == "amc") {
+            if (!empty($row['amc_code'])) {
+              $tempCqmAmcString .= " " . xlt('AMC-2011') . ":" . text($row['amc_code']) . " ";
+            }
+            if (!empty($row['amc_code_2014'])) {
+              $tempCqmAmcString .= " " . xlt('AMC-2014') . ":" . text($row['amc_code_2014']) . " ";
+            }
+          }
+          if ($type_report == "amc_2011") {
+            if (!empty($row['amc_code'])) {
+              $tempCqmAmcString .= " " . xlt('AMC-2011') . ":" . text($row['amc_code']) . " ";
+            }
+          }
+          if ($type_report == "amc_2014") {
+            if (!empty($row['amc_code_2014'])) {
+              $tempCqmAmcString .= " " . xlt('AMC-2014') . ":" . text($row['amc_code_2014']) . " ";
+            }
+          }
+          if (!empty($tempCqmAmcString)) {
+            $dispTitle .=  "(".$tempCqmAmcString.")";
+          }
+          if ( !(empty($row['concatenated_label'])) ) {
+            $dispTitle .= ", " . xlt($row['concatenated_label']) . " ";
+          }
+        } 
+        else { // isset($row['is_sub']
+          $dispTitle .= " - " .  generate_display_field(array('data_type'=>'1','list_id'=>'rule_action_category'),$row['action_category']);
+          $dispTitle .= ": " . generate_display_field(array('data_type'=>'1','list_id'=>'rule_action'),$row['action_item']);
+        }
+        return $dispTitle;  
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Collect patient listing from CDR reports itemization.
  *
  * @param   integer  $report_id         Report id
  * @param   integer  $itemized_test_id  Itemized test id
  * @param   string   $pass              options are 'fail', 'pass', 'exclude', and 'all'
- * @param   integer  $numerator_label  Numerator label (if applicable)
- * @param   string   $given            Sql query returned items (may remove this!)
- * @param   string   $orderby          Sql query ordering (may remove this!)
- * @param   integer  $sqllimit         Sql query pagination info
- * @param   integer  $fstart           Sql query pagination info
- * @return  array                      Patient listing
+ * @param   integer  $numerator_label   Numerator label (if applicable)
+ * @param   integer  $sqllimit          Sql query pagination info
+ * @param   integer  $fstart            Sql query pagination info
+ * @return  array                       Patient listing
  */
-function collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass='all',$numerator_label='',$given,$orderby,$sqllimit,$fstart) {
+function collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass='all',$numerator_label='',$sqllimit,$fstart) {
 
-  // TEMPORARY stuff to get it working
-  $given = "`patient_data`.*, DATE_FORMAT(`patient_data`.`DOB`,'%m/%d/%Y') as DOB_TS";
-  $orderby = "`patient_data`.`lname` ASC, `patient_data`.`fname` ASC";
+  $given = " DISTINCT `patient_data`.*, DATE_FORMAT(`patient_data`.`DOB`,'%m/%d/%Y') as DOB_TS ";
+  $orderby = " `patient_data`.`lname` ASC, `patient_data`.`fname` ASC ";
 
   // set $pass_sql
   switch ($pass) {
@@ -322,10 +386,6 @@ function collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass='al
   for($iter=0; $row=sqlFetchArray($rez); $iter++) {
     $returnval[$iter]=$row;
   }
-
-  // need to do what the _set_patient_inc_count() function does
-  // (I hope this is correct)
-  $GLOBALS['PATIENT_INC_COUNT'] = count($returnval);
 
   return $returnval;
 }

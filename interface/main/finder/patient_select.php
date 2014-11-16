@@ -75,6 +75,7 @@ form {
 }
 
 .srName { width: 12%; }
+.srGender { width: 5%; }
 .srPhone { width: 11%; }
 .srSS { width: 11%; }
 .srDOB { width: 8%; }
@@ -208,7 +209,8 @@ else if ($from_page == "cdr_report") {
   echo "<input type='hidden' name='pass_id' value='".$pass_id."' />\n";
 
   // Collect patient listing from cdr report
-  $result = collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass_id,$numerator_label,$given,$orderby,$sqllimit,$fstart);
+  $result = collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass_id,$numerator_label,$sqllimit,$fstart);
+  $GLOBALS['PATIENT_INC_COUNT'] = count($result);
 }
 else {
   $patient = $_REQUEST['patient'];
@@ -242,7 +244,7 @@ else {
 <table border='0' cellpadding='5' cellspacing='0' width='100%'>
  <tr>
   <td class='text'>
-  <?php if ($report_id) { ?>
+  <?php if ($from_page == "cdr_report") { ?>
    <a href='../../reports/cqm.php?report_id=<?php echo attr($report_id) ?>' class='css_button' onclick='top.restoreSession()'><span><?php echo xlt("Return To Report Results"); ?></span></a>
   <?php } else { ?>
    <a href="./patient_select_help.php" target=_new onclick='top.restoreSession()'>[<?php echo htmlspecialchars( xl('Help'), ENT_NOQUOTES); ?>]&nbsp</a>
@@ -275,12 +277,35 @@ if ($fend > $count) $fend = $count;
 <?php } ?>
   </td>
  </tr>
+ <tr>
+   <?php if ($from_page == "cdr_report") {
+     echo "<td colspan='5' class='text'>";
+     echo "<b>";
+     if ($pass_id == "fail") {
+       echo xlt("Failed Patients");
+     }
+     else if ($pass_id == "pass") {
+       echo xlt("Passed Patients");
+     }
+     else if ($pass_id == "exclude") {
+       echo xlt("Excluded Patients");
+     }
+     else { // $pass_id == "all"
+       echo xlt("All Patients");
+     }
+     echo "</b>";
+     echo " - ";
+     echo collectItemizedRuleDisplayTitle($report_id,$itemized_test_id,$numerator_label);
+     echo "</td>";
+   } ?>
+ </tr>
 </table>
 
 <div id="searchResultsHeader">
 <table>
 <tr>
 <th class="srName"><?php echo htmlspecialchars( xl('Name'), ENT_NOQUOTES);?></th>
+<th class="srGender"><?php echo htmlspecialchars( xl('Sex'), ENT_NOQUOTES);?></th>
 <th class="srPhone"><?php echo htmlspecialchars( xl('Phone'), ENT_NOQUOTES);?></th>
 <th class="srSS"><?php echo htmlspecialchars( xl('SS'), ENT_NOQUOTES);?></th>
 <th class="srDOB"><?php echo htmlspecialchars( xl('DOB'), ENT_NOQUOTES);?></th>
@@ -338,6 +363,7 @@ if ($result) {
     foreach ($result as $iter) {
         echo "<tr class='oneresult' id='".htmlspecialchars( $iter['pid'], ENT_QUOTES)."'>";
         echo  "<td class='srName'>" . htmlspecialchars($iter['lname'] . ", " . $iter['fname']) . "</td>\n";
+        echo  "<td class='srGender'>" . text(getListItemTitle("sex",$iter['sex'])) . "</td>\n";
         //other phone number display setup for tooltip
         $phone_biz = '';
         if ($iter{"phone_biz"} != "") {
