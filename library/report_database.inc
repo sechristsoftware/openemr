@@ -350,11 +350,16 @@ function collectItemizedRuleDisplayTitle($report_id, $itemized_test_id, $numerat
  * @param   integer  $numerator_label   Numerator label (if applicable)
  * @param   integer  $sqllimit          Sql query pagination info
  * @param   integer  $fstart            Sql query pagination info
- * @return  array                       Patient listing
+ * @return  array/integer               Array list or a count
  */
-function collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass='all',$numerator_label='',$sqllimit,$fstart) {
+function collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass='all',$numerator_label='',$count=false,$sqllimit='all',$fstart=0) {
 
-  $given = " DISTINCT `patient_data`.*, DATE_FORMAT(`patient_data`.`DOB`,'%m/%d/%Y') as DOB_TS ";
+  if ($count) {
+    $given = " COUNT(DISTINCT `patient_data`.`pid`) AS total_listings ";
+  }
+  else {
+    $given = " DISTINCT `patient_data`.*, DATE_FORMAT(`patient_data`.`DOB`,'%m/%d/%Y') as DOB_TS ";
+  }
   $orderby = " `patient_data`.`lname` ASC, `patient_data`.`fname` ASC ";
 
   // set $pass_sql
@@ -380,13 +385,19 @@ function collectItemizedPatientsCdrReport($report_id,$itemized_test_id,$pass='al
   }
 
   $sql_query = "SELECT " . $given . " FROM `patient_data` JOIN `report_itemized` ON `patient_data`.`pid` = `report_itemized`.`pid` " . $sql_where. " ORDER BY " . $orderby;
-  $rez = sqlStatementCdrEngine($sql_query,$sqlParameters);
+  if ($sqllimit != "all") $sql_query .= " limit " . escape_limit($fstart) . ", " . escape_limit($sqllimit);
 
-  // create array for return
-  for($iter=0; $row=sqlFetchArray($rez); $iter++) {
-    $returnval[$iter]=$row;
+  if ($count) {
+    $rez = sqlQueryCdrEngine($sql_query,$sqlParameters);
+    return $rez['total_listings'];
   }
-
-  return $returnval;
+  else {
+    $rez = sqlStatementCdrEngine($sql_query,$sqlParameters);
+    // create array of listing for return
+    for($iter=0; $row=sqlFetchArray($rez); $iter++) {
+      $returnval[$iter]=$row;
+    }
+    return $returnval;
+  }
 }
 ?>
