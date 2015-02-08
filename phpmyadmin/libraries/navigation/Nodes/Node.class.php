@@ -369,7 +369,7 @@ class Node
         $query .= "'{$GLOBALS['cfg']['NavigationTreeDbSeparator']}', 1) ";
         $query .= "DB_first_level ";
         $query .= "FROM INFORMATION_SCHEMA.SCHEMATA ";
-        $query .= $this->_getWhereClause($searchClause);
+        $query .= $this->_getWhereClause('SCHEMA_NAME', $searchClause);
         $query .= ") t ";
         $query .= "ORDER BY DB_first_level ASC ";
         $query .= "LIMIT $pos, {$GLOBALS['cfg']['FirstLevelNavigationItems']}";
@@ -401,7 +401,7 @@ class Node
         $query .= "'{$GLOBALS['cfg']['NavigationTreeDbSeparator']}', 1) ";
         $query .= "DB_first_level ";
         $query .= "FROM INFORMATION_SCHEMA.SCHEMATA ";
-        $query .= $this->_getWhereClause($searchClause);
+        $query .= $this->_getWhereClause('SCHEMA_NAME',$searchClause);
         $query .= ") t ";
         $retval = (int)$GLOBALS['dbi']->fetchValue($query);
         return $retval;
@@ -411,15 +411,16 @@ class Node
      * Returns the WHERE clause depending on the $searchClause parameter
      * and the hide_db directive
      *
+     * @param string $columnName   Column name of the column having database names
      * @param string $searchClause A string used to filter the results of the query
      *
      * @return string
      */
-    private function _getWhereClause($searchClause = '')
+    private function _getWhereClause($columnName, $searchClause = '')
     {
         $whereClause = "WHERE TRUE ";
         if (! empty($searchClause)) {
-            $whereClause .= "AND `SCHEMA_NAME` LIKE '%";
+            $whereClause .= "AND " . PMA_Util::backquote($columnName) . " LIKE '%";
             $whereClause .= PMA_Util::sqlAddSlashes(
                 $searchClause, true
             );
@@ -427,8 +428,8 @@ class Node
         }
 
         if (! empty($GLOBALS['cfg']['Server']['hide_db'])) {
-            $whereClause .= "AND `SCHEMA_NAME` NOT REGEXP '"
-                . $GLOBALS['cfg']['Server']['hide_db'] . "' ";
+            $whereClause .= "AND " . PMA_Util::backquote($columnName)
+                . " NOT REGEXP '" . $GLOBALS['cfg']['Server']['hide_db'] . "' ";
         }
 
         if (! empty($GLOBALS['cfg']['Server']['only_db'])) {
@@ -440,7 +441,7 @@ class Node
             $whereClause .= "AND (";
             $subClauses = array();
             foreach ($GLOBALS['cfg']['Server']['only_db'] as $each_only_db) {
-                $subClauses[] = " `SCHEMA_NAME` LIKE '"
+                $subClauses[] = " " . PMA_Util::backquote($columnName) . " LIKE '"
                     . $each_only_db . "' ";
             }
             $whereClause .= implode("OR", $subClauses) . ")";
