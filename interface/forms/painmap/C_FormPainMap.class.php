@@ -59,7 +59,14 @@ class C_FormPainMap extends C_AbstractClickmap {
      * @brief return the path to the backing image relative to the webroot.
      */
     function getImage() {
-        return $GLOBALS['webroot'] . "/interface/forms/" . C_FormPainMap::$FORM_CODE ."/templates/painmap.png";
+        $loc = $_SERVER['SERVER_NAME'].$GLOBALS['webroot']. "/interface/forms/" . C_FormPainMap::$FORM_CODE ."/templates/painmap1.jpg";
+        if(substr($loc, 0, 4) != "http" || substr($loc, 0, 5) != "https"){
+          $locn = "http://".$loc;   
+        }
+        else{
+          $locn = $loc;  
+        }
+        return $locn;
     }
 
     /**
