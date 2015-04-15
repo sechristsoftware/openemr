@@ -68,3 +68,8 @@
 #IfNotColumnType prescriptions size varchar(16)
 ALTER TABLE `prescriptions` CHANGE `size` `size` varchar(16) DEFAULT NULL;
 #EndIf
+
+#IfNotColumnType lang_custom constant_name mediumtext
+ALTER TABLE `lang_custom` CHANGE `constant_name` `constant_name` mediumtext NOT NULL default '';
+#EndIf
+
