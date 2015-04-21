@@ -36,13 +36,14 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
 	$where =
 		"( (e.pc_endDate >= '$from_date' AND e.pc_eventDate <= '$to_date' AND e.pc_recurrtype = '1') OR " .
   		  "(e.pc_eventDate >= '$from_date' AND e.pc_eventDate <= '$to_date') )";
+
 	if ( $where_param ) $where .= $where_param;
 	
 	$order_by = "e.pc_eventDate, e.pc_startTime";
 	if ( $orderby_param ) {
 		$order_by = $orderby_param;
 	}
-	
+
 	$query = "SELECT " .
   	"e.pc_eventDate, e.pc_endDate, e.pc_startTime, e.pc_endTime, e.pc_duration, e.pc_recurrtype, e.pc_recurrspec, e.pc_recurrfreq, e.pc_catid, e.pc_eid, " .
   	"e.pc_title, e.pc_hometext, e.pc_apptstatus, " .
@@ -71,7 +72,7 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
 			}
 		}
 	}
-	
+
 	return $events;
 }
 
@@ -331,6 +332,7 @@ function getComparisonOrder( $code ) {
 	global $ORDERHASH;
 	return $ORDERHASH[$code];
 }
+
 
 function sortAppointments( array $appointments, $orderBy = 'date' )
 {
