@@ -61,35 +61,34 @@
 --  #EndIf
 --    all blocks are terminated with a #EndIf statement.
 
-#IfNotIndex form_encounter encounter_date
-    CREATE INDEX encounter_date on form_encounter (`date`);
+#IfNotTable patient_tracker
+CREATE TABLE IF NOT EXISTS `patient_tracker` (
+  `id`                 bigint(20)   NOT NULL auto_increment,
+  `date`               datetime     NOT NULL,
+  `apptdate`           date         NOT NULL,
+  `appttime`           time         NOT NULL,
+  `eid`                bigint(20)   NOT NULL,
+  `pid`                bigint(20)   NOT NULL,
+  `user`               varchar(255) NOT NULL,
+  `encounter`          bigint(20)   NOT NULL,
+  `endtime`            time         NOT NULL,
+  `laststatus`         varchar(31)  NOT NULL,
+  `lastroom`           varchar(20)  NOT NULL,
+  `lastseq`            varchar(4)   NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY (`encounter`)
+) ENGINE=MyISAM AUTO_INCREMENT=1;
 #EndIf
 
-#IfNotColumnType prescriptions size varchar(16)
-ALTER TABLE `prescriptions` CHANGE `size` `size` varchar(16) DEFAULT NULL;
-#EndIf
-
-#IfNotRow globals gl_name erx_newcrop_path
-UPDATE `globals` SET `gl_name` = 'erx_newcrop_path' WHERE `gl_name` = 'erx_path_production';
-#EndIf
-
-#IfNotRow globals gl_name erx_newcrop_path_soap
-UPDATE `globals` SET `gl_name` = 'erx_newcrop_path_soap' WHERE `gl_name` = 'erx_path_soap_production';
-#EndIf
-
-#IfNotRow globals gl_name erx_account_partner_name
-UPDATE `globals` SET `gl_name` = 'erx_account_partner_name' WHERE `gl_name` = 'partner_name_production';
-#EndIf
-
-#IfNotRow globals gl_name erx_account_name
-UPDATE `globals` SET `gl_name` = 'erx_account_name' WHERE `gl_name` = 'erx_name_production';
-#EndIf
-
-#IfNotRow globals gl_name erx_account_password
-UPDATE `globals` SET `gl_name` = 'erx_account_password' WHERE `gl_name` = 'erx_password_production';
-#EndIf
-
-#IfNotColumnType lang_custom constant_name mediumtext
-ALTER TABLE `lang_custom` CHANGE `constant_name` `constant_name` mediumtext NOT NULL default '';
+#IfNotTable patient_tracker_element
+CREATE TABLE IF NOT EXISTS `patient_tracker_element` (
+  `pt_tracker_id`      bigint(20)   NOT NULL,
+  `start_datetime`     datetime     NOT NULL,
+  `room`               varchar(20)  NOT NULL,
+  `status`             varchar(31)  NOT NULL,
+  `seq`                varchar(4)   NOT NULL,
+  `user`               varchar(255) NOT NULL,
+  KEY  (`pt_tracker_id`)
+) ENGINE=MyISAM;
 #EndIf
 
