@@ -42,6 +42,7 @@ require_once($GLOBALS['srcdir'].'/formdata.inc.php');
 require_once($GLOBALS['srcdir'].'/options.inc.php');
 require_once($GLOBALS['srcdir'].'/encounter_events.inc.php');
 require_once($GLOBALS['srcdir'].'/acl.inc');
+require_once($GLOBALS['srcdir'].'/patient_tracker.inc.php');
 
  //Check access control
  if (!acl_check('patients','appt','',array('write','wsome') ))
@@ -129,21 +130,41 @@ function DOBandEncounter()
    global $event_date,$info_msg;
 	 // Save new DOB if it's there.
 	 $patient_dob = trim($_POST['form_dob']);
+	 $tmph = $_POST['form_hour'] + 0;
+     $tmpm = $_POST['form_minute'] + 0;
+     if ($_POST['form_ampm'] == '2' && $tmph < 12) $tmph += 12;
+     $appttime = "$tmph:$tmpm:00";
+	 $track_date = date("Y-m-d H:i:s");
+	 $tkpid = $_POST['form_pid'];
+	 $tkstatus = $_POST['form_apptstatus'];
+
+	 $pceid = $_GET['eid']; 
+
 	 if ($patient_dob && $_POST['form_pid']) {
 			 sqlStatement("UPDATE patient_data SET DOB = ? WHERE " .
 									 "pid = ?", array($patient_dob,$_POST['form_pid']) );
 	 }
-
+     $tmprow = sqlQuery("SELECT username, facility, facility_id FROM users WHERE id = ?", array($_SESSION["authUserID"]) );
+     $username = $tmprow['username'];
+	 
 	 // Auto-create a new encounter if appropriate.
-	 //
-	 if ($GLOBALS['auto_create_new_encounters'] && $_POST['form_apptstatus'] == '@' && $event_date == date('Y-m-d'))
+	 //	 
+	 
+	 if ($GLOBALS['auto_create_new_encounters'] && ($_POST['form_apptstatus'] == '@' || $_POST['form_apptstatus'] == '~') && $event_date == date('Y-m-d'))
 	 {
+
 		 $encounter = todaysEncounterCheck($_POST['form_pid'], $event_date, $_POST['form_comments'], $_POST['facility'], $_POST['billing_facility'], $_POST['form_provider'], $_POST['form_category'], false);
 		 if($encounter){
 				 $info_msg .= xl("New encounter created with id"); 
 				 $info_msg .= " $encounter";
+
 		 }
+		 
+	 		 add_tracker_status($event_date,$appttime,$tkpid,$username,$tkstatus,$pceid,$encounter);
+		 
 	 }
+	 
+
  }
 //================================================================================================================
 
