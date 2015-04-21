@@ -95,11 +95,13 @@ $USER_SPECIFIC_GLOBALS = array('default_top_pane',
                                'css_header',
                                'gbl_pt_list_page_size',
                                'gbl_pt_list_new_window',
+                               'drop_bottom',
                                'units_of_measurement',
                                'us_weight_format',
                                'date_display_format',
                                'time_display_format',
                                'event_color',
+                               'pat_trkr_timer',					   
                                'erx_import_status_message');
 
 $GLOBALS_METADATA = array(
@@ -113,6 +115,7 @@ $GLOBALS_METADATA = array(
       array(
         'main_info.php' => xl('Calendar Screen'),
         '../new/new.php' => xl('Patient Search/Add Screen'),
+        '../../custom/patient_tracker.php?skip_timeout_reset=1' => xl('Patient Flow Board'),		
       ),
       'main_info.php',                  // default = calendar
       xl('Type of screen layout')
@@ -246,7 +249,14 @@ $GLOBALS_METADATA = array(
       'http://open-emr.org/',
       xl('URL for OpenEMR support.')
     ),
-      
+
+   'drop_bottom' => array(
+      xl('Remove Bottom Pane'),
+      'bool',                           // data type
+      '0',                              // default = false
+      xl('Removes the bottom pane by default on start up.')
+    ),
+	
     'encounter_page_size' => array(
       xl('Encounter Page Size'),
       array(
@@ -938,6 +948,42 @@ $GLOBALS_METADATA = array(
       xl('This determines which color schema used for appointment')
     ),
 
+    'disable_pat_trkr' => array(
+      xl('Disable Patient Flow Board'),
+      'bool',                           // data type
+      '0',                              // default
+      xl('Do not display the patient flow board.')
+    ),
+	
+    'pat_trkr_timer' => array(
+      xl('Patient Flow Board Timer Interval'),
+      array(
+       '0' => 'No automatic refresh',
+       '0:10' => '10',
+       '0:20' => '20',
+       '0:30' => '30',
+       '0:40' => '40',
+       '0:50' => '50',
+       '0:59' => '60',
+      ),
+      '20',                              // default
+      xl('The screen refresh time in Seconds for the main Patient Flow Board Screen.')
+    ),
+	
+    'drug_screen' => array(
+      xl('Enable Random Drug Testing'),
+     'bool',                           // data type
+      '0',                              // default
+      xl('Allow Patient Flow Board to Select Patients for Drug Testing.')
+    ),
+	
+    'drug_testing_percentage' => array(
+      xl('Percentage of Patients to Drug Test'),
+      'num',
+      '33',                       // default
+      xl('Percentage of Patients to select per day for Random Drug Testing.')
+    ),
+	
   ),
 
   // Security Tab
