@@ -1729,6 +1729,6 @@ if (!$GLOBALS['athletic_team']) {
 <script language='JavaScript'>
 syncRadios();
 </script>
-
+<?php include_once("frame_format.php"); ?>
 </body>
 </html>
