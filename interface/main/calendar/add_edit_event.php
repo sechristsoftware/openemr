@@ -158,8 +158,18 @@ function DOBandEncounter()
 				 $info_msg .= " $encounter";
 
 		 }
+                         # Capture the appt status and room number for patient tracker. This will map the encounter to it also.
+		         # TODO Add a room field to this gui and place it in below function
+	 		 manage_tracker_status($event_date,$appttime,$pceid,$tkpid,$username,$tkstatus,'',$encounter);
+
 	 }
-        add_or_update_tracker_status($event_date,$appttime,$tkpid,$username,$tkstatus,$pceid,$encounter);
+         else {
+                         # Capture the appt status and room number for patient tracker.
+                         # TODO Add a room field to this gui and place it in below function. 
+                         if (!empty($pceid)) {
+                             manage_tracker_status($event_date,$appttime,$pceid,$tkpid,$username,$tkstatus,'');
+                         }
+         }
 
  }
 //================================================================================================================

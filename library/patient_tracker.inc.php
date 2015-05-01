@@ -22,6 +22,63 @@
 * @author Terry Hill <terry@lillysystems.com>
 * @link http://www.open-emr.org 
 */
+
+function manage_tracker_status($apptdate,$appttime,$eid,$pid,$user,$status='',$room='',$enc_id='') {
+
+  $datetime = date("Y-m-d H:i:s");
+
+  #Check to see if there is an entry in the patient_tracker table.
+  $tracker = sqlQuery("SELECT * from `patient_tracker` WHERE `apptdate` = ? AND `appttime` = ? " .
+                      "AND `eid` = ? AND `pid` = ?", array($apptdate,$appttime,$eid,$pid));
+  if (empty($tracker)) {
+    #Add a new tracker.
+    $tracker_id = sqlInsert("INSERT INTO `patient_tracker` " .
+                            "(`date`, `apptdate`, `appttime`, `eid`, `pid`, `user`, `laststatus`, `lastroom`, `encounter`, `lastseq`) " .
+                            "VALUES (?,?,?,?,?,?,?,?,?,'1')",
+                            array($datetime,$apptdate,$appttime,$eid,$pid,$user,$status,$room,$enc_id));
+
+    #If there is a status or a room, then add a tracker item.
+    if (!empty($status) || !empty($room)) {
+    sqlInsert("INSERT INTO `patient_tracker_element` " .
+              "(`pt_tracker_id`, `start_datetime`, `user`, `status`, `room`, `seq`) " .
+              "VALUES (?,?,?,?,?,'1')",
+              array($tracker_id,$datetime,$user,$status,$room));
+    }
+  }
+  else {
+    #Tracker already exists.
+    if (($status != $tracker['laststatus']) || ($room != $tracker['lastroom'])) {
+      #Status or room has changed, so need to update tracker.
+
+      #Update laststatus and lastroom in tracker.
+      sqlStatement("UPDATE `patient_tracker` SET `laststatus` = ?, `lastroom` = ?, `lastseq` = ? WHERE `id` = ?",
+                   array($status,$room,($tracker['lastseq']+1),$tracker['id']));
+
+      #Add a tracker item.
+      sqlInsert("INSERT INTO `patient_tracker_element` " .
+                "(`pt_tracker_id`, `start_datetime`, `user`, `status`, `room`, `seq`) " .
+                "VALUES (?,?,?,?,?,?)",
+                array($tracker['id'],$datetime,$user,$status,$room,($tracker['lastseq']+1)));
+    }
+    if (!empty($enc_id)) {
+      #enc_id is not blank, so update this in tracker.
+      sqlStatement("UPDATE `patient_tracker` SET `encounter` = ? WHERE `id` = ?", array($enc_id,$tracker['id']));
+    }  
+  }
+
+  #Ensure the entry in calendar appt entry has been updated.
+  # TODO - also collect the `pc_room` field when it is there
+  # $pc_appt =  sqlQuery("SELECT `pc_apptstatus`, `pc_room` FROM `openemr_postcalendar_events` WHERE `pc_eid` = ?", array($eid))
+  $pc_appt =  sqlQuery("SELECT `pc_apptstatus` FROM `openemr_postcalendar_events` WHERE `pc_eid` = ?", array($eid));
+  if ($status != $pc_appt['pc_apptstatus']) {
+    sqlStatement("UPDATE `openemr_postcalendar_events` SET `pc_apptstatus` = ? WHERE `pc_eid` = ?", array($status,$eid));
+  }
+  # TODO - support for room number after this is added
+  #if ($room != $pc_appt['pc_room']) {
+  #  sqlStatement("UPDATE `openemr_postcalendar_events` SET `pc_room` = ? WHERE `pc_eid` = ?", array($room,$eid));
+  #}
+}
+
 	
 function  add_or_update_tracker_status($apptdate,$appttime,$pid,$user,$status,$pceid='',$encounter='',$room='',$record_id='')
      {	
@@ -102,3 +159,4 @@ function  add_or_update_tracker_status($apptdate,$appttime,$pid,$user,$status,$p
             "where pc_pid =? AND pc_eventdate =? AND pc_startTime =? ", array($status,$pid,$today,$appttime)); 
         }	
 	 }
+
