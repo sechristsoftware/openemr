@@ -84,16 +84,14 @@ window.onload=refreshbegin
 
 // Taken from billing_report 
 // Process a click to go to an patient.
-function topatient(pid, pubpid, pname, enc, datestr, dobstr) {
+function topatient(newpid, pubpid, pname, enc, datestr, dobstr) {
+  openNewTopWindow(newpid);
+}
+
+function openNewTopWindow(pid) {
+ document.fnew.patientID.value = pid;
  top.restoreSession();
-<?php if ($GLOBALS['concurrent_layout']) { ?>
- var othername = (window.name == 'RTop') ? 'RBot' : 'RTop';
- parent.left_nav.setPatient(pname,pid,pubpid,'',dobstr);
- parent.frames[othername].location.href =
-  '../interface/patient_file/summary/demographics.php?set_pid=' + pid;
-<?php } else { ?>
- location.href = '../interface/patient_file/summary/demographics_full.php?pid=' + pid;
-<?php } ?>
+ document.fnew.submit();
 }
 
 </script>
@@ -322,6 +320,12 @@ $appointments = fetchtrkrEvents( $from_date, $to_date , $where);
 </table>
 
 </form>
+
+<!-- form used to open a new top level window when a patient row is clicked -->
+<form name='fnew' method='post' target='_blank' action='../interface/main/main_screen.php?auth=login&site=<?php echo attr($_SESSION['site_id']); ?>'>
+<input type='hidden' name='patientID'      value='0' />
+</form>
+
 </center>
 <script type="text/javascript">
   $(document).ready(function() { 
