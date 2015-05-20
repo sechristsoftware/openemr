@@ -39,6 +39,7 @@ define("SALT_PREFIX_SHA1",'$SHA1$');
  * This function checks for the availability of the preferred hashing algorithm (BLOWFISH)
  * on the system.  If it is available the salt returned is prefixed to indicate it is for BLOWFISH.
  * If it is not available, then SHA1 will be used instead.
+ * Also if the crypt function returns an error rather than a BLOWFISH hash, then will use SHA1 instead.
  * 
  * See php documentation on crypt() for more details.
  * </pre>
@@ -51,7 +52,7 @@ function oemr_password_salt()
     $Allowed_Chars ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./';
     $Chars_Len = 63;
 
-    $Salt_Length = 21;
+    $Salt_Length = 22;
 
     $salt = "";
     
@@ -67,14 +68,24 @@ function oemr_password_salt()
         //This string tells crypt to apply blowfish $rounds times.
         $Blowfish_Pre = '$2a$'.$rounds.'$';
         $Blowfish_End = '$';
+        $Blowfish_Salt = $Blowfish_Pre.$salt.$Blowfish_End;
 
-        return $Blowfish_Pre.$salt.$Blowfish_End;        
+        //Check to ensure a proper hash is created with the blowfish salt before returning it
+        $testCrypt = crypt('test',$Blowfish_Salt);
+        if ( ($testCrypt == '*0') || ($testCrypt == '*1') || (strpos($testCrypt,$Blowfish_Pre) !== 0) ) {
+            //The Blowfish salt is not valid, so return SHA1 salt instead
+            error_log("Blowfish hashing algorithm not available because the crypt() function is not working correctly");
+            return SALT_PREFIX_SHA1.$salt;
+        }
+        else {
+            //The Blowfish salt is valid
+            return $Blowfish_Salt;
+        }
+
     }
+    // The preferred hashing mechanism is not available
     error_log("Blowfish hashing algorithm not available.  Upgrading to PHP 5.3.x or newer is strongly recommended");
-    
     return SALT_PREFIX_SHA1.$salt;
-    
-    
 }
 
 /**
@@ -84,11 +95,12 @@ function oemr_password_salt()
  * This function either uses the built in PHP crypt() function, or sha1() depending
  * on a prefix in the salt.  This on systems without a strong enough built in algorithm
  * for crypt(), sha1() can be used as a fallback.
+ * If the crypt function returns an error or illegal hash, then will return false.
  * </pre>
  * 
  * @param type $plaintext
  * @param type $salt
- * @return type
+ * @return type/boolean
  */
 function oemr_password_hash($plaintext,$salt)
 {
@@ -98,8 +110,16 @@ function oemr_password_hash($plaintext,$salt)
         return SALT_PREFIX_SHA1 . sha1($salt.$plaintext);
     }
     else { // Otherwise use PHP crypt()
-        
-        return crypt($plaintext,$salt);
+        $crypt_return = crypt($plaintext,$salt);
+        if ( ($crypt_return == '*0') || ($crypt_return == '*1') || (strpos($crypt_return,substr($salt, 0, 5)) !== 0) ) {
+            // Error code returned by crypt and not a hash, so return false
+            error_log("crypt() function is not working correctly in OpenEMR");
+            return false;
+        }
+        else {
+            // Hash confirmed, so return the hash.
+            return $crypt_return;
+        }
     }
 }
 ?>
