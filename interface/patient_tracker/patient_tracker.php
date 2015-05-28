@@ -57,7 +57,7 @@ function bpopup(tkid) {
 
 function calendarpopup(eid) {
  top.restoreSession()   
- window.open('../main/calendar/add_edit_event.php?patient_tracker=1&eid=' + eid,'_blank', 'width=550,height=400,resizable=1');
+ window.open('../main/calendar/add_edit_event.php?eid=' + eid,'_blank', 'width=550,height=400,resizable=1');
  return false;
 }
 
