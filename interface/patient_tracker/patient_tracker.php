@@ -314,7 +314,7 @@ $appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
          <?php } else {  echo "  <td>"; }?>
          <?php if (strtotime($newarrive) != '' && $appointment['random_drug_test'] == '1') { ?> 
          <td class="detail" align="center">
-		 <?php if (is_checkout($appointment['status'])) { ?>
+		 <?php if (strtotime($newend) != '') { ?>
 		     <input type=checkbox  disabled='disable' class="drug_screen_completed" id="<?php echo htmlspecialchars($appointment['pt_tracker_id'], ENT_NOQUOTES) ?>"  <?php if ($appointment['drug_screen_completed'] == "1") echo "checked";?>>
 		 <?php } else { ?>
 		     <input type=checkbox  class="drug_screen_completed" id='<?php echo htmlspecialchars($appointment['pt_tracker_id'], ENT_NOQUOTES) ?>' name="drug_screen_completed" <?php if ($appointment['drug_screen_completed'] == "1") echo "checked";?>>
