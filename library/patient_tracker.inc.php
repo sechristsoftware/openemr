@@ -24,7 +24,7 @@
 */
 require_once(dirname(__FILE__) . '/appointments.inc.php');
 
-function fetch_Patient_Tracker_Events( $from_date, $to_date, $where_param = null, $orderby_param = null , $tracker_board ) 
+function fetch_Patient_Tracker_Events($from_date, $to_date) 
 {
     # used to determine which providers to display in the Patient Tracker
     $provider_id = null;

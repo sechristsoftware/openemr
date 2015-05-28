@@ -177,7 +177,7 @@ $to_date = date("Y-m-d");
 $datetime = date("Y-m-d H:i:s");
 $tracker_board ='true';
 
-$appointments = fetch_Patient_Tracker_Events( $from_date, $to_date ,'', '', true);
+$appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
 
 	foreach ( $appointments as $appointment ) {
 		$tracker_id = $appointment['pt_tracker_id'];
