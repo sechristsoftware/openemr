@@ -62,7 +62,7 @@ function refreshbegin(first){
     parsetime=(parsetime[0]*60)+(parsetime[1]*1)*1000;
     if (first != '1') {
       top.restoreSession();
-      window.location.reload();
+      document.pattrk.submit();
     }
     setTimeout("refreshbegin('0')",parsetime);
   <?php } else { ?>
@@ -71,9 +71,10 @@ function refreshbegin(first){
 }
 
 function topatient(newpid, enc) {
- <?php if ($GLOBALS['ptkr_pt_list_new_window']) { ?>    
+ if (document.pattrk.form_new_window.checked) {
    openNewTopWindow(newpid,enc);
- <?php } else { ?>
+ }
+ else {
    top.restoreSession();
    <?php if ($GLOBALS['concurrent_layout']) { ?>
      if (enc > 0) {
@@ -85,7 +86,7 @@ function topatient(newpid, enc) {
    <?php } else { ?>
      top.location.href = "../patient_file/patient_file.php?set_pid=" + newpid;
    <?php } ?>
- <?php } ?>
+ }
 }
 
 function openNewTopWindow(newpid,newencounterid) {
@@ -101,10 +102,33 @@ function openNewTopWindow(newpid,newencounterid) {
 
 <body class="body_top" >
 
-<form id='pattrk' method='post' action='patient_tracker.php' onsubmit='return top.restoreSession()' enctype='multipart/form-data'>
- <form name='myform'><input type='checkbox' name='form_new_window' value='1'<?php
-  if (!empty($GLOBALS['ptkr_pt_list_new_window'])) echo ' checked'; ?> /><?php
-  echo xlt('Open Demographics in New Window'); ?></form>
+<?php if ($GLOBALS['pat_trkr_timer'] == '0') { ?>
+<form name='pattrk' id='pattrk' method='post' action='patient_tracker.php' onsubmit='return top.restoreSession()' enctype='multipart/form-data'>
+<?php } else { ?>
+<form name='pattrk' id='pattrk' method='post' action='patient_tracker.php?skip_timeout_reset=1' onsubmit='return top.restoreSession()' enctype='multipart/form-data'>
+<?php } ?>
+
+ <?php
+ if (isset($_POST['setting_new_window'])) {
+   if (isset($_POST['form_new_window'])) {
+     $new_window_checked = " checked";
+   }
+   else {
+     $new_window_checked = '';
+   }
+ }
+ else {
+   if ($GLOBALS['ptkr_pt_list_new_window']) {
+     $new_window_checked = " checked";
+   }
+   else {
+     $new_window_checked = '';
+   }
+ }
+ ?>
+ <input type='hidden' name='setting_new_window' value='1' />
+ <input type='checkbox' name='form_new_window' value='1'<?php echo $new_window_checked; ?> /><?php
+  echo xlt('Open Patient in New Window'); ?>
 <?php if ($GLOBALS['pat_trkr_timer'] =='0') { ?>
 <table border='0' cellpadding='5' cellspacing='0'>
  <tr>
@@ -114,8 +138,6 @@ function openNewTopWindow(newpid,newencounterid) {
  </tr>
 </table>
 <?php } ?>
-</form>
-
 
 <table border='0' cellpadding='1' cellspacing='2' width='100%'>
 
@@ -306,6 +328,7 @@ $appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
 ?>
 
 </table>
+</form>
 
 <script type="text/javascript">
   $(document).ready(function() { 
