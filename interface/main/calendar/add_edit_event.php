@@ -669,10 +669,10 @@ if ($_POST['form_action'] == "save") {
  }
 
  if ($_POST['form_action'] != "") {
-  // Close this window and refresh the calendar display.
+  // Close this window and refresh the calendar (or the patient_tracker) display.
   echo "<html>\n<body>\n<script language='JavaScript'>\n";
   if ($info_msg) echo " alert('" . addslashes($info_msg) . "');\n";
-  echo " if (opener && !opener.closed && opener.refreshme) opener.refreshme();\n";
+  echo " if (opener && !opener.closed && opener.refreshme) { opener.refreshme(); } else { window.opener.location.reload(); };\n";
   echo " window.close();\n";
   echo "</script>\n</body>\n</html>\n";
   exit();

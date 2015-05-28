@@ -55,6 +55,12 @@ function bpopup(tkid) {
  return false;
 }
 
+function calendarpopup(eid) {
+ top.restoreSession()   
+ window.open('../main/calendar/add_edit_event.php?patient_tracker=1&eid=' + eid,'_blank', 'width=550,height=400,resizable=1');
+ return false;
+}
+
 function refreshbegin(first){
   <?php if ($GLOBALS['pat_trkr_timer'] != '0') { ?>
     var reftime="<?php echo attr($GLOBALS['pat_trkr_timer']); ?>";
@@ -197,51 +203,73 @@ $appointments = array();
 $from_date = date("Y-m-d");
 $to_date = date("Y-m-d");
 $datetime = date("Y-m-d H:i:s");
-$tracker_board ='true';
 
 $appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
 
 	foreach ( $appointments as $appointment ) {
-		$tracker_id = $appointment['pt_tracker_id'];
-		$docname  = $appointment['lname'] . ', ' . $appointment['fname'] . ' ' . $appointment['mname'];
-        $ptname = $appointment['fname'] . " " . $appointment['lname'];
-        $raw_encounter_date = date("Y-m-d", strtotime($appointment['date']));
-		$newarrive = collect_checkin($appointment['id']);
-        $newend = collect_checkout($appointment['id']);
-        if (strlen($docname)<= 3 ) continue;
-        if (is_checkout($appointment['status']) && $GLOBALS['checkout_roll_off'] >0) {
-           $to_time = strtotime($newend);
-           $from_time = strtotime($datetime);
-           $display_check_out = round(abs($from_time - $to_time) / 60,0);
-		   if ( $display_check_out >= $GLOBALS['checkout_roll_off'] ) continue;
-        }
-        $colorevents = (collectApptStatusSettings($appointment['status']));
-        $bgcolor = $colorevents['color'];
-        $statalert = $colorevents['time_alert'];
+
+                if ($appointment['pc_recurrtype'] != 0) {
+                        // TODO: Note this block of code can likely be removed when the appointment recursion bug has been fixed.
+                        // don't show if excluded
+                        // example of pc_recurrspec having "exdate";s:8:"20150527";
+                        $date_squash = str_replace("-","",$appointment['pc_eventDate']);
+                        if (preg_match("/exdate.+$date_squash/",$appointment['pc_recurrspec'])) {
+                                continue;
+                        }
+                }
+
+                // Collect variables and do some processing
+                $docname  = $appointment['ulname'] . ', ' . $appointment['ufname'] . ' ' . $appointment['umname'];
+                if (strlen($docname)<= 3 ) continue;
+                $ptname = $appointment['lname'] . ', ' . $appointment['fname'] . ' ' . $appointment['mname'];
+                $appt_enc = $appointment['encounter'];
+                $appt_eid = (!empty($appointment['eid'])) ? $appointment['eid'] : $appointment['pc_eid'];
+                $appt_pid = (!empty($appointment['pid'])) ? $appointment['pid'] : $appointment['pc_pid'];
+                $status = (!empty($appointment['status'])) ? $appointment['status'] : $appointment['pc_apptstatus'];
+                $appt_room = (!empty($appointment['room'])) ? $appointment['room'] : $appointment['pc_room'];
+                $appt_time = (!empty($appointment['appttime'])) ? $appointment['appttime'] : $appointment['pc_startTime'];
+                $tracker_id = $appointment['id'];
+                $newarrive = collect_checkin($tracker_id);
+                $newend = collect_checkout($tracker_id);
+                $colorevents = (collectApptStatusSettings($status));
+                $bgcolor = $colorevents['color'];
+                $statalert = $colorevents['time_alert'];
+                if ( is_checkout($status) && ($GLOBALS['checkout_roll_off'] > 0) ) {
+                        $to_time = strtotime($newend);
+                        $from_time = strtotime($datetime);
+                        $display_check_out = round(abs($from_time - $to_time) / 60,0);
+                        if ( $display_check_out >= $GLOBALS['checkout_roll_off'] ) continue;
+                }
 ?>
         <tr bgcolor='<?php echo $bgcolor ?>'>
         <td class="detail" align="center">
-        <?php echo text($appointment['pid']) ?>
+        <?php echo text($appt_pid) ?>
          </td>
         <td class="detail" align="center">
-        <a href="#" onclick="return topatient('<?php echo text($appointment['pid']);?>','<?php echo text($appointment['encounter']);?>')" >
-        <?php echo text($appointment['lname']) . ', ' . text($appointment['fname']) . ' ' . text($appointment['mname']); ?></a>
+        <a href="#" onclick="return topatient('<?php echo attr($appt_pid);?>','<?php echo attr($appt_enc);?>')" >
+        <?php echo text($ptname); ?></a>
          </td>
         <td class="detail" align="center">
-		 <?php if($appointment['encounter'] != 0) echo text($appointment['encounter']); ?></a>
+		 <?php if($appt_enc != 0) echo text($appt_enc); ?></a>
          </td>
          <td class="detail" align="center">
-         <?php echo text($appointment['room']) ; ?>  
+         <?php echo text($appt_room) ; ?>  
          </td>
          <td class="detail" align="center">
-         <?php echo text($appointment['appttime']) ?>
+         <?php echo text($appt_time) ?>
          </td>
          <td class="detail" align="center">
         <?php echo text(substr($newarrive,11)); ?>
          </td>
-         <td class="detail" align="center">  
-         <a href=""  onclick="return bpopup(
-         <?php  $statusverb = getListItemTitle("apptstat",$appointment['status']); echo text($appointment['id']);  ?> ) " ><?php echo text($statusverb); ?></a>		 
+         <td class="detail" align="center"> 
+         <?php if ($appointment['pc_recurrtype'] != 0) { ?>
+           <a href=""  onclick="return calendarpopup(<?php echo text($appt_eid); ?>)">
+         <?php } else { ?>
+           <a href=""  onclick="return bpopup(<?php echo text($tracker_id); ?>)">
+         <?php } ?>
+         <?php echo text(getListItemTitle("apptstat",$status)); ?>
+         </a>
+
 		 </td>
         <?php		 
 		 //time in status
@@ -274,7 +302,7 @@ $appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
          <?php echo text(xl_appt_category($appointment['pc_title'])) ?>
          </td>
          <td class="detail" align="center">
-         <?php echo text($appointment['ulname']) . ', ' . text($appointment['ufname']) . ' ' . text($appointment['umname']); ?>
+         <?php echo text($docname); ?>
          </td>
          <td class="detail" align="center"> 
          <?php		 

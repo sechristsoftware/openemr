@@ -65,8 +65,16 @@ if ($enc_yn['encounter'] == '0' || $enc_yn == '0') return(false);
   return(true);
 }
 
- # this function will return the tracker id that is managed  
+ # this function will return the tracker id that is managed
+ # or will return false if no tracker id was managed (in the case of a recurrent appointment)
 function manage_tracker_status($apptdate,$appttime,$eid,$pid,$user,$status='',$room='',$enc_id='') {
+
+  #First ensure the eid is not a recurrent appointment. If it is, then do not do anything and return false.
+  $pc_appt =  sqlQuery("SELECT `pc_recurrtype` FROM `openemr_postcalendar_events` WHERE `pc_eid` = ?", array($eid));
+  if ($pc_appt['pc_recurrtype'] != 0) {
+    return false;
+  }
+
   $datetime = date("Y-m-d H:i:s");
 
   #Check to see if there is an entry in the patient_tracker table.
