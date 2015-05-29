@@ -330,10 +330,9 @@ function InsertEvent($args,$from = 'general') {
 			$args['starttime'],$args['endtime'],$args['form_allday'],$args['form_apptstatus'],$args['form_prefcat'],
 			$args['locationspec'],(int)$args['facility'],(int)$args['billing_facility'],$args['form_room'])
 		);
-		
 
-            # Capture the appt status and room number for patient tracker.
-            manage_tracker_status($args['event_date'],$args['starttime'],$pc_eid,$form_pid,$_SESSION['authUser'],$args['form_apptstatus'],$args['form_room']);        
+            manage_tracker_status($args['event_date'],$args['starttime'],$pc_eid,$form_pid,$_SESSION['authUser'],$args['form_apptstatus'],$args['form_room']);
+            $GLOBALS['temporary-eid-for-manage-tracker'] = $pc_eid;
 
             return $pc_eid;
 
