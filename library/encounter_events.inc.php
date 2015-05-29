@@ -332,7 +332,7 @@ function InsertEvent($args,$from = 'general') {
 		);
 
             manage_tracker_status($args['event_date'],$args['starttime'],$pc_eid,$form_pid,$_SESSION['authUser'],$args['form_apptstatus'],$args['form_room']);
-            $GLOBALS['temporary-eid-for-manage-tracker'] = $pc_eid;
+            $GLOBALS['temporary-eid-for-manage-tracker'] = $pc_eid; //used by manage tracker module to set correct encounter in tracker when check in
 
             return $pc_eid;
 

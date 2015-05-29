@@ -150,8 +150,12 @@ function DOBandEncounter()
 				 $info_msg .= " $encounter";
 		 }
                  # Capture the appt status and room number for patient tracker. This will map the encounter to it also.
-                 if (!empty($_GET['eid']) || isset($GLOBALS['temporary-eid-for-manage-tracker'])) {
-                    $temp_eid = (!empty($_GET['eid'])) ? $_GET['eid']  : $GLOBALS['temporary-eid-for-manage-tracker'];
+                 if ( isset($GLOBALS['temporary-eid-for-manage-tracker']) || !empty($_GET['eid']) ) {
+                    // Note that the temporary-eid-for-manage-tracker is used to capture the eid for new appointments and when separate a recurring
+                    // appointment. It is set in the InsertEvent() function. Note that in the case of spearating a recurrent appointment, the get eid
+                    // parameter is actually erroneous(is eid of the recurrent appt and not the new separated appt), so need to use the
+                    // temporary-eid-for-manage-tracker global instead.
+                    $temp_eid = (isset($GLOBALS['temporary-eid-for-manage-tracker'])) ? $GLOBALS['temporary-eid-for-manage-tracker'] : $_GET['eid'];
 	 	    manage_tracker_status($event_date,$appttime,$temp_eid,$_POST['form_pid'],$_SESSION["authUser"],$_POST['form_apptstatus'],$_POST['form_room'],$encounter);
                  }
 	 }

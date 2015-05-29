@@ -210,10 +210,11 @@ $appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
 
                 if ($appointment['pc_recurrtype'] != 0) {
                         // TODO: Note this block of code can likely be removed when the appointment recursion bug has been fixed.
-                        // don't show if excluded
-                        // example of pc_recurrspec having "exdate";s:8:"20150527";
+                        // don't show if date has been excluded
+                        // example of pc_recurrspec having "exdate" of "20150527,20150528,";
                         $date_squash = str_replace("-","",$appointment['pc_eventDate']);
-                        if (preg_match("/exdate.+$date_squash/",$appointment['pc_recurrspec'])) {
+                        $recurrent_info = unserialize($appointment['pc_recurrspec']);
+                        if (preg_match("/$date_squash/",$recurrent_info['exdate'])) {
                                 continue;
                         }
                 }
