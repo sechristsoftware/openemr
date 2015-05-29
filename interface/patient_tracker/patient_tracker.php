@@ -263,7 +263,7 @@ $appointments = fetch_Patient_Tracker_Events($from_date, $to_date);
         <?php echo text(substr($newarrive,11)); ?>
          </td>
          <td class="detail" align="center"> 
-         <?php if ($appointment['pc_recurrtype'] != 0) { ?>
+         <?php if (empty($tracker_id)) { //for appt not yet with tracker id and for recurring appt ?>
            <a href=""  onclick="return calendarpopup(<?php echo text($appt_eid); ?>)">
          <?php } else { ?>
            <a href=""  onclick="return bpopup(<?php echo text($tracker_id); ?>)">
