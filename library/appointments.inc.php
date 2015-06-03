@@ -9,6 +9,12 @@
 
  // Holds library functions (and hashes) used by the appointment reporting module
 
+
+
+require_once(dirname(__FILE__)."/encounter_events.inc.php");
+require_once($GLOBALS['fileroot']."/interface/main/calendar/modules/PostCalendar/pnincludes/Date/Calc.php");
+
+
 $COMPARE_FUNCTION_HASH = array(
 	'doctor' => 'compareAppointmentsByDoctorName',
 	'patient' => 'compareAppointmentsByPatientName',
@@ -34,7 +40,7 @@ $ORDERHASH = array(
 function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param = null ) 
 {
 	$where =
-		"( (e.pc_endDate >= '$from_date' AND e.pc_eventDate <= '$to_date' AND e.pc_recurrtype = '1') OR " .
+		"( (e.pc_endDate >= '$from_date' AND e.pc_eventDate <= '$to_date' AND e.pc_recurrtype > '0') OR " .
   		  "(e.pc_eventDate >= '$from_date' AND e.pc_eventDate <= '$to_date') )";
 	if ( $where_param ) $where .= $where_param;
 	
@@ -56,24 +62,131 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
 	"WHERE $where " . 
 	"ORDER BY $order_by";
 
-	$res = sqlStatement( $query );
-	$events = array();
-	if ( $res )
-	{
-		while ( $row = sqlFetchArray($res) ) 
-		{
-			// if it's a repeating appointment, fetch all occurances in date range
-			if ( $row['pc_recurrtype'] ) {
-				$reccuringEvents = getRecurringEvents( $row, $from_date, $to_date );
-				$events = array_merge( $events, $reccuringEvents );
-			} else {
-				$events []= $row;
-			}
-		}
-	}
-	
-	return $events;
+
+///////////////////////////////////////////////////////////////////////
+// The following code is from the calculateEvents function in the
+// PostCalendar Module modified and inserted here by epsdky.
+
+  $cy = substr($from_date,0,4);
+  $cm = substr($from_date,4,2);
+  $cd = substr($from_date,6,2);
+
+  $events2 = array();
+
+	$res = sqlStatement($query);
+
+ 	while ($event = sqlFetchArray($res)) {
+
+    list($esY,$esM,$esD) = explode('-',$event['pc_eventDate']);
+
+    $event_recurrspec = @unserialize($event['pc_recurrspec']);
+
+    $stopDate = ($event['pc_endDate'] <= $to_date) ? $event['pc_endDate'] : $to_date;
+
+    switch($event['pc_recurrtype']) {
+
+      case '0' :
+
+        $events2[] = $event;
+        
+        break;
+//////
+      case '1' :
+
+        $rfreq = $event_recurrspec['event_repeat_freq'];
+        $rtype = $event_recurrspec['event_repeat_freq_type'];
+        $exdate = $event_recurrspec['exdate'];
+        
+        $nm = $esM; $ny = $esY; $nd = $esD;
+        $occurance = Date_Calc::dateFormat($nd,$nm,$ny,'%Y-%m-%d');
+        while($occurance < $from_date) {
+          $occurance =& __increment($nd,$nm,$ny,$rfreq,$rtype);
+          list($ny,$nm,$nd) = explode('-',$occurance);
+        }
+
+
+        while($occurance <= $stopDate) {
+
+            $excluded = false;
+            if (isset($exdate)) {
+                foreach (explode(",", $exdate) as $exception) {
+                    // occurrance format == yyyy-mm-dd
+                    // exception format == yyyymmdd
+                    if (preg_replace("/-/", "", $occurance) == $exception) {
+                        $excluded = true;
+                    }
+                }
+            }
+
+            if ($excluded == false) {
+              $event['pc_eventDate'] = $occurance;
+              $event['pc_endDate'] = '0000-00-00';
+              $events2[] = $event;
+            }
+          
+            $occurance =& __increment($nd,$nm,$ny,$rfreq,$rtype);
+            list($ny,$nm,$nd) = explode('-',$occurance);
+
+        }
+
+        break;
+
+//////
+      case '2' :
+
+        $rfreq = $event_recurrspec['event_repeat_on_freq'];
+        $rnum  = $event_recurrspec['event_repeat_on_num'];
+        $rday  = $event_recurrspec['event_repeat_on_day'];
+        $exdate = $event_recurrspec['exdate'];
+
+        $nm = $esM; $ny = $esY; $nd = $esD;
+        // $nd will sometimes be 29, 30 or 31, this will cause overflow in mktime therefore $this is used. 
+        $this01 = '01'; 
+
+        while($ny < $cy) {
+          $occurance = date('Y-m-d',mktime(0,0,0,$nm+$rfreq,$this01,$ny));
+          list($ny,$nm,$nd) = explode('-',$occurance);
+        }
+        while($occurance <= $stopDate) {
+          $dnum = $rnum;
+          do {
+              $occurance = Date_Calc::NWeekdayOfMonth($dnum--,$rday,$nm,$ny,$format="%Y-%m-%d");
+          } while($occurance === -1);
+    
+          if($occurance >= $from_date) {
+            $excluded = false;
+            if (isset($exdate)) {
+                foreach (explode(",", $exdate) as $exception) {
+                    // occurrance format == yyyy-mm-dd
+                    // exception format == yyyymmdd
+                    if (preg_replace("/-/", "", $occurance) == $exception) {
+                        $excluded = true;
+                    }
+                }
+            }
+
+            if ($excluded == false && $occurance <= $stopDate) {
+              $event['pc_eventDate'] = $occurance;
+              $event['pc_endDate'] = '0000-00-00';
+              $events2[] = $event;
+            }
+
+          }     
+
+          $occurance = date('Y-m-d',mktime(0,0,0,$nm+$rfreq,$this01,$ny));
+          list($ny,$nm,$nd) = explode('-',$occurance);
+
+          }
+
+        break;
+
+    }
+
+  }    
+  return $events2;
+////////////////////// End of code inserted by epsdky.
 }
+
 
 function fetchAllEvents( $from_date, $to_date, $provider_id = null, $facility_id = null )
 {
@@ -141,104 +254,6 @@ function fetchAppointments( $from_date, $to_date, $patient_id = null, $provider_
 	return $appointments;
 }
 
-function getRecurringEvents( $event, $from_date, $to_date )
-{
-	$repeatEvents = array();
-	$from_date_time = strtotime( $from_date . " 00:00:00" );
-	$thistime = strtotime( $event['pc_eventDate'] . " 00:00:00" );
-	//$thistime = max( $thistime, $from_date_time );
-	if ( $event['pc_recurrtype'] )
-	{
-		preg_match( '/"event_repeat_freq_type";s:1:"(\d)"/', $event['pc_recurrspec'], $matches );
-		$repeattype = $matches[1];
-
-		preg_match( '/"event_repeat_freq";s:1:"(\d)"/', $event['pc_recurrspec'], $matches );
-		$repeatfreq = $matches[1];
-    if ($event['pc_recurrtype'] == 2) {
-     // Repeat type is 2 so frequency comes from event_repeat_on_freq.
-     preg_match('/"event_repeat_on_freq";s:1:"(\d)"/', $event['pc_recurrspec'], $matches);
-     $repeatfreq = $matches[1];
-    }
-		if ( !$repeatfreq ) $repeatfreq = 1;
-
-    preg_match('/"event_repeat_on_num";s:1:"(\d)"/', $event['pc_recurrspec'], $matches);
-    $my_repeat_on_num = $matches[1];
-
-    preg_match('/"event_repeat_on_day";s:1:"(\d)"/', $event['pc_recurrspec'], $matches);
-    $my_repeat_on_day = $matches[1];
-
-		$upToDate = strtotime( $to_date." 23:59:59" ); // set the up-to-date to the last second of the "to_date"
-		$endtime = strtotime( $event['pc_endDate'] . " 23:59:59" );
-		if ( $endtime > $upToDate ) $endtime = $upToDate;
-
-		$repeatix = 0;
-		while ( $thistime < $endtime )
-		{
-			// Skip the event if a repeat frequency > 1 was specified and this is
-			// not the desired occurrence.
-			if ( !$repeatix ) {
-			    $inRange = ( $thistime >= $from_date_time && $thistime < $upToDate );
-			    if ( $inRange ) {
-    				$newEvent = $event;
-    				$eventDate = date( "Y-m-d", $thistime );
-    				$newEvent['pc_eventDate'] = $eventDate;
-    				$newEvent['pc_endDate'] = $eventDate;
-    				$repeatEvents []= $newEvent;
-			    }
-			}
-				
-			if  ( ++$repeatix >= $repeatfreq ) $repeatix = 0;
-
-			$adate = getdate($thistime);
-
-      if ($event['pc_recurrtype'] == 2) {
-        // Need to skip to nth or last weekday of the next month.
-        $adate['mon'] += 1;
-        if ($adate['mon'] > 12) {
-          $adate['year'] += 1;
-          $adate['mon'] -= 12;
-        }
-        if ($my_repeat_on_num < 5) { // not last
-          $adate['mday'] = 1;
-          $dow = jddayofweek(cal_to_jd(CAL_GREGORIAN, $adate['mon'], $adate['mday'], $adate['year']));
-          if ($dow > $my_repeat_on_day) $dow -= 7;
-          $adate['mday'] += ($my_repeat_on_num - 1) * 7 + $my_repeat_on_day - $dow;
-        }
-        else { // last weekday of month
-          $adate['mday'] = cal_days_in_month(CAL_GREGORIAN, $adate['mon'], $adate['year']);
-          $dow = jddayofweek(cal_to_jd(CAL_GREGORIAN, $adate['mon'], $adate['mday'], $adate['year']));
-          if ($dow < $my_repeat_on_day) $dow += 7;
-          $adate['mday'] += $my_repeat_on_day - $dow;
-        }
-      } // end recurrtype 2
-
-      else { // recurrtype 1
-			  if ($repeattype == 0)        { // daily
-				  $adate['mday'] += 1;
-			  } else if ($repeattype == 1) { // weekly
-				  $adate['mday'] += 7;
-			  } else if ($repeattype == 2) { // monthly
-				  $adate['mon'] += 1;
-			  } else if ($repeattype == 3) { // yearly
-				  $adate['year'] += 1;
-			  } else if ($repeattype == 4) { // work days
-				  if ($adate['wday'] == 5)      // if friday, skip to monday
-				  $adate['mday'] += 3;
-				  else if ($adate['wday'] == 6) // saturday should not happen
-				  $adate['mday'] += 2;
-				  else
-				  $adate['mday'] += 1;
-			  } else {
-				  die("Invalid repeat type '$repeattype'");
-			  }
-      } // end recurrtype 1
-
-			$thistime = mktime(0, 0, 0, $adate['mon'], $adate['mday'], $adate['year']);
-		}
-	}
-
-	return $repeatEvents;
-}
 
 // get the event slot size in seconds
 function getSlotSize()
