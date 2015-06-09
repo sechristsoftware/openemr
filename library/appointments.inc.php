@@ -12,7 +12,7 @@
 
 
 require_once(dirname(__FILE__)."/encounter_events.inc.php");
-require_once($GLOBALS['fileroot']."/interface/main/calendar/modules/PostCalendar/pnincludes/Date/Calc.php");
+require_once(dirname(__FILE__)."/../interface/main/calendar/modules/PostCalendar/pnincludes/Date/Calc.php");
 
 
 $COMPARE_FUNCTION_HASH = array(
@@ -73,9 +73,9 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
 
   $events2 = array();
 
-	$res = sqlStatement($query);
+  $res = sqlStatement($query);
 
- 	while ($event = sqlFetchArray($res)) {
+  while ($event = sqlFetchArray($res)) {
 
     list($esY,$esM,$esD) = explode('-',$event['pc_eventDate']);
 
