@@ -52,13 +52,23 @@ function imsubmitted() {
  olddate.setFullYear(olddate.getFullYear() - 1);
  document.cookie = '<?php echo session_name() . '=' . session_id() ?>; path=/; expires=' + olddate.toGMTString();
 <?php } ?>
-    return false; //Currently the submit action is handled by the encrypt_form(). 
+    return false; //Currently the submit action is handled by the encrypt_form().
 }
+document.cookie = 'NUSA_Guids = <<?php echo ($GLOBALS['organizaion_id'])?>>/<84e4e1fa-a8f2-464c-96c3-647d8f96a32b>'
 </script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </head>
+
 <body onload="javascript:document.login_form.authUser.focus();" >
 <span class="text"></span>
+
 <center>
 
 <form method="POST"
@@ -93,7 +103,7 @@ else {
 $_SESSION['language_choice'] = $defaultLangID;
 // collect languages if showing language menu
 if ($GLOBALS['language_menu_login']) {
-    
+
         // sorting order of language titles depends on language translation options.
         $mainLangID = empty($_SESSION['language_choice']) ? '1' : $_SESSION['language_choice'];
         if ($mainLangID == '1' && !empty($GLOBALS['skip_english_translation']))
@@ -113,7 +123,7 @@ if ($GLOBALS['language_menu_login']) {
             "ORDER BY IF(LENGTH(ld.definition),ld.definition,ll.lang_description), ll.lang_id";
           $res3=SqlStatement($sql, array($mainLangID));
 	}
-    
+
         for ($iter = 0;$row = sqlFetchArray($res3);$iter++)
                $result3[$iter] = $row;
         if (count($result3) == 1) {
@@ -122,21 +132,19 @@ if ($GLOBALS['language_menu_login']) {
         }
 }
 else {
-        echo "<input type='hidden' name='languageChoice' value='".attr($defaultLangID)."' />\n";   
+        echo "<input type='hidden' name='languageChoice' value='".attr($defaultLangID)."' />\n";
 }
 ?>
 
-<table width="100%" height="90%">
-<td align='center' valign='middle' width='34%'>
 <div class="login-box">
-<div class="logo-left"><?php echo $logocode;?></div>
+<center><div><img src="/interface/pic/logo.png"></div>
 
-<div class="table-right">
-<table width="100%">
+<br>
+
 <?php if (count($result) != 1) { ?>
-<tr>
+
 <td><span class="text"><?php echo xlt('Group:'); ?></span></td>
-<td>
+
 <select name=authProvider>
 <?php
 	foreach ($result as $iter) {
@@ -144,13 +152,13 @@ else {
 	}
 ?>
 </select>
-</td></tr>
 <?php } ?>
 
 <?php if (isset($_SESSION['loginfailure']) && ($_SESSION['loginfailure'] == 1)): ?>
-<tr><td colspan='2' class='text' style='color:red'>
+
+  <a class='text' style='color:red'>
 <?php echo xlt('Invalid username or password'); ?>
-</td></tr>
+    </a>
 <?php endif; ?>
 
 <?php if (isset($_SESSION['relogin']) && ($_SESSION['relogin'] == 1)): ?>
@@ -161,16 +169,17 @@ else {
 </td></tr>
 <?php endif; ?>
 
-<tr>
-<td><span class="text"><?php echo xlt('Username:'); ?></span></td>
-<td>
-<input class="entryfield" type="text" size="10" name="authUser">
-</td></tr><tr>
-<td><span class="text"><?php echo xlt('Password:'); ?></span></td>
-<td>
-<input class="entryfield" type="password" size="10" name="clearPass">
-</td></tr>
+<!--
+<td><span class="text"><?php echo xlt('Username:'); ?></span></td>-->
 
+<input class="entryfield" type="text"s name="authUser" placeholder="Username">
+<br>
+<!--
+<span class="text"><?php echo xlt('Password:'); ?></span>-->
+
+<input class="entryfield" type="password"  name="clearPass" placeholder="Password">
+    <br>
+<!--
 <?php
 if ($GLOBALS['language_menu_login']) {
 if (count($result3) != 1) { ?>
@@ -195,25 +204,21 @@ if (count($result3) != 1) { ?>
 ?>
 </select>
 </td></tr>
-<?php }} ?>
+<?php }} ?>-->
 
-<tr><td>&nbsp;</td><td>
 <input class="button large" type="submit" onClick="transmit_form()" value="<?php echo xla('Login');?>">
-</td></tr>
 <tr><td colspan='2' class='text' style='color:red'>
 <?php
 $ip=$_SERVER['REMOTE_ADDR'];
 ?>
 </div>
-</td></tr>
-</table>
-
+    </center>
 </div>
-<div style="clear: both;"> </div>
+    <div style="clear: both;"> </div>
 <div class="version">
 <?php echo "v".text($openemr_version) ?> | <a  href="../../acknowledge_license_cert.html" target="main"><?php echo xlt('Acknowledgments, Licensing and Certification'); ?></a>
 </div>
-</div>
+    </div>
 <div class="demo">
 		<!-- Uncomment this for the OpenEMR demo installation
 		<p><center>login = admin

@@ -7,12 +7,12 @@ include_once("../globals.php");
 <link rel=stylesheet href="<?php echo $css_header;?>" type="text/css">
 <link rel=stylesheet href="../themes/login.css" type="text/css">
 </head>
-<body class="body_title">
+<body>
+<!--
+<span>
+<div ><?php echo "$openemr_name" ?></div>
 
-<span class="title_bar">
-<div class="title_name"><?php echo "$openemr_name" ?></div>
-
-</span><br>
+</span><br>-->
 
 </body>
 </html>
